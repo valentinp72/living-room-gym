@@ -1,5 +1,6 @@
 import { EXERCISES } from './exercises/index.js';
 import { buildMannequin, resetPose } from './avatar.js';
+import { readHands } from './tracking.js';
 
 // Show or hide a panel or button. A-Frame raycasters ignore `visible`, so a
 // hidden button would still catch the laser (and its clicks) in front of a
@@ -33,6 +34,7 @@ export const gymApp = {
     this.mannequin = buildMannequin(this.el);
     this.current = null;
     this.clock = 0;
+    this.hands = readHands(this.el.sceneEl);
 
     const menuButtons = document.querySelector('#menuButtons');
     EXERCISES.forEach((ex, i) => {
@@ -115,7 +117,8 @@ export const gymApp = {
     }
     if (!this.current) return;
     this.clock += delta / 1000;
-    const ctx = { scene: this.el.sceneEl, camera: this.camera, rHand: this.rHand, lHand: this.lHand };
+    const scene = this.el.sceneEl;
+    const ctx = { scene, camera: this.camera, hands: readHands(scene, this.hands) };
     this.current.ex.update(ctx, this.current.st, delta);
     this.repText.setAttribute('value', this.current.ex.label(this.current.st));
     resetPose(this.mannequin);

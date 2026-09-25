@@ -11,7 +11,8 @@
 </head>
 <body>
 <!-- AR (passthrough) is the main mode; VR is kept as a fallback. -->
-<a-scene xr-environment="color:#0d1117" xr-mode-ui="XRMode: xr">
+<a-scene xr-environment="color:#0d1117" xr-mode-ui="XRMode: xr"
+  webxr="optionalFeatures: bounded-floor, hand-tracking">
   <a-assets></a-assets>
 
   <a-entity id="rig" position="0 0 0">
@@ -22,6 +23,12 @@
     </a-entity>
     <a-entity id="rightHand" laser-controls="hand:right" raycaster="objects:.clickable; far:20"></a-entity>
     <a-entity id="leftHand" laser-controls="hand:left" raycaster="objects:.clickable; far:20"></a-entity>
+    <!-- Bare hands: pinch to click. In AR the real hands show through
+         passthrough; in VR a hand model is drawn. -->
+    <a-entity id="rightHandPointer" hand-pointer="hand: right"></a-entity>
+    <a-entity id="leftHandPointer" hand-pointer="hand: left"></a-entity>
+    <a-entity class="vr-only" hand-tracking-controls="hand: right"></a-entity>
+    <a-entity class="vr-only" hand-tracking-controls="hand: left"></a-entity>
   </a-entity>
 
   <a-plane class="vr-only" rotation="-90 0 0" width="20" height="20" color="#1b1f24"></a-plane>

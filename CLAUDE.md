@@ -34,7 +34,7 @@ www/
   js/main.js               # entry point: registers A-Frame components
   js/app.js                # gym-app component: menu / exercise flow, per-frame tick
   js/avatar.js             # jointed demo mannequin, resetPose + rot/place/turn helpers
-  js/tracking.js           # shared tracking helpers (isHandTracked, xrMode)
+  js/tracking.js           # shared tracking helpers (readHands, xrMode)
   js/components/*.js       # other A-Frame components (registered in main.js)
   js/exercises/index.js    # EXERCISES registry (menu order)
   js/exercises/<name>.js   # one exercise per file, default export
@@ -42,7 +42,7 @@ www/
 
 - Exercise object: `id, name, muscle, color, instructions`, plus:
   - `state()` returns a fresh per-session state
-  - `update(ctx, st, dtMs)` runs each frame; `ctx = { scene, camera, rHand, lHand }` (A-Frame entities)
+  - `update(ctx, st, dtMs)` runs each frame; `ctx = { scene, camera, hands }` (`camera` is the A-Frame entity; `hands` comes from `readHands()`)
   - `label(st)` returns the counter text
   - `demo(parts, tSeconds)` poses the mannequin; it's reset to standing before every call
   - `manual`: if true, shows the Start/Stop button instead of automatic detection
@@ -52,7 +52,8 @@ www/
 - `gym-app` component (on `#stage` in the markup) owns the UI state, the per-frame `tick`, and `recenter()`.
 - `#stage` holds everything placed relative to the user: both panels and the mannequin. Positions inside it assume the user stands at the stage origin looking toward −Z. `recenter()` moves the stage under the head and turns it to the head's yaw (or to where the top of the head points when looking down). It runs 0.5 s after entering AR/VR, on B / Y, and from `.recenter` buttons, and leaving XR resets the stage. Put new user-facing content inside `#stage`, not directly in the scene.
 - Rig: `#rig > #camera` (with a gaze cursor), `#rightHand` and `#leftHand` (`laser-controls`). Buttons get class `button`; raycasters target `.clickable`, which `setShown()` in `app.js` adds only while a button is visible. A-Frame raycasters ignore `visible`, so hidden buttons would otherwise steal clicks. Always show or hide UI with `setShown()`, never with `setAttribute('visible')` alone.
-- Shared tracking and rep-detection helpers go in `js/tracking.js`. Use `isHandTracked(handEl)` before reading a controller's position: it checks for a live WebXR pose (`tracked-controls-webxr` has a `controller` and a non-null `pose`).
+- Shared tracking and rep-detection helpers go in `js/tracking.js`. Exercises get `ctx.hands = readHands(scene)`: `{ left, right }`, each `{ tracked, kind: 'controller' | 'hand' | null, position }`. It is read straight from the WebXR session (grip space, or the wrist joint for hands without one), so controllers and bare hands work the same. Never read hand positions from the `#rightHand` / `#leftHand` entities: they only cover controllers, and they freeze at their last position when tracking is lost.
+- Input: controllers use `laser-controls` (`#rightHand` / `#leftHand`, trigger = click, A/B/X/Y events). Bare hands use `hand-pointer` (`js/components/hand-pointer.js`): a ray along the hand's WebXR target ray, where a pinch (the session `select` event) clicks the first `.clickable` hit. It ignores controller sources, so the trigger doesn't double-click. The `hand-tracking-controls` entities only draw hand models, and they are `vr-only` because in AR the real hands show through passthrough. Every action must be reachable without controllers (B / Y are only shortcuts).
 - Bicep Curls (`js/exercises/curls.js`) counts each arm separately. A rep = the hand rises 30 cm above its lowest point to at least chest height (45 cm below the eyes), then drops 30 cm. The thresholds are relative, so they work across body sizes.
 - Squats (`js/exercises/squats.js`) calibrates standing head height once the head stays within 3 cm for 1 s, and recalibrates whenever `xrMode(scene)` changes (flat, `vr`, `ar`). While standing, the baseline only moves up. A rep = head 25 cm below the baseline, then back within 8 cm.
 
@@ -65,7 +66,7 @@ www/
 - Units are meters. +Y is up, and the user starts looking toward **−Z**. An object in front of the user at `z = -2` faces the user through its **+Z** side.
 - `rotation` is in **degrees** (XYZ Euler). For a limb hanging along −Y from a pivot, a positive X rotation swings it toward **−Z**. The mannequin faces its own +Z, so for it, negative X = forward (hip flexion, raising an arm, bending the elbow) and positive X at the knee bends the shin back. For the spine (pointing +Y), positive X leans forward.
 - In an XR session with the default `local-floor` reference space, A-Frame writes the headset pose straight into `#camera`'s `object3D` (`renderer.xr.setPoseTarget`), so `position.y` is the real head height above the floor and `quaternion` is the head orientation. On desktop it is the fixed `1.6`. Don't compute a calibration baseline until the session has started and the pose has settled.
-- Controller entities sit at `0,0,0` until first tracked, and freeze at their last position when tracking is lost. Check `isHandTracked()` before trusting a position.
+- Hands and controllers can be untracked on any frame. Check `hand.tracked` before trusting a position.
 
 ## Known problems (see README "Known issues")
 

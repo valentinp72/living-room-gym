@@ -1,12 +1,34 @@
 // Shared helpers for reading headset / controller tracking.
 
-// True when a controller entity (laser-controls, oculus-touch-controls, ...)
-// has a live WebXR pose this frame. A-Frame keeps an untracked controller at
-// its last known position (or 0,0,0 if never seen), so positions alone can't
-// be trusted.
-export function isHandTracked(handEl) {
-  const tc = handEl && handEl.components['tracked-controls-webxr'];
-  return !!(tc && tc.controller && tc.pose);
+// Per-side hand state read from the WebXR session, for Touch controllers and
+// tracked hands alike:
+//   { left: { tracked, kind, position }, right: { ... } }
+// kind is 'controller', 'hand' or null; position (THREE.Vector3, meters) is
+// the palm / controller grip, in the same space as the #camera position.
+// Outside XR, or when a hand isn't seen this frame, tracked is false.
+export function readHands(sceneEl, out = { left: emptyHand(), right: emptyHand() }) {
+  out.left.tracked = out.right.tracked = false;
+  out.left.kind = out.right.kind = null;
+  const session = sceneEl.xrSession, frame = sceneEl.frame;
+  const ref = session && frame && sceneEl.renderer.xr.getReferenceSpace();
+  if (!ref) return out;
+  for (const src of session.inputSources) {
+    const hand = out[src.handedness];
+    if (!hand) continue;
+    let pose = null;
+    if (src.gripSpace) pose = frame.getPose(src.gripSpace, ref);
+    else if (src.hand && frame.getJointPose) pose = frame.getJointPose(src.hand.get('wrist'), ref);
+    if (!pose) continue;   // not tracked this frame
+    const p = pose.transform.position;
+    hand.position.set(p.x, p.y, p.z);
+    hand.tracked = true;
+    hand.kind = src.hand ? 'hand' : 'controller';
+  }
+  return out;
+}
+
+function emptyHand() {
+  return { tracked: false, kind: null, position: new THREE.Vector3() };
 }
 
 // Which immersive mode the scene is in: 'vr', 'ar' or null (flat page).

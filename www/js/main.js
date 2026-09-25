@@ -3,6 +3,8 @@
 // so registering components here is early enough for the scene markup.
 import { gymApp } from './app.js';
 import { xrEnvironment } from './components/xr-environment.js';
+import { handPointer } from './components/hand-pointer.js';
 
 AFRAME.registerComponent('gym-app', gymApp);
 AFRAME.registerComponent('xr-environment', xrEnvironment);
+AFRAME.registerComponent('hand-pointer', handPointer);

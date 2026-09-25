@@ -2,7 +2,8 @@
 
 A WebXR bodybuilding trainer for **Meta Quest**, built with [A-Frame](https://aframe.io).
 Pick an exercise (legs, arms, abs, …), watch a demo avatar perform the movement, and let
-the app count your reps (or time your holds) using headset and controller tracking.
+the app count your reps (or time your holds) using headset tracking and either Touch
+controllers or bare-hand tracking.
 
 It is made for **AR (mixed reality)**: you train in your own room with Quest passthrough,
 and the UI panels and demo avatar appear in it. A VR mode (virtual gym) is kept as a fallback.
@@ -20,7 +21,7 @@ for testing. See [Known issues](#known-issues).
 | Exercise    | Muscle group | Tracking                                              |
 |-------------|--------------|-------------------------------------------------------|
 | Squats      | Legs         | Automatic: headset height drop vs. calibrated standing height |
-| Bicep Curls | Arms         | Automatic, per arm: controller height relative to the headset |
+| Bicep Curls | Arms         | Automatic, per arm: hand / controller height relative to the headset |
 | Plank Hold  | Abs          | Manual timer: Start / Stop button, or A / X on a controller |
 
 ## Running locally
@@ -47,6 +48,10 @@ Then:
   gym instead. The panels and avatar appear 2 to 3 m in front of you. Whenever you move
   (for example to a free patch of floor), press **B / Y** or **Recenter** to bring them in
   front of you again.
+- **Controllers or bare hands:** point with the controller laser and pull the trigger, or,
+  with hand tracking on (Quest settings), put the controllers down, point with your hand and
+  pinch your thumb and index finger to click. B / Y don't exist without controllers, so use
+  the Recenter button on the panel instead.
 
 > `key.pem` is a private key. Never commit it or publish it.
 
@@ -63,9 +68,10 @@ Then:
         ├── main.js            # Entry point: registers A-Frame components
         ├── app.js             # gym-app component: menu, exercise screen, per-frame loop
         ├── avatar.js          # Jointed demo mannequin + posing helpers
-        ├── tracking.js        # Shared tracking helpers (controller tracked? AR/VR/flat?)
+        ├── tracking.js        # Shared tracking helpers (hand / controller poses, AR/VR/flat)
         ├── components/
-        │   └── xr-environment.js  # AR passthrough: transparent background, hides VR-only scenery
+        │   ├── xr-environment.js  # AR passthrough: transparent background, hides VR-only scenery
+        │   └── hand-pointer.js    # Bare hands: pointing ray + pinch to click
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
             ├── squats.js
@@ -87,7 +93,7 @@ export default {
   id: 'lunges', name: 'Lunges', muscle: 'Legs', color: '#6a1b9a',
   instructions: 'Step forward and lower your back knee…',
   state: () => ({ reps: 0 }),            // fresh state per session
-  update(ctx, st, dtMs) { /* read ctx.scene / camera / rHand / lHand */ },
+  update(ctx, st, dtMs) { /* read ctx.scene / camera / hands */ },
   label: st => 'Reps: ' + st.reps,       // live counter text
   demo(parts, t) { rot(parts.kneeL, 40); /* see avatar.js for joints */ },
   // manual: true                         // show Start/Stop instead of auto-detection
@@ -111,6 +117,7 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 - [x] AR / passthrough mode on Quest (with VR as a fallback)
 - [x] Recenter the panels and avatar in front of the user (B / Y, panel button, on entering
       AR / VR)
+- [x] Hand tracking: pinch to click, curls counted from bare hands
 - [ ] Room awareness in AR: keep the panels and avatar clear of real walls and furniture
 - [x] A jointed avatar (elbows, knees, ankles, spine) standing on the floor next to the
       exercise panel, with its pose reset every frame

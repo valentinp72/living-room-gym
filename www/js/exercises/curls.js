@@ -1,4 +1,3 @@
-import { isHandTracked } from '../tracking.js';
 import { rot, turn } from '../avatar.js';
 
 // Hand height is measured relative to the eyes, in meters. Thresholds are
@@ -9,14 +8,14 @@ const DROP = 0.3;       // then fall this far below its highest point = 1 rep
 
 const newArm = () => ({ reps: 0, tracked: false, up: false, low: null, high: null });
 
-function stepArm(arm, handEl, headY) {
-  arm.tracked = isHandTracked(handEl);
+function stepArm(arm, hand, headY) {
+  arm.tracked = hand.tracked;
   if (!arm.tracked) {
     // Forget the partial movement; the rep count is kept.
     arm.up = false; arm.low = null; arm.high = null;
     return;
   }
-  const rel = handEl.object3D.position.y - headY;
+  const rel = hand.position.y - headY;
   if (!arm.up) {
     arm.low = arm.low === null ? rel : Math.min(arm.low, rel);
     if (rel > TOP && rel - arm.low > RISE) { arm.up = true; arm.high = rel; }
@@ -28,17 +27,17 @@ function stepArm(arm, handEl, headY) {
 
 export default {
   id: 'curls', name: 'Bicep Curls', muscle: 'Arms', color: '#1565c0',
-  instructions: 'Hold a controller in each hand. Curl your hand up toward your shoulder, then lower it.',
+  instructions: 'Hold a controller in each hand, or use your bare hands. Curl your hand up toward your shoulder, then lower it.',
   state: () => ({ left: newArm(), right: newArm() }),
   update(ctx, st) {
     if (!ctx.camera.object3D) return;
     const headY = ctx.camera.object3D.position.y;
-    stepArm(st.left, ctx.lHand, headY);
-    stepArm(st.right, ctx.rHand, headY);
+    stepArm(st.left, ctx.hands.left, headY);
+    stepArm(st.right, ctx.hands.right, headY);
   },
   label(st) {
     const text = 'Left: ' + st.left.reps + '    Right: ' + st.right.reps;
-    return st.left.tracked || st.right.tracked ? text : text + '\nWaiting for controllers';
+    return st.left.tracked || st.right.tracked ? text : text + '\nShow your hands or controllers';
   },
   demo(parts, t) {
     // Alternate arms: 0 = arm straight down, 1 = hand at the shoulder.
