@@ -4,13 +4,16 @@ A WebXR bodybuilding trainer for **Meta Quest**, built with [A-Frame](https://af
 Pick an exercise (legs, arms, abs, …), watch a demo avatar perform the movement, and let
 the app count your reps (or time your holds) using headset and controller tracking.
 
+It is made for **AR (mixed reality)**: you train in your own room with Quest passthrough,
+and the UI panels and demo avatar appear in it. A VR mode (virtual gym) is kept as a fallback.
+
 It is a plain static web app. There is no build step and nothing to install beyond Python 3,
 so it runs directly in the Quest Browser.
 
 ## Status
 
-Early prototype. It works in VR on Quest and in a desktop browser (mouse look + click),
-but has several known issues. See [Known issues](#known-issues).
+Early prototype. It runs in AR and VR on Quest and in a desktop browser (mouse look + click)
+for testing. See [Known issues](#known-issues).
 
 ## Exercises
 
@@ -39,7 +42,10 @@ Then:
 - **Desktop:** open `https://localhost:8443`, accept the certificate warning, look around
   with the mouse, and click the panels.
 - **Meta Quest:** make sure the headset is on the same network, open the Quest Browser at
-  `https://<your-computer-LAN-IP>:8443`, accept the certificate warning, then tap **Enter VR**.
+  `https://<your-computer-LAN-IP>:8443`, accept the certificate warning, then tap the **AR**
+  button (bottom right) to train in your room. The **VR** button next to it opens the virtual
+  gym instead. Start the session facing an open area: the panels and avatar appear about
+  2 to 3 m in front of where you are standing.
 
 > `key.pem` is a private key. Never commit it or publish it.
 
@@ -56,7 +62,9 @@ Then:
         ├── main.js            # Entry point: registers A-Frame components
         ├── app.js             # gym-app component: menu, exercise screen, per-frame loop
         ├── avatar.js          # Jointed demo mannequin + posing helpers
-        ├── tracking.js        # Shared tracking helpers (is a controller tracked?)
+        ├── tracking.js        # Shared tracking helpers (controller tracked? AR/VR/flat?)
+        ├── components/
+        │   └── xr-environment.js  # AR passthrough: transparent background, hides VR-only scenery
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
             ├── squats.js
@@ -92,15 +100,19 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 
 ## Known issues
 
-1. **VR only, no AR / passthrough.** The scene never asks for an `immersive-ar` session,
-   draws an opaque background and a floor plane, and has no AR entry button, so Quest
-   passthrough can't be used.
+1. **Content is placed relative to where the AR session starts.** If you start facing a
+   wall or furniture, the panels and avatar can end up inside it. Exit and re-enter AR
+   facing open space.
+2. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
+   simulating an AR session, not yet on a Quest.
 
 ## Roadmap
 
 - [x] Split the code into ES modules (exercises, avatar, UI, rep-detection helpers) while
       keeping the no-build setup
-- [ ] AR / passthrough mode on Quest (with VR as a fallback)
+- [x] AR / passthrough mode on Quest (with VR as a fallback)
+- [ ] AR placement: recenter the panels and avatar in front of the user, snap them to the
+      real floor and walls
 - [x] A jointed avatar (elbows, knees, ankles, spine) standing on the floor next to the
       exercise panel, with its pose reset every frame
 - [x] Robust Bicep Curls counting: per-arm counts, movement-based thresholds, ignores

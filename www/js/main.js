@@ -2,5 +2,7 @@
 // A-Frame waits for readyState 'complete' before initializing entities,
 // so registering components here is early enough for the scene markup.
 import { gymApp } from './app.js';
+import { xrEnvironment } from './components/xr-environment.js';
 
 AFRAME.registerComponent('gym-app', gymApp);
+AFRAME.registerComponent('xr-environment', xrEnvironment);

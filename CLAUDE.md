@@ -6,6 +6,8 @@ Guidance for Claude Code when working in this repository. See `README.md` for th
 
 A WebXR bodybuilding trainer for Meta Quest, built with A-Frame and served as static files. Target device: **Meta Quest Browser**. Secondary target: a desktop browser for quick testing (mouse look + click).
 
+**AR (passthrough) is the main mode; VR is only a fallback.** Design and test features for a user training in their real room: nothing should depend on the virtual floor or background, content must stay readable over passthrough, and anything that only works in VR is a bug.
+
 ## Commands
 
 ```sh
@@ -33,6 +35,7 @@ www/
   js/app.js                # gym-app component: menu / exercise flow, per-frame tick
   js/avatar.js             # jointed demo mannequin, resetPose + rot/place/turn helpers
   js/tracking.js           # shared tracking helpers (isHandTracked, xrMode)
+  js/components/*.js       # other A-Frame components (registered in main.js)
   js/exercises/index.js    # EXERCISES registry (menu order)
   js/exercises/<name>.js   # one exercise per file, default export
 ```
@@ -44,6 +47,7 @@ www/
   - `demo(parts, tSeconds)` poses the mannequin; it's reset to standing before every call
   - `manual`: if true, shows the Start/Stop button instead of automatic detection
 - Mannequin (`js/avatar.js`): joint tree `root > pelvis > spine > head / shoulderL,R > elbowL,R` and `pelvis > hipL,R > kneeL,R > ankleL,R`. `root` sits on the floor (y = 0) between the feet; `pelvis` is at `PELVIS_Y` when standing. Segment lengths are in `BODY`. Pose with `rot(el, x, y, z)` (degrees, writes `object3D` directly), `place(el, x, y, z)` and `turn(parts, deg)` (0 = facing the user). `app.js` calls `resetPose()` every frame before `demo()`. Keep the feet on the floor by computing the pelvis position from the leg angles (see squats), and check a pose from the side, not only from the user's spot.
+- Display modes (`js/components/xr-environment.js`, on `<a-scene>`): in AR the scene background turns transparent (passthrough), and elements with class `vr-only` (the virtual floor) are hidden. In any headset mode, elements with class `flat-only` (the desktop gaze cursor) are hidden. Don't set `background` on the scene directly; use `xr-environment="color: ..."`. `xr-mode-ui="XRMode: xr"` shows both the AR and VR buttons.
 - Layout during an exercise: the exercise panel is left of center and turned toward the user (`index.html`), and the mannequin stands to its right (`HOME` in `avatar.js`). The menu panel stays centered.
 - `gym-app` component (attached to `#menuPanel` in the markup) owns the UI state and the per-frame `tick`.
 - Rig: `#rig > #camera` (with a gaze cursor), `#rightHand` and `#leftHand` (`laser-controls`). Buttons get class `button`; raycasters target `.clickable`, which `setShown()` in `app.js` adds only while a button is visible. A-Frame raycasters ignore `visible`, so hidden buttons would otherwise steal clicks. Always show or hide UI with `setShown()`, never with `setAttribute('visible')` alone.
@@ -62,9 +66,10 @@ www/
 - In an XR session with the default `local-floor` reference space, the camera's `position.y` is the real head height above the floor. On desktop it is the fixed `1.6`. Don't compute a calibration baseline until the session has started and the pose has settled.
 - Controller entities sit at `0,0,0` until first tracked, and freeze at their last position when tracking is lost. Check `isHandTracked()` before trusting a position.
 
-## Known problems (to fix, see README "Known issues")
+## Known problems (see README "Known issues")
 
-1. No AR: needs an `immersive-ar` session (`xr-mode-ui` / `webxr` settings), the background and floor hidden in AR (`hide-on-enter-ar`), and passthrough.
+1. AR content is placed relative to where the session starts (the `local-floor` origin), with no recentering and no awareness of the real floor or walls.
+2. AR has only been tested by simulating the session (`addState('ar-mode')` + `enter-vr`), not on a Quest.
 
 ## Working style
 
