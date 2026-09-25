@@ -1,0 +1,10 @@
+# TLS key/cert for the local dev server
+*.pem
+
+# Python
+__pycache__/
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
