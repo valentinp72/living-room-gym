@@ -44,8 +44,9 @@ Then:
 - **Meta Quest:** make sure the headset is on the same network, open the Quest Browser at
   `https://<your-computer-LAN-IP>:8443`, accept the certificate warning, then tap the **AR**
   button (bottom right) to train in your room. The **VR** button next to it opens the virtual
-  gym instead. Start the session facing an open area: the panels and avatar appear about
-  2 to 3 m in front of where you are standing.
+  gym instead. The panels and avatar appear 2 to 3 m in front of you. Whenever you move
+  (for example to a free patch of floor), press **B / Y** or **Recenter** to bring them in
+  front of you again.
 
 > `key.pem` is a private key. Never commit it or publish it.
 
@@ -56,7 +57,7 @@ Then:
 ├── server.py                  # Minimal HTTPS static server for ./www (port 8443)
 ├── cert.pem / key.pem         # Self-signed TLS cert + private key (local dev only, not committed)
 └── www/
-    ├── index.html             # A-Frame scene markup (rig, floor, lights, UI panels)
+    ├── index.html             # A-Frame scene markup (rig, floor, lights, #stage with UI panels)
     ├── css/app.css            # Page styles
     └── js/
         ├── main.js            # Entry point: registers A-Frame components
@@ -100,10 +101,7 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 
 ## Known issues
 
-1. **Content is placed relative to where the AR session starts.** If you start facing a
-   wall or furniture, the panels and avatar can end up inside it. Exit and re-enter AR
-   facing open space.
-2. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
+1. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
    simulating an AR session, not yet on a Quest.
 
 ## Roadmap
@@ -111,8 +109,9 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 - [x] Split the code into ES modules (exercises, avatar, UI, rep-detection helpers) while
       keeping the no-build setup
 - [x] AR / passthrough mode on Quest (with VR as a fallback)
-- [ ] AR placement: recenter the panels and avatar in front of the user, snap them to the
-      real floor and walls
+- [x] Recenter the panels and avatar in front of the user (B / Y, panel button, on entering
+      AR / VR)
+- [ ] Room awareness in AR: keep the panels and avatar clear of real walls and furniture
 - [x] A jointed avatar (elbows, knees, ankles, spine) standing on the floor next to the
       exercise panel, with its pose reset every frame
 - [x] Robust Bicep Curls counting: per-arm counts, movement-based thresholds, ignores

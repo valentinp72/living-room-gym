@@ -49,7 +49,8 @@ www/
 - Mannequin (`js/avatar.js`): joint tree `root > pelvis > spine > head / shoulderL,R > elbowL,R` and `pelvis > hipL,R > kneeL,R > ankleL,R`. `root` sits on the floor (y = 0) between the feet; `pelvis` is at `PELVIS_Y` when standing. Segment lengths are in `BODY`. Pose with `rot(el, x, y, z)` (degrees, writes `object3D` directly), `place(el, x, y, z)` and `turn(parts, deg)` (0 = facing the user). `app.js` calls `resetPose()` every frame before `demo()`. Keep the feet on the floor by computing the pelvis position from the leg angles (see squats), and check a pose from the side, not only from the user's spot.
 - Display modes (`js/components/xr-environment.js`, on `<a-scene>`): in AR the scene background turns transparent (passthrough), and elements with class `vr-only` (the virtual floor) are hidden. In any headset mode, elements with class `flat-only` (the desktop gaze cursor) are hidden. Don't set `background` on the scene directly; use `xr-environment="color: ..."`. `xr-mode-ui="XRMode: xr"` shows both the AR and VR buttons.
 - Layout during an exercise: the exercise panel is left of center and turned toward the user (`index.html`), and the mannequin stands to its right (`HOME` in `avatar.js`). The menu panel stays centered.
-- `gym-app` component (attached to `#menuPanel` in the markup) owns the UI state and the per-frame `tick`.
+- `gym-app` component (on `#stage` in the markup) owns the UI state, the per-frame `tick`, and `recenter()`.
+- `#stage` holds everything placed relative to the user: both panels and the mannequin. Positions inside it assume the user stands at the stage origin looking toward −Z. `recenter()` moves the stage under the head and turns it to the head's yaw (or to where the top of the head points when looking down). It runs 0.5 s after entering AR/VR, on B / Y, and from `.recenter` buttons, and leaving XR resets the stage. Put new user-facing content inside `#stage`, not directly in the scene.
 - Rig: `#rig > #camera` (with a gaze cursor), `#rightHand` and `#leftHand` (`laser-controls`). Buttons get class `button`; raycasters target `.clickable`, which `setShown()` in `app.js` adds only while a button is visible. A-Frame raycasters ignore `visible`, so hidden buttons would otherwise steal clicks. Always show or hide UI with `setShown()`, never with `setAttribute('visible')` alone.
 - Shared tracking and rep-detection helpers go in `js/tracking.js`. Use `isHandTracked(handEl)` before reading a controller's position: it checks for a live WebXR pose (`tracked-controls-webxr` has a `controller` and a non-null `pose`).
 - Bicep Curls (`js/exercises/curls.js`) counts each arm separately. A rep = the hand rises 30 cm above its lowest point to at least chest height (45 cm below the eyes), then drops 30 cm. The thresholds are relative, so they work across body sizes.
@@ -63,12 +64,12 @@ www/
 
 - Units are meters. +Y is up, and the user starts looking toward **−Z**. An object in front of the user at `z = -2` faces the user through its **+Z** side.
 - `rotation` is in **degrees** (XYZ Euler). For a limb hanging along −Y from a pivot, a positive X rotation swings it toward **−Z**. The mannequin faces its own +Z, so for it, negative X = forward (hip flexion, raising an arm, bending the elbow) and positive X at the knee bends the shin back. For the spine (pointing +Y), positive X leans forward.
-- In an XR session with the default `local-floor` reference space, the camera's `position.y` is the real head height above the floor. On desktop it is the fixed `1.6`. Don't compute a calibration baseline until the session has started and the pose has settled.
+- In an XR session with the default `local-floor` reference space, A-Frame writes the headset pose straight into `#camera`'s `object3D` (`renderer.xr.setPoseTarget`), so `position.y` is the real head height above the floor and `quaternion` is the head orientation. On desktop it is the fixed `1.6`. Don't compute a calibration baseline until the session has started and the pose has settled.
 - Controller entities sit at `0,0,0` until first tracked, and freeze at their last position when tracking is lost. Check `isHandTracked()` before trusting a position.
 
 ## Known problems (see README "Known issues")
 
-1. AR content is placed relative to where the session starts (the `local-floor` origin), with no recentering and no awareness of the real floor or walls.
+1. No awareness of real walls or furniture in AR. Recentering is manual (plus once on entering XR).
 2. AR has only been tested by simulating the session (`addState('ar-mode')` + `enter-vr`), not on a Quest.
 
 ## Working style

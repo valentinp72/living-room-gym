@@ -26,8 +26,9 @@ export const BODY = {
 };
 export const PELVIS_Y = BODY.ankle + BODY.shin + BODY.thigh;
 
-// Where the mannequin stands (right of the exercise panel, see index.html), and how far it
-// is turned from facing the user by default. 45° gives a three-quarter view.
+// Where the mannequin stands on the stage (right of the exercise panel, see
+// index.html; the user is at the stage origin), and how far it is turned
+// from facing the user by default. 45° gives a three-quarter view.
 const HOME = { x: 1.3, z: -2.6 };
 const DEFAULT_TURN = 45;
 
@@ -41,7 +42,7 @@ export function place(el, x = 0, y = 0, z = 0) {
 }
 
 // Turn the whole body `deg` degrees away from facing the user (the user is
-// at the origin). 0 = facing the user, 90 = right side towards the user.
+// at the stage origin). 0 = facing the user, 90 = right side towards the user.
 export function turn(parts, deg) {
   const toUser = Math.atan2(-HOME.x, -HOME.z) / DEG;
   rot(parts.root, 0, toUser + deg, 0);
@@ -61,7 +62,7 @@ const JOINTS = ['pelvis', 'spine', 'head', 'shoulderL', 'shoulderR', 'elbowL', '
 
 const SKIN = '#e0e0e0', ARM = '#c0c0c0', LEG = '#9e9e9e';
 
-export function buildMannequin(sceneEl) {
+export function buildMannequin(parentEl) {
   function node(parent, pos, id) {
     const e = document.createElement('a-entity');
     if (id) e.setAttribute('id', id);
@@ -82,7 +83,7 @@ export function buildMannequin(sceneEl) {
   }
 
   const B = BODY;
-  const root = node(sceneEl, `${HOME.x} 0 ${HOME.z}`, 'mannequin');
+  const root = node(parentEl, `${HOME.x} 0 ${HOME.z}`, 'mannequin');
   root.setAttribute('visible', false);
   const pelvis = node(root, `0 ${PELVIS_Y} 0`);
 
