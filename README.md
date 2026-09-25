@@ -71,7 +71,7 @@ Then:
         ├── tracking.js        # Shared tracking helpers (hand / controller poses, AR/VR/flat)
         ├── components/
         │   ├── xr-environment.js  # AR passthrough: transparent background, hides VR-only scenery
-        │   └── hand-pointer.js    # Bare hands: pointing ray + pinch to click
+        │   └── xr-pointer.js      # XR pointing ray + click (controller trigger or pinch)
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
             ├── squats.js

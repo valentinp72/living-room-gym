@@ -12,21 +12,21 @@
 <body>
 <!-- AR (passthrough) is the main mode; VR is kept as a fallback. -->
 <a-scene xr-environment="color:#0d1117" xr-mode-ui="XRMode: xr"
-  webxr="optionalFeatures: bounded-floor, hand-tracking">
+  webxr="optionalFeatures: bounded-floor, hand-tracking"
+  cursor="rayOrigin: mouse" raycaster="objects: .clickable">
   <a-assets></a-assets>
 
   <a-entity id="rig" position="0 0 0">
-    <a-entity id="camera" camera="active:true" position="0 1.6 0" look-controls wasd-controls>
-      <a-entity class="flat-only" cursor="fuse:false" raycaster="objects:.clickable; far:20"
-        geometry="primitive:ring; radiusInner:0.005; radiusOuter:0.009" position="0 0 -1"
-        material="color:#fff; shader:flat"></a-entity>
-    </a-entity>
-    <a-entity id="rightHand" laser-controls="hand:right" raycaster="objects:.clickable; far:20"></a-entity>
-    <a-entity id="leftHand" laser-controls="hand:left" raycaster="objects:.clickable; far:20"></a-entity>
-    <!-- Bare hands: pinch to click. In AR the real hands show through
-         passthrough; in VR a hand model is drawn. -->
-    <a-entity id="rightHandPointer" hand-pointer="hand: right"></a-entity>
-    <a-entity id="leftHandPointer" hand-pointer="hand: left"></a-entity>
+    <!-- Desktop: the mouse clicks (cursor on <a-scene>, rayOrigin: mouse). -->
+    <a-entity id="camera" camera="active:true" position="0 1.6 0" look-controls wasd-controls></a-entity>
+    <!-- Pointing + clicking in XR, controllers (trigger) and bare hands (pinch). -->
+    <a-entity id="rightPointer" xr-pointer="hand: right"></a-entity>
+    <a-entity id="leftPointer" xr-pointer="hand: left"></a-entity>
+    <!-- Controller models (VR only: in AR the real ones show through
+         passthrough) and A/B/X/Y button events. No laser cursors. -->
+    <a-entity id="rightHand" class="vr-only" oculus-touch-controls="hand: right"></a-entity>
+    <a-entity id="leftHand" class="vr-only" oculus-touch-controls="hand: left"></a-entity>
+    <!-- Bare-hand models, VR only. -->
     <a-entity class="vr-only" hand-tracking-controls="hand: right"></a-entity>
     <a-entity class="vr-only" hand-tracking-controls="hand: left"></a-entity>
     <!-- Counter shown on the floor in front of the face during floor

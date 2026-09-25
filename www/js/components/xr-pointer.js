@@ -1,12 +1,16 @@
-// Pointing ray + pinch-to-click for tracked hands (no controllers), the
-// hand-tracking counterpart of laser-controls. Put one per hand on an entity
-// inside #rig: <a-entity hand-pointer="hand: right">.
+// Pointing ray + click for one hand, whether it holds a controller or is a
+// tracked bare hand. Put one per hand on an entity inside #rig:
+// <a-entity xr-pointer="hand: right">.
 //
-// The ray follows the hand's WebXR target ray (the system pointing ray) and
-// only shows while that hand is tracked. A pinch fires the session's
-// 'select' event, which clicks the first .clickable the ray hits.
-// Controllers are left to laser-controls (their sources have no `hand`).
-export const handPointer = {
+// The ray follows that hand's WebXR target ray and only shows while it is
+// tracked. The session's 'select' event (trigger pull, or pinch) clicks the
+// first .clickable the ray hits, once.
+//
+// This is the only click path in XR. A-Frame's `cursor` (and so
+// laser-controls) also listens to the session's selectstart/selectend from
+// every hand at once, which clicked whatever the head, or the other hand,
+// was pointing at. Don't add cursors that aren't rayOrigin: mouse.
+export const xrPointer = {
   schema: { hand: { default: 'right', oneOf: ['left', 'right'] } },
   init: function () {
     this.el.setAttribute('raycaster', { objects: '.clickable', far: 20, showLine: true, enabled: false });
@@ -17,9 +21,6 @@ export const handPointer = {
   },
   remove: function () {
     if (this.session) this.session.removeEventListener('select', this.onSelect);
-  },
-  isOurs: function (src) {
-    return !!src.hand && src.handedness === this.data.hand;
   },
   tick: function () {
     const scene = this.el.sceneEl;
@@ -33,7 +34,7 @@ export const handPointer = {
     const ref = session && frame && scene.renderer.xr.getReferenceSpace();
     if (ref) {
       for (const src of session.inputSources) {
-        if (this.isOurs(src)) { pose = frame.getPose(src.targetRaySpace, ref); break; }
+        if (src.handedness === this.data.hand) { pose = frame.getPose(src.targetRaySpace, ref); break; }
       }
     }
     if (!!pose !== this.active) {
@@ -48,8 +49,12 @@ export const handPointer = {
     }
   },
   onSelect: function (evt) {
-    if (!this.active || !this.isOurs(evt.inputSource)) return;
-    const hit = this.el.components.raycaster.intersectedEls[0];
+    if (!this.active || evt.inputSource.handedness !== this.data.hand) return;
+    const rc = this.el.components.raycaster;
+    // Use the ray as it is now, not as of the last raycaster refresh.
+    this.el.object3D.updateMatrixWorld(true);
+    rc.checkIntersections();
+    const hit = rc.intersectedEls[0];
     if (hit) hit.emit('click');
   }
 };

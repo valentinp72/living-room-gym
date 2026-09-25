@@ -4,7 +4,6 @@ import { xrMode } from '../tracking.js';
 //  - AR (the main mode): transparent background so Quest passthrough shows
 //    the real room, and elements with class "vr-only" (virtual floor, ...)
 //    hidden. A-Frame 1.5's `background` stays opaque in AR on its own.
-//  - VR and AR: elements with class "flat-only" (desktop gaze cursor) hidden.
 //  - Flat page / VR: opaque background `color`.
 export const xrEnvironment = {
   schema: { color: { type: 'color', default: '#0d1117' } },
@@ -20,6 +19,5 @@ export const xrEnvironment = {
     const mode = xrMode(scene);
     scene.setAttribute('background', { color: this.data.color, transparent: mode === 'ar' });
     scene.querySelectorAll('.vr-only').forEach(e => e.setAttribute('visible', mode !== 'ar'));
-    scene.querySelectorAll('.flat-only').forEach(e => e.setAttribute('visible', mode === null));
   }
 };
