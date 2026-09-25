@@ -3,11 +3,16 @@
  * To add a new exercise, create a file in this folder that default-exports
  * an object with:
  *   id, name, muscle, color, instructions
+ *   unit                -> 'reps' or 'seconds': what count() returns and
+ *                          what training sets give as the target
  *   state()             -> fresh per-session state object
  *   update(ctx, st, dt) -> read ctx.scene/camera/hands each frame
  *                          (hands: see readHands() in tracking.js),
  *                          mutate st (reps, time, etc.)
+ *   count(st)           -> progress toward a training-set target, in `unit`
  *   label(st)           -> string shown as the live counter
+ *   paced (optional)    -> true for untracked exercises built with paced()
+ *                          (exercises/paced.js): the app ticks each rep
  *   demo(parts, t)       -> pose the mannequin each frame (t = seconds
  *                          since the exercise screen opened) to show the move.
  *                          The pose is reset to standing before every call,

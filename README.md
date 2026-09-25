@@ -1,9 +1,10 @@
 # XR Muscle Gym
 
 A WebXR bodybuilding trainer for **Meta Quest**, built with [A-Frame](https://aframe.io).
-Pick an exercise (legs, arms, abs, …), watch a demo avatar perform the movement, and let
-the app count your reps (or time your holds) using headset tracking and either Touch
-controllers or bare-hand tracking.
+Pick a **training set** (a fixed sequence of exercises with rep or time targets and rests
+in between), or a single exercise. A demo avatar shows each movement, and the app counts
+your reps (or times your holds) using headset tracking and either Touch controllers or
+bare-hand tracking. Sounds confirm each finished exercise.
 
 It is made for **AR (mixed reality)**: you train in your own room with Quest passthrough,
 and the UI panels and demo avatar appear in it. A VR mode (virtual gym) is kept as a fallback.
@@ -16,6 +17,30 @@ so it runs directly in the Quest Browser.
 Early prototype. It runs in AR and VR on Quest and in a desktop browser (mouse look + click)
 for testing. See [Known issues](#known-issues).
 
+## Training sets
+
+A training set runs its steps in order. Each step has a target in reps or seconds, and
+there is a fixed rest between steps. Difficulty is configuration: an easier or harder
+variant of a set is another entry with different reps, seconds and rest.
+
+| Training set      | Level | Rest | Steps                                        |
+|-------------------|-------|------|----------------------------------------------|
+| Full body starter | Easy  | 20 s | 10 squats, 10 bicep curls (each arm), 20 s plank |
+
+During a set, the panel shows the step (`1/3  SQUATS`) and progress (`4 / 10`). **Skip**
+jumps to the next step or ends the rest early. Sounds:
+
+| Sound           | When                                                     |
+|-----------------|----------------------------------------------------------|
+| Two-tone chime  | A step's target is reached                               |
+| 3 short beeps   | The last 3 seconds of a rest                             |
+| High beep       | The next step starts                                     |
+| Fanfare         | The training set is complete                             |
+| Tick            | Each rep of a *paced* exercise (see below)               |
+
+Single exercises stay available in the menu, with no target, which is handy for testing
+and debugging detection.
+
 ## Exercises
 
 | Exercise    | Muscle group | Tracking                                              |
@@ -23,6 +48,10 @@ for testing. See [Known issues](#known-issues).
 | Squats      | Legs         | Automatic: headset height drop vs. calibrated standing height |
 | Bicep Curls | Arms         | Automatic, per arm: hand / controller height relative to the headset |
 | Plank Hold  | Abs          | Automatic timer: detects the plank from head height and tilt |
+
+Exercises the headset and hands can't track (for example fire hydrants: on all fours,
+only a leg moves) are **paced**: the app counts reps at a fixed tempo with a tick for each
+one, and you follow along. See `www/js/exercises/paced.js`.
 
 ## Running locally
 
@@ -67,6 +96,9 @@ Then:
     └── js/
         ├── main.js            # Entry point: registers A-Frame components
         ├── app.js             # gym-app component: menu, exercise screen, per-frame loop
+        ├── workouts.js        # WORKOUTS: the training sets (data only)
+        ├── workout-runner.js  # Runs a training set: steps, targets, rests, events
+        ├── sound.js           # Feedback sounds (Web Audio, no files)
         ├── avatar.js          # Jointed demo mannequin + posing helpers
         ├── tracking.js        # Shared tracking helpers (hand / controller poses, AR/VR/flat)
         ├── components/
@@ -74,6 +106,7 @@ Then:
         │   └── xr-pointer.js      # XR pointing ray + click (controller trigger or pinch)
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
+            ├── paced.js       # Helper for untracked exercises: app-paced reps
             ├── squats.js
             ├── curls.js
             └── plank.js
@@ -81,6 +114,26 @@ Then:
 
 The JavaScript uses native ES modules, so the page has to be served over HTTP(S).
 Opening `index.html` directly from disk won't work.
+
+### Adding a training set
+
+Add an entry to `WORKOUTS` in `www/js/workouts.js`:
+
+```js
+{
+  id: 'full-body-normal', name: 'Full body', level: 'Normal', color: '#00695c',
+  rest: 15,
+  steps: [
+    { exercise: 'squats', reps: 15 },
+    { exercise: 'curls', reps: 12 },
+    { exercise: 'plank', seconds: 40 },
+  ],
+}
+```
+
+Steps use `reps` for exercises counted in reps and `seconds` for timed ones. A mistake
+(unknown exercise, wrong unit, target ≤ 0) stops the app on load with an error that names
+the set and step.
 
 ### Adding an exercise
 
@@ -92,14 +145,20 @@ import { rot, place, turn } from '../avatar.js';
 export default {
   id: 'lunges', name: 'Lunges', muscle: 'Legs', color: '#6a1b9a',
   instructions: 'Step forward and lower your back knee…',
+  unit: 'reps',                          // or 'seconds' for timed exercises
   state: () => ({ reps: 0 }),            // fresh state per session
   update(ctx, st, dtMs) { /* read ctx.scene / camera / hands */ },
+  count: st => st.reps,                  // progress toward a training-set target, in `unit`
   label: st => 'Reps: ' + st.reps,       // live counter text
   demo(parts, t) { rot(parts.kneeL, 40); /* see avatar.js for joints */ },
 };
 ```
 
 Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` array.
+
+For an exercise that can't be tracked, spread `paced({ secondsPerRep })` from
+`exercises/paced.js` into it instead of writing `unit` / `state` / `update` / `count` /
+`label`.
 
 The mannequin is reset to standing before every `demo` call, so a demo only sets the
 joints that move. `www/js/avatar.js` lists the joints and the rotation directions.
@@ -130,7 +189,10 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 - [x] Robust squat detection: calibrates standing height once still, recalibrates on
       entering / leaving VR or AR
 - [ ] More exercises (push-ups, lunges, shoulder press, crunches, …)
-- [ ] Sets, rest timers, and session history
+- [x] Training sets with rep / time targets, rests, skip and sounds
+- [ ] More training sets and difficulty levels, and new exercises (lunges, push-ups,
+      fire hydrants, ...)
+- [ ] Session history
 
 ## Tech
 

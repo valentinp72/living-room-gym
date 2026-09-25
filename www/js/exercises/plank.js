@@ -20,7 +20,8 @@ const fmt = s => s.toFixed(1) + 's';
 export default {
   id: 'plank', name: 'Plank Hold', muscle: 'Abs', color: '#ef6c00',
   instructions: 'Get into a forearm plank, facing the floor. The timer starts and stops by itself.',
-  state: () => ({ holding: false, time: 0, inFor: 0, outFor: 0, last: null, best: 0 }),
+  unit: 'seconds',
+  state: () => ({ holding: false, time: 0, inFor: 0, outFor: 0, last: null, best: 0, total: 0 }),
   update(ctx, st, dt) {
     if (!ctx.camera.object3D) return;
     const s = dt / 1000;
@@ -37,9 +38,12 @@ export default {
       st.time -= st.outFor;
       st.last = st.time;
       st.best = Math.max(st.best, st.time);
+      st.total += st.time;
       st.inFor = 0;
     }
   },
+  // Seconds held, over all holds.
+  count: st => st.total + (st.holding ? st.time : 0),
   label(st) {
     if (st.holding) return 'Hold: ' + fmt(st.time) + (st.best ? '\nBest: ' + fmt(st.best) : '');
     if (st.last === null) return 'Get into plank position';

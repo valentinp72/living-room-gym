@@ -28,6 +28,7 @@ function stepArm(arm, hand, headY) {
 export default {
   id: 'curls', name: 'Bicep Curls', muscle: 'Arms', color: '#1565c0',
   instructions: 'Hold a controller in each hand, or use your bare hands. Curl your hand up toward your shoulder, then lower it.',
+  unit: 'reps',
   state: () => ({ left: newArm(), right: newArm() }),
   update(ctx, st) {
     if (!ctx.camera.object3D) return;
@@ -35,6 +36,8 @@ export default {
     stepArm(st.left, ctx.hands.left, headY);
     stepArm(st.right, ctx.hands.right, headY);
   },
+  // One rep = one curl with each arm.
+  count: st => Math.min(st.left.reps, st.right.reps),
   label(st) {
     const text = 'Left: ' + st.left.reps + '    Right: ' + st.right.reps;
     return st.left.tracked || st.right.tracked ? text : text + '\nShow your hands or controllers';

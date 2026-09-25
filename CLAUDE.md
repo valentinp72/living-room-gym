@@ -32,19 +32,29 @@ www/
   index.html               # scene markup only (rig, floor, lights, menu + exercise panels)
   css/app.css              # page styles (outside the 3D scene)
   js/main.js               # entry point: registers A-Frame components
-  js/app.js                # gym-app component: menu / exercise flow, per-frame tick
+  js/app.js                # gym-app component: menu, single exercises + training sets, per-frame tick
+  js/workouts.js           # WORKOUTS: training sets, data only
+  js/workout-runner.js     # runs a training set; pure logic returning events
+  js/sound.js              # play(name) feedback sounds (Web Audio), unlockAudio()
   js/avatar.js             # jointed demo mannequin, resetPose + rot/place/turn helpers
   js/tracking.js           # shared tracking helpers (readHands, xrMode)
   js/components/*.js       # other A-Frame components (registered in main.js)
   js/exercises/index.js    # EXERCISES registry (menu order)
   js/exercises/<name>.js   # one exercise per file, default export
+  js/exercises/paced.js    # paced(): building block for untracked exercises
 ```
 
-- Exercise object: `id, name, muscle, color, instructions`, plus:
+- Exercise object: `id, name, muscle, color, instructions, unit ('reps' | 'seconds')`, plus:
   - `state()` returns a fresh per-session state
   - `update(ctx, st, dtMs)` runs each frame; `ctx = { scene, camera, hands }` (`camera` is the A-Frame entity; `hands` comes from `readHands()`)
+  - `count(st)` returns progress toward a training-set target, in `unit` (curls: one rep = one curl with each arm; plank: total seconds held)
   - `label(st)` returns the counter text
+  - `paced: true` (from `paced()`) marks untracked exercises: the app counts reps at a fixed tempo and plays a tick per rep
   - `demo(parts, tSeconds)` poses the mannequin; it's reset to standing before every call
+- Training sets (`js/workouts.js`): `{ id, name, level, color, rest, steps: [{ exercise, reps } | { exercise, seconds }] }`, validated on load by `validateWorkout()`. The product direction is **training sets first, with configurable difficulty** (same exercises, other targets / rest). Single exercises stay for testing and debugging. `workout-runner.js` is pure logic: `updateRun()` / `skip()` return events (`stepDone`, `count`, `go`, `finished`), and `app.js` turns them into sounds (`sound.js`) and panel updates. During rest, the mannequin previews the next exercise.
+- Sounds (`js/sound.js`): every finished step plays a sound (a fanfare for the last one), paced reps tick, and the rest counts down 3-2-1. Browsers need a user gesture before audio plays, so handlers go through `onClick()` in `app.js`, which calls `unlockAudio()`.
+- Menu (`buildMenu()` in `app.js`): "Training sets" (`#workoutButtons`) then "Single exercises" (`#menuButtons`). These containers hold only buttons (tests index them), and the background is sized to fit. A long list of sets will need paging or scrolling.
+- Text: A-Frame's default font only has basic Latin characters. An em dash (—), middle dot (·) or similar just disappears, so use plain `-`, `:` or `,`. Keep `a-text` `width` (its wrap width) inside the panel.
 - Mannequin (`js/avatar.js`): joint tree `root > pelvis > spine > head / shoulderL,R > elbowL,R` and `pelvis > hipL,R > kneeL,R > ankleL,R`. `root` sits on the floor (y = 0) between the feet; `pelvis` is at `PELVIS_Y` when standing. Segment lengths are in `BODY`. Pose with `rot(el, x, y, z)` (degrees, writes `object3D` directly), `place(el, x, y, z)` and `turn(parts, deg)` (0 = facing the user). `app.js` calls `resetPose()` every frame before `demo()`. Keep the feet on the floor by computing the pelvis position from the leg angles (see squats), and check a pose from the side, not only from the user's spot.
 - Display modes (`js/components/xr-environment.js`, on `<a-scene>`): in AR the scene background turns transparent (passthrough), and elements with class `vr-only` (the virtual floor) are hidden. Don't set `background` on the scene directly; use `xr-environment="color: ..."`. `xr-mode-ui="XRMode: xr"` shows both the AR and VR buttons.
 - Layout during an exercise: the exercise panel is left of center and turned toward the user (`index.html`), and the mannequin stands to its right (`HOME` in `avatar.js`). The menu panel stays centered.

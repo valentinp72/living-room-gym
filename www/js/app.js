@@ -1,6 +1,10 @@
 import { EXERCISES } from './exercises/index.js';
+import { WORKOUTS } from './workouts.js';
+import { validateWorkout, createRun, updateRun, skip, currentStep, nextStep, targetOf,
+  describeStep, exerciseById } from './workout-runner.js';
 import { buildMannequin, resetPose } from './avatar.js';
 import { readHands } from './tracking.js';
+import { play, unlockAudio } from './sound.js';
 
 // Show or hide a panel or button. A-Frame raycasters ignore `visible`, so a
 // hidden button would still catch the laser (and its clicks) in front of a
@@ -13,6 +17,35 @@ function setShown(el, shown) {
   buttons.forEach(b => b.classList.toggle('clickable', shown));
 }
 
+// Click handler that also unlocks audio (browsers need a user gesture).
+function onClick(el, fn) {
+  el.addEventListener('click', () => { unlockAudio(); fn(); });
+}
+
+function makeButton(label, color, width, height) {
+  const btn = document.createElement('a-entity');
+  btn.setAttribute('class', 'button');
+  btn.setAttribute('geometry', { primitive: 'plane', width, height });
+  btn.setAttribute('material', 'color', color);
+  const text = document.createElement('a-text');
+  text.setAttribute('value', label);
+  text.setAttribute('align', 'center');
+  text.setAttribute('color', '#fff');
+  text.setAttribute('width', 3.2);
+  text.setAttribute('position', '0 0 0.01');
+  btn.appendChild(text);
+  return btn;
+}
+
+function makeText(value, color, width) {
+  const text = document.createElement('a-text');
+  text.setAttribute('value', value);
+  text.setAttribute('align', 'center');
+  text.setAttribute('color', color);
+  text.setAttribute('width', width);
+  return text;
+}
+
 // Seconds to wait after entering AR/VR before recentering, so the headset
 // pose has settled.
 const RECENTER_DELAY = 0.5;
@@ -22,11 +55,22 @@ const RECENTER_DELAY = 0.5;
 const FLOOR_HEAD_Y = 0.9;
 const FLOOR_AHEAD = 0.2;
 
-// The gym-app component (on #stage): builds the menu, switches between the
-// menu and exercise screens, drives the current exercise every frame, and
-// recenters the stage in front of the user.
+// "4 / 10" or "12 / 30 s"
+function progressText(ex, st, step) {
+  const target = targetOf(step);
+  const done = Math.min(Math.floor(ex.count(st)), target);
+  return done + ' / ' + target + (ex.unit === 'seconds' ? ' s' : '');
+}
+
+// The gym-app component (on #stage): builds the menu, runs single exercises
+// and training sets (see workouts.js), and recenters the stage in front of
+// the user.
+//   this.current  the exercise on screen: { ex, st } (null on the menu)
+//   this.run      the training set being run (see workout-runner.js), or null
 export const gymApp = {
   init: function () {
+    WORKOUTS.forEach(validateWorkout);
+
     this.camera = document.querySelector('#camera');
     this.rHand = document.querySelector('#rightHand');
     this.lHand = document.querySelector('#leftHand');
@@ -35,38 +79,25 @@ export const gymApp = {
     this.titleText = document.querySelector('#exerciseTitle');
     this.instrText = document.querySelector('#instrText');
     this.repText = document.querySelector('#repText');
+    this.skipBtn = document.querySelector('#btnSkip');
     this.floorLabel = document.querySelector('#floorLabel');
     this.floorLabelText = document.querySelector('#floorLabelText');
     this.mannequin = buildMannequin(this.el);
     this.current = null;
+    this.run = null;
     this.clock = 0;
+    this.lastCount = 0;
     this.hands = readHands(this.el.sceneEl);
 
-    const menuButtons = document.querySelector('#menuButtons');
-    EXERCISES.forEach((ex, i) => {
-      const btn = document.createElement('a-entity');
-      btn.setAttribute('class', 'button');
-      btn.setAttribute('geometry', 'primitive: plane; width: 1.8; height: 0.3');
-      btn.setAttribute('material', 'color:' + ex.color);
-      btn.setAttribute('position', '0 ' + (0.25 - i * 0.4) + ' 0.01');
-      const label = document.createElement('a-text');
-      label.setAttribute('value', ex.name + ' — ' + ex.muscle);
-      label.setAttribute('align', 'center');
-      label.setAttribute('color', '#fff');
-      label.setAttribute('width', '3.2');
-      label.setAttribute('position', '0 0 0.01');
-      btn.appendChild(label);
-      btn.addEventListener('click', () => this.startExercise(ex));
-      menuButtons.appendChild(btn);
-    });
-
-    document.querySelector('#btnBack').addEventListener('click', () => this.showMenu());
+    this.buildMenu();
+    onClick(document.querySelector('#btnBack'), () => this.showMenu());
+    onClick(this.skipBtn, () => this.handleEvents(skip(this.run)));
     // Recenter: panel buttons, B (right) / Y (left), and on entering AR/VR.
-    document.querySelectorAll('.recenter').forEach(b => b.addEventListener('click', () => this.recenter()));
+    document.querySelectorAll('.recenter').forEach(b => onClick(b, () => this.recenter()));
     this.rHand.addEventListener('bbuttondown', () => this.recenter());
     this.lHand.addEventListener('ybuttondown', () => this.recenter());
     this.recenterIn = null;
-    this.el.sceneEl.addEventListener('enter-vr', () => { this.recenterIn = RECENTER_DELAY; });
+    this.el.sceneEl.addEventListener('enter-vr', () => { unlockAudio(); this.recenterIn = RECENTER_DELAY; });
     this.el.sceneEl.addEventListener('exit-vr', () => {
       // Back on the flat page the camera is at the origin again.
       this.recenterIn = null;
@@ -75,6 +106,34 @@ export const gymApp = {
     });
 
     this.showMenu();
+  },
+  // Menu: "Training sets" then "Single exercises", laid out top to bottom,
+  // with the background sized to fit.
+  buildMenu: function () {
+    const TOP = 1.0;   // top edge of the panel, relative to its center
+    let y = 0.55;      // below the title
+    const put = (el, height) => { el.setAttribute('position', `0 ${y - height / 2} 0.01`); y -= height; };
+    const section = (container, title, items, label, start) => {
+      const header = makeText(title, '#999', 2);
+      this.menuPanel.appendChild(header);   // not in `container`: it only holds buttons
+      put(header, 0.2);
+      items.forEach(item => {
+        const btn = makeButton(label(item), item.color, 1.8, 0.26);
+        onClick(btn, () => start(item));
+        container.appendChild(btn);
+        put(btn, 0.32);
+      });
+      y -= 0.08;
+    };
+    section(document.querySelector('#workoutButtons'), 'Training sets', WORKOUTS,
+      w => `${w.name} (${w.level})`, w => this.startWorkout(w));
+    section(document.querySelector('#menuButtons'), 'Single exercises', EXERCISES,
+      ex => `${ex.name} - ${ex.muscle}`, ex => this.startExercise(ex));
+    put(document.querySelector('#btnRecenterMenu'), 0.3);
+    y -= 0.1;
+    const bg = document.querySelector('#menuBg');
+    bg.setAttribute('height', TOP - y);
+    bg.setAttribute('position', `0 ${(TOP + y) / 2} 0`);
   },
   // Head-top direction on the floor (unit x/z), for someone facing down;
   // falls back to the gaze direction when upright.
@@ -110,20 +169,72 @@ export const gymApp = {
   },
   showMenu: function () {
     this.current = null;
+    this.run = null;
     setShown(this.menuPanel, true);
     setShown(this.exercisePanel, false);
     this.mannequin.root.setAttribute('visible', false);
     this.floorLabel.setAttribute('visible', false);
   },
-  startExercise: function (ex) {
-    this.current = { ex, st: ex.state() };
+  // Exercise screen, shared by single exercises and training sets.
+  showExerciseScreen: function (skippable) {
     this.clock = 0;
+    this.lastCount = 0;
     setShown(this.menuPanel, false);
     setShown(this.exercisePanel, true);
-    this.titleText.setAttribute('value', ex.name.toUpperCase() + ' — ' + ex.muscle);
-    this.instrText.setAttribute('value', ex.instructions);
+    setShown(this.skipBtn, skippable);
     this.mannequin.root.setAttribute('visible', true);
+  },
+  startExercise: function (ex) {
+    this.run = null;
+    this.current = { ex, st: ex.state() };
+    this.showExerciseScreen(false);
+    this.titleText.setAttribute('value', ex.name.toUpperCase() + ' - ' + ex.muscle);
+    this.instrText.setAttribute('value', ex.instructions);
     this.repText.setAttribute('value', ex.label(this.current.st));
+  },
+  startWorkout: function (workout) {
+    this.run = createRun(workout);
+    this.showExerciseScreen(true);
+    this.showStep();
+  },
+  // Panel texts for the training set's current phase.
+  showStep: function () {
+    const run = this.run;
+    const steps = run.workout.steps;
+    this.clock = 0;
+    this.lastCount = 0;
+    if (run.phase === 'exercise') {
+      this.current = { ex: run.ex, st: run.st };
+      this.titleText.setAttribute('value', `${run.index + 1}/${steps.length}  ${run.ex.name.toUpperCase()}`);
+      this.instrText.setAttribute('value', `${describeStep(currentStep(run))}. ${run.ex.instructions}`);
+      this.skipBtn.querySelector('a-text').setAttribute('value', 'Skip');
+    } else if (run.phase === 'rest') {
+      // The mannequin previews the next exercise.
+      const next = exerciseById(nextStep(run).exercise);
+      this.current = { ex: next, st: null };
+      this.titleText.setAttribute('value', 'REST');
+      this.instrText.setAttribute('value', `Next: ${next.name}, ${describeStep(nextStep(run))}`);
+      this.skipBtn.querySelector('a-text').setAttribute('value', 'Skip rest');
+    } else {
+      this.current = null;
+      this.titleText.setAttribute('value', 'TRAINING COMPLETE');
+      this.instrText.setAttribute('value', `${run.workout.name} (${run.workout.level}): ${steps.length} exercises done.`);
+      this.repText.setAttribute('value', 'Well done!');
+      setShown(this.skipBtn, false);
+      this.mannequin.root.setAttribute('visible', false);
+      this.floorLabel.setAttribute('visible', false);
+    }
+  },
+  // Sounds + screen changes for the runner's events.
+  handleEvents: function (events) {
+    if (!events.length) return;
+    for (const e of events) {
+      if (e === 'stepDone' && !events.includes('finished')) play('done');
+      else if (e === 'finished') play('finish');
+      else if (e === 'count') play('count');
+      else if (e === 'go') play('go');
+    }
+    if (events.some(e => e !== 'count')) this.showStep();
   },
   tick: function (t, delta) {
     if (this.recenterIn !== null) {
@@ -134,11 +245,36 @@ export const gymApp = {
     this.clock += delta / 1000;
     const scene = this.el.sceneEl;
     const ctx = { scene, camera: this.camera, hands: readHands(scene, this.hands) };
-    this.current.ex.update(ctx, this.current.st, delta);
-    const text = this.current.ex.label(this.current.st);
+
+    let text;
+    if (this.run) {
+      const run = this.run;
+      const phase = run.phase, ex = run.ex, st = run.st, step = currentStep(run);
+      const events = updateRun(run, ctx, delta);
+      if (phase === 'exercise') {
+        this.tickPaced(ex, st);
+        text = ex.label(st) + '\n' + progressText(ex, st, step);
+      } else {
+        text = Math.ceil(run.restLeft) + 's';
+      }
+      this.handleEvents(events);
+      if (!this.current) return;   // training set finished
+    } else {
+      const { ex, st } = this.current;
+      ex.update(ctx, st, delta);
+      this.tickPaced(ex, st);
+      text = ex.label(st);
+    }
     this.repText.setAttribute('value', text);
     this.updateFloorLabel(text);
     resetPose(this.mannequin);
     this.current.ex.demo(this.mannequin, this.clock);
+  },
+  // Paced exercises: a tick for every rep the app counts.
+  tickPaced: function (ex, st) {
+    if (!ex.paced) return;
+    const n = Math.floor(ex.count(st));
+    if (n > this.lastCount) play('rep');
+    this.lastCount = n;
   }
 };

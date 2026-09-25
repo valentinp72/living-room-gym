@@ -12,6 +12,7 @@ const newCalibration = () => ({ min: Infinity, max: -Infinity, ms: 0 });
 export default {
   id: 'squats', name: 'Squats', muscle: 'Legs', color: '#2e7d32',
   instructions: 'Stand still to calibrate, then squat down and stand back up for each rep.',
+  unit: 'reps',
   state: () => ({ mode: undefined, calib: newCalibration(), baselineY: null, down: false, reps: 0 }),
   update(ctx, st, dt) {
     if (!ctx.camera.object3D) return;
@@ -38,6 +39,7 @@ export default {
       if (y < st.baselineY - DOWN) st.down = true;
     } else if (y > st.baselineY - UP) { st.down = false; st.reps++; }
   },
+  count: st => st.reps,
   label: st => st.baselineY === null ? 'Stand still...' : 'Reps: ' + st.reps,
   demo(parts, t) {
     const c = (1 - Math.cos(t * 1.6)) / 2;   // 0 = standing, 1 = bottom of the squat
