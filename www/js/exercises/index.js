@@ -1,0 +1,21 @@
+/* ---------------------------------------------------------------------
+ * EXERCISE REGISTRY
+ * To add a new exercise, create a file in this folder that default-exports
+ * an object with:
+ *   id, name, muscle, color, instructions
+ *   state()             -> fresh per-session state object
+ *   update(ctx, st, dt) -> read ctx.camera/ctx.rHand/ctx.lHand each frame,
+ *                          mutate st (reps, time, etc.)
+ *   label(st)           -> string shown as the live counter
+ *   demo(parts, t)       -> pose the mannequin each frame (t = seconds
+ *                          since the exercise screen opened) to show the move
+ *   manual (optional)    -> true if it needs a Start/Stop button instead
+ *                          of automatic rep detection (e.g. timed holds)
+ * then import it below and add it to EXERCISES (menu order).
+ * Nothing else in the app needs to change.
+ * ------------------------------------------------------------------- */
+import squats from './squats.js';
+import curls from './curls.js';
+import plank from './plank.js';
+
+export const EXERCISES = [squats, curls, plank];

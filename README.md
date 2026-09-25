@@ -47,29 +47,31 @@ Then:
 
 ```
 .
-├── server.py        # Minimal HTTPS static server for ./www (port 8443)
-├── cert.pem         # Self-signed TLS certificate (local dev only)
-├── key.pem          # TLS private key (local dev only, keep secret)
+├── server.py                  # Minimal HTTPS static server for ./www (port 8443)
+├── cert.pem / key.pem         # Self-signed TLS cert + private key (local dev only, not committed)
 └── www/
-    └── index.html   # The entire app: A-Frame scene, exercise registry, avatar, UI logic
+    ├── index.html             # A-Frame scene markup (rig, floor, lights, UI panels)
+    ├── css/app.css            # Page styles
+    └── js/
+        ├── main.js            # Entry point: registers A-Frame components
+        ├── app.js             # gym-app component: menu, exercise screen, per-frame loop
+        ├── avatar.js          # Demo mannequin with shoulder / hip pivots
+        └── exercises/
+            ├── index.js       # EXERCISES registry (defines menu order)
+            ├── squats.js
+            ├── curls.js
+            └── plank.js
 ```
 
-Inside `www/index.html`:
-
-- **`EXERCISES`**: the exercise registry. Each entry defines `state()`, `update()`,
-  `label()`, `demo()` and optionally `manual`.
-- **`buildMannequin()`**: builds the box/sphere demo avatar with pivots for shoulders and hips.
-- **`gym-app` component**: builds the menu, switches between the menu and exercise screens,
-  and drives `update` / `demo` every frame.
-- **Scene markup**: camera rig, left/right `laser-controls`, floor, lights, and the menu
-  and exercise panels.
+The JavaScript uses native ES modules, so the page has to be served over HTTP(S).
+Opening `index.html` directly from disk won't work.
 
 ### Adding an exercise
 
-Push a new object into `EXERCISES`:
+Create `www/js/exercises/<name>.js`:
 
 ```js
-{
+export default {
   id: 'lunges', name: 'Lunges', muscle: 'Legs', color: '#6a1b9a',
   instructions: 'Step forward and lower your back knee…',
   state: () => ({ reps: 0 }),            // fresh state per session
@@ -77,15 +79,17 @@ Push a new object into `EXERCISES`:
   label: st => 'Reps: ' + st.reps,       // live counter text
   demo(parts, t) { /* pose parts.root / shoulderL/R / hipL/R */ },
   // manual: true                         // show Start/Stop instead of auto-detection
-}
+};
 ```
+
+Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` array.
 
 ## Known issues
 
 1. **VR only, no AR / passthrough.** The scene never asks for an `immersive-ar` session,
    draws an opaque background and a floor plane, and has no AR entry button, so Quest
    passthrough can't be used.
-2. **Rep counting is unreliable** (reported for the arm exercise):
+2. **Rep counting is unreliable** (reported for Bicep Curls):
    - Curls: each hand is tracked separately and both increment the same `reps` counter,
      so curling both arms counts 2 reps.
    - Curls: the "up" threshold (hand within 15 cm below the eyes) is higher than a real
@@ -106,12 +110,10 @@ Push a new object into `EXERCISES`:
      its forearms.
    - The pose is never reset between exercises. After the plank, other demos inherit the
      lying-down rotation, and joint angles from earlier exercises carry over.
-4. **Everything is in one file** (`www/index.html`). This makes it hard to navigate, test
-   or extend.
 
 ## Roadmap
 
-- [ ] Split the code into ES modules (exercises, avatar, UI, rep-detection helpers) while
+- [x] Split the code into ES modules (exercises, avatar, UI, rep-detection helpers) while
       keeping the no-build setup
 - [ ] AR / passthrough mode on Quest (with VR as a fallback)
 - [ ] A jointed avatar (elbows, knees, spine) that is placed on the floor, faces the user,

@@ -21,33 +21,35 @@ There is no build step, no package manager, and no test suite (yet). Do not add 
 - **Never commit, print or move `key.pem`.** If a git repo is initialized, `*.pem` must be in `.gitignore`.
 - **A-Frame, not raw three.js**, for scene structure. Dropping down to `object3D` / `THREE` inside components is fine for math and performance.
 
-## Architecture (current: single file `www/index.html`)
+## Architecture
 
-- `EXERCISES` array: the registry. Each entry has `id, name, muscle, color, instructions`, plus:
+Native ES modules, no bundler. `index.html` loads A-Frame (classic script), then `js/main.js` (module).
+
+```
+www/
+  index.html               # scene markup only (rig, floor, lights, menu + exercise panels)
+  css/app.css              # page styles (outside the 3D scene)
+  js/main.js               # entry point: registers A-Frame components
+  js/app.js                # gym-app component: menu / exercise flow, per-frame tick
+  js/avatar.js             # buildMannequin(): demo avatar + joint pivots
+  js/exercises/index.js    # EXERCISES registry (menu order)
+  js/exercises/<name>.js   # one exercise per file, default export
+```
+
+- Exercise object: `id, name, muscle, color, instructions`, plus:
   - `state()` returns a fresh per-session state
   - `update(ctx, st, dtMs)` runs each frame; `ctx = { camera, rHand, lHand }` (A-Frame entities)
   - `label(st)` returns the counter text
   - `demo(parts, tSeconds)` poses the mannequin
   - `manual`: if true, shows the Start/Stop button instead of automatic detection
 - `buildMannequin(sceneEl)` returns `{ root, shoulderL, shoulderR, hipL, hipR }` pivot entities.
-- `gym-app` component (attached to `#menuPanel`) owns the UI state and the per-frame `tick`.
+- `gym-app` component (attached to `#menuPanel` in the markup) owns the UI state and the per-frame `tick`.
 - Rig: `#rig > #camera` (with a gaze cursor), `#rightHand` and `#leftHand` (`laser-controls`). Interactive meshes use class `.clickable`.
+- Shared rep-detection helpers (calibration, hysteresis, tracking checks) should go in `js/tracking.js` once more than one exercise needs them.
 
-The user wants this split into modules. Planned layout (not implemented yet; confirm before restructuring):
+**Component registration timing:** A-Frame 1.5 delays entity initialization until `document.readyState === 'complete'`, and module scripts run before that, so registering components from `js/main.js` works with components declared in the markup. Keep all `AFRAME.registerComponent` calls in modules imported by `main.js`, not in code that runs lazily after load.
 
-```
-www/
-  index.html            # scene markup only
-  css/app.css
-  js/main.js            # registers components, boots the app
-  js/app.js             # gym-app component: menu / exercise flow
-  js/avatar.js          # mannequin build + pose reset + joint helpers
-  js/exercises/index.js # registry
-  js/exercises/*.js     # one file per exercise
-  js/tracking.js        # shared rep-detection helpers (calibration, hysteresis)
-```
-
-When splitting into ES modules, A-Frame components must be registered **before** the `<a-scene>` initializes. Module scripts are deferred, so either register components from a classic script placed before the scene, or check in the browser that the components still initialize.
+**Module scripts need HTTP(S).** Opening `index.html` via `file://` fails. Always use `server.py` (or `python3 -m http.server --directory www` for desktop-only testing).
 
 ## Coordinate and pose conventions (A-Frame / three.js)
 
@@ -61,9 +63,6 @@ When splitting into ES modules, A-Frame components must be registered **before**
 1. No AR: needs an `immersive-ar` session (`xr-mode-ui` / `webxr` settings), the background and floor hidden in AR (`hide-on-enter-ar`), and passthrough.
 2. Curl rep counting: both hands share one counter (double counting), the "up" threshold is too high, and untracked controllers aren't ignored. Squat baseline is captured too early.
 3. Mannequin: floats about 40 cm above the floor, has no elbows or knees, hip rotation sign is reversed, plank lies face-up, and the pose isn't reset between exercises.
-4. Single-file codebase.
-
-When the user says "bar push up" they mean the **Bicep Curls** exercise.
 
 ## Working style
 
