@@ -1,0 +1,12 @@
+{
+  "name": "vr-muscle-tests",
+  "private": true,
+  "type": "module",
+  "description": "Headless browser tests for www/ (the app itself has no build step).",
+  "scripts": {
+    "test": "node run.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "23.11.1"
+  }
+}

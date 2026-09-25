@@ -14,7 +14,14 @@ A WebXR bodybuilding trainer for Meta Quest, built with A-Frame and served as st
 python3 server.py          # HTTPS static server for ./www on https://0.0.0.0:8443
 ```
 
-There is no build step, no package manager, and no test suite (yet). Do not add a bundler or npm toolchain unless the user asks for one.
+```sh
+cd tests && npm install    # once
+cd tests && npm test       # all suites (node run.mjs <suite ...> for some)
+```
+
+The app has no build step and no package manager. `tests/` is the only place with a `package.json` (just `puppeteer-core`); never make `www/` depend on it, and don't add a bundler unless the user asks.
+
+**Tests** (`tests/`): each suite is a standalone script `node <suite>.mjs <url> [screenshotPrefix]` that exits non-zero on failure; `run.mjs` serves `www/` on a free port and runs them (list in `SUITES`). `lib.mjs` launches headless Chrome with software WebGL (`$CHROME` overrides the path). `fakexr.mjs` installs a fake WebXR session on the scene (`window.fakeXR.hands.{left,right}` = kind, pos, ray, lost; `fakeSelect(side)` = trigger / pinch). AR / VR are entered as A-Frame does: `addState('ar-mode')` then `emit('enter-vr')`. Suites read panel text and joint transforms directly, so renaming ids or labels means updating them. Run `npm test` after every change and add a suite (or checks) for new behaviour, including a regression check for each bug fix. They don't replace a real Quest: say what was only simulated.
 
 ## Hard constraints
 
@@ -89,4 +96,4 @@ www/
 
 - Match the existing code: plain modern JavaScript (no TypeScript), small functions, short explanatory comments, 2-space indent.
 - Keep the "add an exercise = add one registry entry" property. New exercises should not require changes elsewhere.
-- Test on desktop first (`https://localhost:8443`). Say clearly what can only be verified on a real Quest (tracking, AR, rep thresholds) instead of claiming it works.
+- Run `npm test` in `tests/`, then check on desktop (`https://localhost:8443`). Say clearly what can only be verified on a real Quest (tracking, AR, rep thresholds) instead of claiming it works.

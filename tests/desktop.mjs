@@ -1,0 +1,33 @@
+// Desktop: real mouse clicks on the panels (cursor rayOrigin: mouse).
+import { launch } from './lib.mjs';
+const [url] = process.argv.slice(2);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const browser = await launch();
+const page = await browser.newPage();
+await page.setViewport({ width: 1200, height: 800 });
+const errors = [];
+page.on('pageerror', e => errors.push(e.message));
+await page.goto(url, { waitUntil: 'load' });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await sleep(300);
+// Screen position of an element's center.
+const screenOf = sel => page.evaluate(sel => {
+  const el = Array.isArray(sel) ? document.querySelectorAll(sel[0])[sel[1]] : document.querySelector(sel);
+  const scene = document.querySelector('a-scene'); scene.object3D.updateMatrixWorld(true);
+  const p = new THREE.Vector3(); el.object3D.getWorldPosition(p); p.project(scene.camera);
+  const r = scene.canvas.getBoundingClientRect();
+  return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height];
+}, sel);
+const click = async sel => { const [x, y] = await screenOf(sel); await page.mouse.move(x, y); await sleep(100); await page.mouse.down(); await page.mouse.up(); await sleep(250); };
+const title = () => page.evaluate(() => document.querySelector('#exercisePanel').getAttribute('visible') ? document.querySelector('#exerciseTitle').getAttribute('value') : 'menu');
+const results = [];
+for (const [i, want] of [[2, 'PLANK HOLD - Abs'], [1, 'BICEP CURLS - Arms'], [0, 'SQUATS - Legs']]) {
+  await click(['#menuButtons > *', i]);
+  const got = await title(); results.push({ ok: got === want, name: 'mouse opens ' + want, got });
+  await click('#btnBack');
+  const m = await title(); results.push({ ok: m === 'menu', name: 'mouse Back', got: m });
+}
+for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : ' got=' + r.got));
+console.log('page errors:', errors.length ? errors : 'none');
+await browser.close();
+process.exit(results.every(r => r.ok) && !errors.length ? 0 : 1);

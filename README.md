@@ -86,12 +86,37 @@ Then:
 
 > `key.pem` is a private key. Never commit it or publish it.
 
+## Tests
+
+`tests/` holds headless browser tests (Node 18+ and a local Chrome or Chromium; the app
+itself still has no build step). They load the real page, simulate head poses and fake a
+WebXR session with controllers or bare hands, then check rep counts, clicks, the avatar's
+poses, AR display, recentering and training sets.
+
+```sh
+cd tests
+npm install              # once: puppeteer-core only (it doesn't download a browser)
+npm test                 # all suites; prints the details of failing ones
+node run.mjs plank curls # some suites only (VERBOSE=1 prints every check)
+```
+
+The browser is found automatically (Chromium from snap or apt, Google Chrome, or the macOS
+apps). Set `CHROME=/path/to/chrome` to pick another one. `run.mjs` serves `www/` itself on
+a free port. To run one suite against a server that is already running, or to get
+screenshots: `node tests/workout.mjs http://127.0.0.1:8000/ /tmp/shot` (several suites take
+a screenshot prefix as second argument). `views.mjs` isn't a test: it screenshots every demo
+pose from several sides.
+
+What they can't check: real tracking and passthrough, and whether the rep thresholds suit
+a real body. Those still need a Quest.
+
 ## Project structure
 
 ```
 .
 ├── server.py                  # Minimal HTTPS static server for ./www (port 8443)
 ├── cert.pem / key.pem         # Self-signed TLS cert + private key (local dev only, not committed)
+├── tests/                     # Headless browser tests (puppeteer-core), see "Tests"
 └── www/
     ├── index.html             # A-Frame scene markup (rig, floor, lights, #stage with UI panels)
     ├── css/app.css            # Page styles
@@ -195,6 +220,7 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 - [ ] More training sets and difficulty levels, and new exercises (lunges, push-ups,
       fire hydrants, ...)
 - [ ] Session history
+- [x] Automated tests (headless browser, fake WebXR session)
 
 ## Tech
 
