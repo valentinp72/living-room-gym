@@ -57,7 +57,9 @@ const eq = (name, got, want) => check(name, JSON.stringify(got) === JSON.stringi
 
 // Menu.
 const menu = await page.evaluate(() => [...document.querySelectorAll('#workoutButtons > *')].map(b => b.querySelector('a-text').getAttribute('value')));
-eq('menu lists the training set', menu, ['Full body starter (Easy)']);
+eq('menu lists the training sets', menu, ['Full body starter (Easy)', 'Legs and glutes (Easy)', 'Abs (Easy)',
+  'Chest and arms (Easy)', 'Full body (Medium)']);
+// Every training set is valid (validateWorkout runs on load; a throw would be a page error).
 if (shot) await page.screenshot({ path: shot + '-menu.png' });
 
 // Step 1: 10 squats.

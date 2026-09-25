@@ -19,11 +19,22 @@
  *                          so only set the joints that move (see avatar.js
  *                          for the joint names, rot/place/turn helpers and
  *                          rotation directions)
- * then import it below and add it to EXERCISES (menu order).
+ * then import it below and add it to EXERCISES (menu order: a grid, row by row).
+ * Building blocks: paced() (untracked, app-paced reps), headDip() (standing,
+ * head goes down and up: squats, lunges), pushUpReps() (face down).
  * Nothing else in the app needs to change.
  * ------------------------------------------------------------------- */
 import squats from './squats.js';
 import curls from './curls.js';
 import plank from './plank.js';
+import crunches from './crunches.js';
+import legRaises from './leg-raises.js';
+import pushUps from './push-ups.js';
+import kneePushUps from './knee-push-ups.js';
+import lunges from './lunges.js';
+import calfRaises from './calf-raises.js';
+import gluteBridges from './glute-bridges.js';
+import fireHydrants from './fire-hydrants.js';
 
-export const EXERCISES = [squats, curls, plank];
+export const EXERCISES = [squats, curls, plank, crunches, legRaises, pushUps, kneePushUps,
+  lunges, calfRaises, gluteBridges, fireHydrants];

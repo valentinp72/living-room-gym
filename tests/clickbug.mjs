@@ -40,6 +40,7 @@ const back = () => page.evaluate(() => document.querySelector('#btnBack').emit('
 const results = [];
 const expect = (name, got, want) => results.push({ name, ok: JSON.stringify(got) === JSON.stringify(want), got, want });
 
+await page.evaluate(() => document.querySelector('#tabSingle').emit('click'));
 for (const kind of ['hand', 'controller']) {
   // Head looks at Squats, hand points at Plank Hold, left hand points at Bicep Curls.
   await lookAt(['#menuButtons > *', 0]);

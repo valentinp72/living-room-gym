@@ -48,6 +48,72 @@ export function turn(parts, deg) {
   rot(parts.root, 0, toUser + deg, 0);
 }
 
+// Side-view posing (inverse kinematics) in the mannequin's own y/z plane:
+// points are { y, z } relative to `root` (y up from the floor, +z = where
+// the standing mannequin faces). An X angle `a` (degrees) points a limb
+// hanging from its joint along (y: -cos a, z: -sin a): 0 = straight down,
+// -90 = toward +z. Bodies (pelvis / spine) point along (y: cos a, z: sin a):
+// 0 = upright, 90 = lying face down with the head toward +z, -90 = lying
+// face up with the head toward -z.
+
+// Angle of a limb going from point a to point b.
+export const limbAngle = (a, b) => Math.atan2(a.z - b.z, a.y - b.y) / DEG;
+
+// Point `dist` along a body tilted `deg` from `from` (e.g. the shoulders
+// from the pelvis).
+export const along = (from, deg, dist) =>
+  ({ y: from.y + dist * Math.cos(deg * DEG), z: from.z + dist * Math.sin(deg * DEG) });
+
+// Middle joint (knee / elbow) of a two-segment limb from a to b. `bend`
+// picks the side: +1 bends toward +z when the limb points down (knees
+// forward), -1 the other way. Out of reach, the limb is straight.
+export function middleJoint(a, b, l1, l2, bend) {
+  const dz = b.z - a.z, dy = b.y - a.y;
+  const d = Math.min(Math.hypot(dz, dy), l1 + l2 - 1e-6);
+  const uz = dz / Math.hypot(dz, dy), uy = dy / Math.hypot(dz, dy);
+  const x = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
+  const h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
+  return { y: a.y + uy * x + bend * uz * h, z: a.z + uz * x - bend * uy * h };
+}
+
+// Pose leg `s` ('L' / 'R') so its ankle joint lands on `ankle`, with the
+// pelvis at `hip` tilted `pelvisDeg`. The foot ends up `footDeg` from flat
+// (positive = toes down, heel up). Knees bend forward.
+export function legTo(parts, s, hip, pelvisDeg, ankle, footDeg = 0) {
+  const knee = middleJoint(hip, ankle, BODY.thigh, BODY.shin, 1);
+  const thigh = limbAngle(hip, knee), shin = limbAngle(knee, ankle);
+  rot(parts['hip' + s], thigh - pelvisDeg);
+  rot(parts['knee' + s], shin - thigh);
+  rot(parts['ankle' + s], footDeg - shin);
+}
+
+// Pose arm `s` so the hand's center lands on `hand`. The shoulder is at
+// `shoulder` on a torso tilted `torsoDeg` (pelvis + spine). bend: as in
+// middleJoint(); -1 for push-ups (elbows toward the feet).
+export const HAND = BODY.forearm + 0.03;   // elbow -> center of the hand
+export const HAND_R = 0.045;               // hand radius
+export function armTo(parts, s, shoulder, torsoDeg, hand, bend) {
+  const elbow = middleJoint(shoulder, hand, BODY.upperArm, HAND, bend);
+  const upper = limbAngle(shoulder, elbow), fore = limbAngle(elbow, hand);
+  rot(parts['shoulder' + s], upper - torsoDeg);
+  rot(parts['elbow' + s], fore - upper);
+}
+
+// Lying on the back (pelvis tilted -90, head toward -z): the torso's back
+// rests on the floor, and the head is raised a little so it doesn't sink.
+export const LYING_Y = 0.09;   // half the torso depth
+export function lieOnBack(parts, pelvis = { y: LYING_Y, z: 0 }) {
+  place(parts.pelvis, 0, pelvis.y, pelvis.z);
+  rot(parts.pelvis, -90);
+  rot(parts.head, 15);
+}
+
+// Height of the pelvis above the floor for a straight body tilted `deg`
+// face down, standing on its toes (ankles straight): the lowest point is the
+// front bottom edge of the foot box.
+export const onToesY = deg =>
+  (BODY.thigh + BODY.shin + BODY.ankle) * Math.cos(deg * DEG) + 0.16 * Math.sin(deg * DEG);
+
 // Back to standing straight, arms down. Called before every demo frame, so a
 // demo only sets the joints it moves and no pose leaks between exercises.
 export function resetPose(parts) {

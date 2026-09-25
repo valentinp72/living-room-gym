@@ -23,9 +23,13 @@ A training set runs its steps in order. Each step has a target in reps or second
 there is a fixed rest between steps. Difficulty is configuration: an easier or harder
 variant of a set is another entry with different reps, seconds and rest.
 
-| Training set      | Level | Rest | Steps                                        |
-|-------------------|-------|------|----------------------------------------------|
-| Full body starter | Easy  | 20 s | 10 squats, 10 bicep curls (each arm), 20 s plank |
+| Training set      | Level  | Rest | Steps                                                              |
+|-------------------|--------|------|--------------------------------------------------------------------|
+| Full body starter | Easy   | 20 s | 10 squats, 10 bicep curls (each arm), 20 s plank                   |
+| Legs and glutes   | Easy   | 20 s | 10 squats, 10 lunges, 10 fire hydrants, 10 glute bridges, 15 calf raises |
+| Abs               | Easy   | 20 s | 10 crunches, 8 leg raises, 20 s plank, 10 crunches                 |
+| Chest and arms    | Easy   | 25 s | 8 knee push-ups, 10 curls, 8 knee push-ups, 10 curls               |
+| Full body         | Medium | 15 s | 15 squats, 10 push-ups, 16 lunges, 15 crunches, 15 glute bridges, 40 s plank |
 
 During a set, the panel shows the step (`1/3  SQUATS`) and progress (`4 / 10`). Rest looks
 different on purpose: a blue panel with a cyan countdown, and the avatar just stands and
@@ -40,20 +44,31 @@ demo appears only when it starts. **Skip** jumps to the next step or ends the re
 | Fanfare         | The training set is complete                             |
 | Tick            | Each rep of a *paced* exercise (see below)               |
 
-Single exercises stay available in the menu, with no target, which is handy for testing
-and debugging detection.
+The menu has two tabs: **Training sets**, and **Single exercises** (no target), which is
+handy for testing and debugging detection.
 
 ## Exercises
 
-| Exercise    | Muscle group | Tracking                                              |
-|-------------|--------------|-------------------------------------------------------|
-| Squats      | Legs         | Automatic: headset height drop vs. calibrated standing height |
-| Bicep Curls | Arms         | Automatic, per arm: hand height relative to the headset, and controller tilt (works with the hands out of view) |
-| Plank Hold  | Abs          | Automatic timer: detects the plank from head height and tilt |
+| Exercise      | Muscle group | Tracking                                              |
+|---------------|--------------|-------------------------------------------------------|
+| Squats        | Legs         | Automatic: headset height drop vs. calibrated standing height |
+| Lunges        | Legs         | Automatic, like squats                                |
+| Calf Raises   | Legs         | Paced, one every 2 s                                  |
+| Bicep Curls   | Arms         | Automatic, per arm: hand height relative to the headset, and controller tilt (works with the hands out of view) |
+| Plank Hold    | Abs          | Automatic timer: detects the plank from head height and tilt |
+| Crunches      | Abs          | Automatic: lying on your back (head low, looking up), the head rises and comes back down |
+| Leg Raises    | Abs          | Paced, one every 3 s                                  |
+| Push-ups      | Chest        | Automatic: face down with the head low, the head goes down and back up |
+| Knee Push-ups | Chest        | Automatic, like push-ups                              |
+| Glute Bridges | Glutes       | Paced, one every 3 s                                  |
+| Fire Hydrants | Glutes       | Paced, one every 2.5 s, alternating legs              |
 
-Exercises the headset and hands can't track (for example fire hydrants: on all fours,
-only a leg moves) are **paced**: the app counts reps at a fixed tempo with a tick for each
-one, and you follow along. See `www/js/exercises/paced.js`.
+Exercises the headset and hands can't track (on the floor with only the legs moving, or a
+head movement too small to tell apart) are **paced**: the app counts reps at a fixed tempo
+with a tick for each one, and you follow along. See `www/js/exercises/paced.js`.
+
+During floor exercises the counter follows your face: on the floor under it when facing
+down, or floating above it when lying on your back.
 
 ## Running locally
 
@@ -134,9 +149,12 @@ a real body. Those still need a Quest.
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
             ├── paced.js       # Helper for untracked exercises: app-paced reps
-            ├── squats.js
+            ├── head-dip.js    # Helper for standing head-dip exercises (squats, lunges)
+            ├── squats.js, lunges.js, calf-raises.js
             ├── curls.js
-            └── plank.js
+            ├── plank.js, crunches.js, leg-raises.js
+            ├── push-ups.js, knee-push-ups.js
+            └── glute-bridges.js, fire-hydrants.js
 ```
 
 The JavaScript uses native ES modules, so the page has to be served over HTTP(S).
@@ -195,10 +213,12 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 1. **The plank is detected from the headset only.** Your head must be 25 to 80 cm above the
    floor and facing down. A knee plank, or kneeling on all fours with your face down, also
    counts.
-2. **Curl thresholds are unconfirmed on a real Quest.** Curls with controllers are also
+2. **New exercise thresholds are estimates.** Crunches (head rises 12 cm), push-ups (head
+   drops 15 cm) and lunges have only been checked with a simulated headset, not on a Quest.
+3. **Curl thresholds are unconfirmed on a real Quest.** Curls with controllers are also
    detected from how much the controller tilts (70°, up to at least 30° above horizontal).
    These values are estimates. Bare hands must stay in the headset's view.
-3. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
+4. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
    simulating an AR session, not yet on a Quest.
 
 ## Roadmap
@@ -218,10 +238,11 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
       untracked controllers
 - [x] Robust squat detection: calibrates standing height once still, recalibrates on
       entering / leaving VR or AR
-- [ ] More exercises (push-ups, lunges, shoulder press, crunches, …)
+- [x] More exercises: crunches, leg raises, push-ups, knee push-ups, lunges, calf raises,
+      glute bridges, fire hydrants
 - [x] Training sets with rep / time targets, rests, skip and sounds
-- [ ] More training sets and difficulty levels, and new exercises (lunges, push-ups,
-      fire hydrants, ...)
+- [x] Training sets per body area (legs and glutes, abs, chest and arms, full body)
+- [ ] More difficulty levels, and more exercises (shoulder press, ...)
 - [ ] Session history
 - [x] Automated tests (headless browser, fake WebXR session)
 

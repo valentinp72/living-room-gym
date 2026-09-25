@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WWW = path.join(HERE, '..', 'www');
 const SUITES = ['workout', 'desktop', 'clickbug', 'pointer', 'buttons', 'ar',
-  'recenter', 'plank', 'curls', 'squats', 'avatar', 'textfit'];
+  'recenter', 'plank', 'curls', 'squats', 'exercises', 'avatar', 'textfit'];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 

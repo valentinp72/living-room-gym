@@ -29,9 +29,12 @@ const expect = (name, got, want) => results.push({ name, ok: JSON.stringify(got)
 
 await sleep(150);
 expect('no hands: no pointer rays', await pointers(), [false, false]);
-await point('right', 'hand', ['#menuButtons > *', 0]);
+await point('right', 'hand', '#tabSingle');
 await sleep(150);
 expect('tracked right hand: right ray shown', await pointers(), [false, true]);
+await pinch('right');
+expect('pinch switches the menu tab', await page.evaluate(() => document.querySelector('#menuButtons').getAttribute('visible')), true);
+await point('right', 'hand', ['#menuButtons > *', 0]);
 await pinch('right');
 expect('pinch opens Squats', await screen(), 'SQUATS - Legs');
 await point('right', 'hand', '#btnBack');

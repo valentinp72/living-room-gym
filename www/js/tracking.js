@@ -56,3 +56,11 @@ export function xrMode(sceneEl) {
   if (sceneEl.is('vr-mode')) return 'vr';
   return null;
 }
+
+// How far the user looks up or down: the vertical part of the gaze
+// direction, from -1 (straight down, e.g. face down in a push-up) to +1
+// (straight up, e.g. lying on the back). `head` is the #camera object3D.
+const GAZE = new THREE.Vector3();
+export function gazeY(head) {
+  return GAZE.set(0, 0, -1).applyQuaternion(head.quaternion).y;
+}

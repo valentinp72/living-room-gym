@@ -46,13 +46,13 @@
   <a-entity id="stage" gym-app>
     <!-- Menu: buttons and layout are built by buildMenu() in app.js. -->
     <a-entity id="menuPanel" position="0 1.6 -2">
-      <a-plane id="menuBg" width="2.4" height="2" color="#000" opacity="0.65"></a-plane>
+      <a-plane id="menuBg" width="2.6" height="2" color="#000" opacity="0.65"></a-plane>
       <a-text value="XR MUSCLE GYM" align="center" position="0 0.75 0.01" width="3.2" color="#fff"></a-text>
       <a-entity id="workoutButtons"></a-entity>
       <a-entity id="menuButtons"></a-entity>
-      <a-entity id="btnRecenterMenu" class="button recenter" geometry="primitive:plane; width:1.2; height:0.22"
-        material="color:#37474f">
-        <a-text value="Recenter (B / Y)" align="center" position="0 0 0.01" color="#fff" width="2.2"></a-text>
+      <a-entity id="btnRecenterMenu" class="button recenter" geometry="primitive:plane; width:0.5; height:0.24"
+        material="color:#546e7a">
+        <a-text value="Recenter" align="center" position="0 0 0.01" color="#fff" width="2.0"></a-text>
       </a-entity>
     </a-entity>
 
@@ -60,7 +60,8 @@
       <a-plane id="exerciseBg" width="2.4" height="2.1" color="#000" opacity="0.65"></a-plane>
       <a-text id="exerciseTitle" value="" align="center" position="0 0.85 0.01" width="3.2" color="#fff"></a-text>
       <a-text id="instrText" value="" align="center" position="0 0.5 0.01" width="2.2" color="#bbb"></a-text>
-      <a-text id="repText" value="" align="center" position="0 0.05 0.01" width="3.8" color="#ffeb3b"></a-text>
+      <!-- Anchored at its top: counters with extra lines grow down, away from the instructions. -->
+      <a-text id="repText" value="" align="center" baseline="top" position="0 0.22 0.01" width="3.8" color="#ffeb3b"></a-text>
       <a-entity id="btnBack" class="button" geometry="primitive:plane; width:0.68; height:0.3"
         material="color:#555" position="-0.75 -0.8 0.01">
         <a-text value="Menu" align="center" position="0 0 0.01" color="#fff" width="2.4"></a-text>

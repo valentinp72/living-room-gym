@@ -1,6 +1,8 @@
-// Screenshots of each demo pose: from the user's spot and close-ups around the avatar.
+// Screenshots of the demo poses, from the user's spot and around the mannequin.
+// Usage: node views.mjs <url> <outPrefix> [exercise index:seconds ...]
+// (default: every exercise at 0, 0.8 and 1.6 s). Not a test: look at them.
 import { launch } from './lib.mjs';
-const [url, out] = process.argv.slice(2);
+const [url, out, ...wanted] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const browser = await launch();
 const page = await browser.newPage();
@@ -10,7 +12,10 @@ await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, {
 await page.evaluate(() => document.querySelector('#camera').setAttribute('look-controls', 'enabled: false'));
 
 // [exercise index, demo time, label]
-const poses = [[0, 0, 'squat-top'], [0, Math.PI / 1.6, 'squat-bottom'], [1, 0, 'curls'], [2, 0, 'plank']];
+const count = await page.evaluate(() => document.querySelectorAll('#menuButtons > *').length);
+const poses = wanted.length
+  ? wanted.map(w => { const [i, t] = w.split(':').map(Number); return [i, t, `${i}-${t}`]; })
+  : [...Array(count).keys()].flatMap(i => [0, 0.8, 1.6].map(t => [i, t, `${i}-${t}`]));
 // Camera spots relative to the avatar's root, in the avatar's own frame (+z = its front).
 const views = { user: null, side: [3, 1.0, 0], front: [0, 1.0, 3], back34: [-2.2, 1.6, -2.2] };
 for (const [i, t, name] of poses) {

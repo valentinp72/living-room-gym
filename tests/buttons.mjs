@@ -46,10 +46,17 @@ for (const ex of [0, 1, 2]) {
   for (const [spot, from] of Object.entries(spots))
     for (const b of ['#btnBack', '#btnRecenter']) check({ screen: 'exercise ' + ex, spot, ...(await aim(from, b)) });
 }
-// Menu buttons (exercise panel hidden).
+// Menu buttons (exercise panel hidden), on both tabs: the hidden tab's
+// buttons sit exactly where the shown ones are.
 await page.evaluate(() => document.querySelector('#btnBack').emit('click')); await sleep(150);
-for (const [spot, from] of Object.entries(spots))
-  for (let i = 0; i < 3; i++) check({ screen: 'menu', spot, ...(await aim(from, ['#menuButtons > *', i])) });
+for (const [tab, list] of [['#tabSets', '#workoutButtons'], ['#tabSingle', '#menuButtons']]) {
+  await page.evaluate(t => document.querySelector(t).emit('click'), tab); await sleep(100);
+  const n = await page.evaluate(l => document.querySelectorAll(l + ' > *').length, list);
+  for (const [spot, from] of Object.entries(spots)) {
+    for (let i = 0; i < n; i++) check({ screen: 'menu', spot, ...(await aim(from, [list + ' > *', i])) });
+    for (const t of ['#tabSets', '#tabSingle']) check({ screen: 'menu', spot, ...(await aim(from, t)) });
+  }
+}
 for (const [spot, from] of Object.entries(spots)) check({ screen: 'menu', spot, ...(await aim(from, '#btnRecenterMenu')) });
 
 for (const r of results) console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.screen.padEnd(11)} ${r.spot.padEnd(9)} aim=${r.target.padEnd(20)} hit=${r.hit}`);

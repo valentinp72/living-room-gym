@@ -21,12 +21,27 @@ const screenOf = sel => page.evaluate(sel => {
 const click = async sel => { const [x, y] = await screenOf(sel); await page.mouse.move(x, y); await sleep(100); await page.mouse.down(); await page.mouse.up(); await sleep(250); };
 const title = () => page.evaluate(() => document.querySelector('#exercisePanel').getAttribute('visible') ? document.querySelector('#exerciseTitle').getAttribute('value') : 'menu');
 const results = [];
+// The menu opens on the training sets; exercises are on the other tab.
+const visible = sel => page.evaluate(s => document.querySelector(s).getAttribute('visible'), sel);
+results.push({ ok: await visible('#workoutButtons') && !(await visible('#menuButtons')), name: 'menu opens on training sets' });
+await click('#tabSingle');
+results.push({ ok: !(await visible('#workoutButtons')) && await visible('#menuButtons'), name: 'mouse switches tab' });
 for (const [i, want] of [[2, 'PLANK HOLD - Abs'], [1, 'BICEP CURLS - Arms'], [0, 'SQUATS - Legs']]) {
   await click(['#menuButtons > *', i]);
   const got = await title(); results.push({ ok: got === want, name: 'mouse opens ' + want, got });
   await click('#btnBack');
   const m = await title(); results.push({ ok: m === 'menu', name: 'mouse Back', got: m });
 }
+// Every exercise button opens its own exercise.
+const names = await page.evaluate(() => [...document.querySelectorAll('#menuButtons > *')].map(b => b.querySelector('a-text').getAttribute('value')));
+for (const [i, name] of names.entries()) {
+  await click(['#menuButtons > *', i]);
+  const got = await title(); results.push({ ok: got.startsWith(name.toUpperCase() + ' - '), name: 'mouse opens ' + name, got });
+  await click('#btnBack');
+}
+results.push({ ok: await visible('#menuButtons'), name: 'Back keeps the tab' });
+await click('#tabSets');
+results.push({ ok: await visible('#workoutButtons') && !(await visible('#menuButtons')), name: 'mouse switches back' });
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : ' got=' + r.got));
 console.log('page errors:', errors.length ? errors : 'none');
 await browser.close();
