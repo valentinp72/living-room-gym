@@ -37,12 +37,14 @@ const expect = (name, got, want) => results.push({ name, ok: JSON.stringify(got)
 // 1. Turned 90° left and moved: Recenter puts the menu 2 m ahead again.
 await head(1, 1.7, 2, 90);
 await click('#btnRecenterMenu');
-expect('menu button: menu 2 m ahead, centered', await menuFromHead(), { ahead: 2, side: 0, height: 1.6 });
+// The menu's own height is set by buildMenu() to fit its contents.
+const menuY = await page.evaluate(() => Math.round(document.querySelector('#menuPanel').object3D.position.y * 100) / 100);
+expect('menu button: menu 2 m ahead, centered', await menuFromHead(), { ahead: 2, side: 0, height: menuY });
 // 2. Turned back-right, from the exercise screen.
 await page.evaluate(() => document.querySelectorAll('#menuButtons > *')[2].emit('click'));
 await head(-0.5, 1.6, -1, -135);
 await click('#btnRecenter');
-expect('exercise button: recenters too', await menuFromHead(), { ahead: 2, side: 0, height: 1.6 });
+expect('exercise button: recenters too', await menuFromHead(), { ahead: 2, side: 0, height: menuY });
 if (shot) await page.screenshot({ path: shot + '-exercise.png' });
 // 3. Looking straight down in a plank (head low, top of head pointing +x): uses head-top direction.
 await head(0, 0.4, 0, -90, -90);

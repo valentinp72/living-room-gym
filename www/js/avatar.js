@@ -29,7 +29,11 @@ export const PELVIS_Y = BODY.ankle + BODY.shin + BODY.thigh;
 // Where the mannequin stands on the stage (right of the exercise panel, see
 // index.html; the user is at the stage origin), and how far it is turned
 // from facing the user by default. 45° gives a three-quarter view.
-const HOME = { x: 1.3, z: -2.6 };
+// setHome() moves (and shrinks) it for room awareness, in a cramped room;
+// HOME is the default.
+export const HOME = Object.freeze({ x: 1.3, z: -2.6 });
+const home = { ...HOME, scale: 1 };
+export function setHome(spot, scale = 1) { home.x = spot.x; home.z = spot.z; home.scale = scale; }
 const DEFAULT_TURN = 45;
 
 // Rotate an entity's pivot, in degrees. Uses object3D directly: it runs
@@ -44,7 +48,7 @@ export function place(el, x = 0, y = 0, z = 0) {
 // Turn the whole body `deg` degrees away from facing the user (the user is
 // at the stage origin). 0 = facing the user, 90 = right side towards the user.
 export function turn(parts, deg) {
-  const toUser = Math.atan2(-HOME.x, -HOME.z) / DEG;
+  const toUser = Math.atan2(-home.x, -home.z) / DEG;
   rot(parts.root, 0, toUser + deg, 0);
 }
 
@@ -117,7 +121,8 @@ export const onToesY = deg =>
 // Back to standing straight, arms down. Called before every demo frame, so a
 // demo only sets the joints it moves and no pose leaks between exercises.
 export function resetPose(parts) {
-  place(parts.root, HOME.x, 0, HOME.z);
+  place(parts.root, home.x, 0, home.z);
+  parts.root.object3D.scale.setScalar(home.scale);
   turn(parts, DEFAULT_TURN);
   place(parts.pelvis, 0, PELVIS_Y, 0);
   for (const name of JOINTS) rot(parts[name]);

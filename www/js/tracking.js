@@ -64,3 +64,35 @@ const GAZE = new THREE.Vector3();
 export function gazeY(head) {
   return GAZE.set(0, 0, -1).applyQuaternion(head.quaternion).y;
 }
+
+// The headset's room scan (Quest: Space Setup), for room.js buildRoom():
+// [{ kind: 'vertical' | 'horizontal' | 'mesh', label, points: [[x, y, z], ...] }]
+// in the reference space. Planes need the 'plane-detection' session feature,
+// meshes (furniture volumes, Quest 3) 'mesh-detection'. Returns null when
+// the session doesn't give any room data (no feature, or not in XR).
+const SURFACE_MATRIX = new THREE.Matrix4();
+const SURFACE_POINT = new THREE.Vector3();
+export function readSurfaces(sceneEl) {
+  const frame = sceneEl.frame;
+  const ref = sceneEl.xrSession && frame && sceneEl.renderer.xr.getReferenceSpace();
+  if (!ref || (!frame.detectedPlanes && !frame.detectedMeshes)) return null;
+  const out = [];
+  const add = (kind, label, space, coords) => {
+    const pose = frame.getPose(space, ref);
+    if (!pose) return;
+    SURFACE_MATRIX.fromArray(pose.transform.matrix);
+    const points = [];
+    for (let i = 0; i < coords.length; i += 3) {
+      SURFACE_POINT.set(coords[i], coords[i + 1], coords[i + 2]).applyMatrix4(SURFACE_MATRIX);
+      points.push([SURFACE_POINT.x, SURFACE_POINT.y, SURFACE_POINT.z]);
+    }
+    out.push({ kind, label: label || '', points });
+  };
+  for (const plane of frame.detectedPlanes || []) {
+    add(plane.orientation, plane.semanticLabel, plane.planeSpace, plane.polygon.flatMap(p => [p.x, p.y, p.z]));
+  }
+  for (const mesh of frame.detectedMeshes || []) {
+    add('mesh', mesh.semanticLabel, mesh.meshSpace, mesh.vertices);
+  }
+  return out;
+}
