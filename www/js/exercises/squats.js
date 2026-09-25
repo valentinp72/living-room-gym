@@ -1,4 +1,5 @@
 import { xrMode } from '../tracking.js';
+import { BODY, place, rot, turn } from '../avatar.js';
 
 // Head height in meters, relative to the calibrated standing height.
 const DOWN = 0.25;          // head this far below standing = bottom of the squat
@@ -39,9 +40,20 @@ export default {
   },
   label: st => st.baselineY === null ? 'Stand still...' : 'Reps: ' + st.reps,
   demo(parts, t) {
-    const c = (Math.sin(t * 1.3) + 1) / 2;
-    parts.root.setAttribute('position', { x: 1.6, y: 1.1 - c * 0.3, z: -2 });
-    parts.hipL.setAttribute('rotation', { x: c * 40, y: 0, z: 0 });
-    parts.hipR.setAttribute('rotation', { x: c * 40, y: 0, z: 0 });
+    const c = (1 - Math.cos(t * 1.6)) / 2;   // 0 = standing, 1 = bottom of the squat
+    const thigh = 95 * c, shin = 35 * c;     // forward tilt from vertical, degrees
+    const rad = Math.PI / 180;
+    // Keep the feet planted: put the pelvis where the thighs and shins end up.
+    place(parts.pelvis, 0,
+      BODY.ankle + BODY.shin * Math.cos(shin * rad) + BODY.thigh * Math.cos(thigh * rad),
+      BODY.shin * Math.sin(shin * rad) - BODY.thigh * Math.sin(thigh * rad));
+    for (const s of ['L', 'R']) {
+      rot(parts['hip' + s], -thigh);
+      rot(parts['knee' + s], thigh + shin);
+      rot(parts['ankle' + s], -shin);
+      rot(parts['shoulder' + s], -90 - 45 * c);   // arms held level in front
+    }
+    rot(parts.spine, 45 * c);                     // lean the chest forward
+    turn(parts, 60);
   }
 };

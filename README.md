@@ -55,7 +55,7 @@ Then:
     └── js/
         ├── main.js            # Entry point: registers A-Frame components
         ├── app.js             # gym-app component: menu, exercise screen, per-frame loop
-        ├── avatar.js          # Demo mannequin with shoulder / hip pivots
+        ├── avatar.js          # Jointed demo mannequin + posing helpers
         ├── tracking.js        # Shared tracking helpers (is a controller tracked?)
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
@@ -72,43 +72,37 @@ Opening `index.html` directly from disk won't work.
 Create `www/js/exercises/<name>.js`:
 
 ```js
+import { rot, place, turn } from '../avatar.js';
+
 export default {
   id: 'lunges', name: 'Lunges', muscle: 'Legs', color: '#6a1b9a',
   instructions: 'Step forward and lower your back knee…',
   state: () => ({ reps: 0 }),            // fresh state per session
   update(ctx, st, dtMs) { /* read ctx.scene / camera / rHand / lHand */ },
   label: st => 'Reps: ' + st.reps,       // live counter text
-  demo(parts, t) { /* pose parts.root / shoulderL/R / hipL/R */ },
+  demo(parts, t) { rot(parts.kneeL, 40); /* see avatar.js for joints */ },
   // manual: true                         // show Start/Stop instead of auto-detection
 };
 ```
 
 Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` array.
 
+The mannequin is reset to standing before every `demo` call, so a demo only sets the
+joints that move. `www/js/avatar.js` lists the joints and the rotation directions.
+
 ## Known issues
 
 1. **VR only, no AR / passthrough.** The scene never asks for an `immersive-ar` session,
    draws an opaque background and a floor plane, and has no AR entry button, so Quest
    passthrough can't be used.
-2. **The demo avatar is misplaced and animates incorrectly:**
-   - Its feet float about 40 cm above the floor (the torso sits at y = 1.1, and the
-     hip pivot plus leg length only reach down to about y = 0.4).
-   - It has no elbow or knee joints. The "curl" swings the whole straight arm (a front raise),
-     and the "squat" rotates straight legs.
-   - The hip rotation goes the wrong way: in the squat the legs swing backward instead
-     of the thighs coming forward.
-   - The plank rotation puts the avatar on its back (face up) instead of face down on
-     its forearms.
-   - The pose is never reset between exercises. After the plank, other demos inherit the
-     lying-down rotation, and joint angles from earlier exercises carry over.
 
 ## Roadmap
 
 - [x] Split the code into ES modules (exercises, avatar, UI, rep-detection helpers) while
       keeping the no-build setup
 - [ ] AR / passthrough mode on Quest (with VR as a fallback)
-- [ ] A jointed avatar (elbows, knees, spine) that is placed on the floor, faces the user,
-      and resets its pose per exercise
+- [x] A jointed avatar (elbows, knees, ankles, spine) standing on the floor next to the
+      exercise panel, with its pose reset every frame
 - [x] Robust Bicep Curls counting: per-arm counts, movement-based thresholds, ignores
       untracked controllers
 - [x] Robust squat detection: calibrates standing height once still, recalibrates on

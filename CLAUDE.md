@@ -31,7 +31,7 @@ www/
   css/app.css              # page styles (outside the 3D scene)
   js/main.js               # entry point: registers A-Frame components
   js/app.js                # gym-app component: menu / exercise flow, per-frame tick
-  js/avatar.js             # buildMannequin(): demo avatar + joint pivots
+  js/avatar.js             # jointed demo mannequin, resetPose + rot/place/turn helpers
   js/tracking.js           # shared tracking helpers (isHandTracked, xrMode)
   js/exercises/index.js    # EXERCISES registry (menu order)
   js/exercises/<name>.js   # one exercise per file, default export
@@ -41,9 +41,10 @@ www/
   - `state()` returns a fresh per-session state
   - `update(ctx, st, dtMs)` runs each frame; `ctx = { scene, camera, rHand, lHand }` (A-Frame entities)
   - `label(st)` returns the counter text
-  - `demo(parts, tSeconds)` poses the mannequin
+  - `demo(parts, tSeconds)` poses the mannequin; it's reset to standing before every call
   - `manual`: if true, shows the Start/Stop button instead of automatic detection
-- `buildMannequin(sceneEl)` returns `{ root, shoulderL, shoulderR, hipL, hipR }` pivot entities.
+- Mannequin (`js/avatar.js`): joint tree `root > pelvis > spine > head / shoulderL,R > elbowL,R` and `pelvis > hipL,R > kneeL,R > ankleL,R`. `root` sits on the floor (y = 0) between the feet; `pelvis` is at `PELVIS_Y` when standing. Segment lengths are in `BODY`. Pose with `rot(el, x, y, z)` (degrees, writes `object3D` directly), `place(el, x, y, z)` and `turn(parts, deg)` (0 = facing the user). `app.js` calls `resetPose()` every frame before `demo()`. Keep the feet on the floor by computing the pelvis position from the leg angles (see squats), and check a pose from the side, not only from the user's spot.
+- Layout during an exercise: the exercise panel is left of center and turned toward the user (`index.html`), and the mannequin stands to its right (`HOME` in `avatar.js`). The menu panel stays centered.
 - `gym-app` component (attached to `#menuPanel` in the markup) owns the UI state and the per-frame `tick`.
 - Rig: `#rig > #camera` (with a gaze cursor), `#rightHand` and `#leftHand` (`laser-controls`). Interactive meshes use class `.clickable`.
 - Shared tracking and rep-detection helpers go in `js/tracking.js`. Use `isHandTracked(handEl)` before reading a controller's position: it checks for a live WebXR pose (`tracked-controls-webxr` has a `controller` and a non-null `pose`).
@@ -57,14 +58,13 @@ www/
 ## Coordinate and pose conventions (A-Frame / three.js)
 
 - Units are meters. +Y is up, and the user starts looking toward **−Z**. An object in front of the user at `z = -2` faces the user through its **+Z** side.
-- `rotation` is in **degrees** (XYZ Euler). For a limb hanging along −Y from a pivot, a positive X rotation swings it toward **−Z**, which is *away* from a user facing the avatar. Check the sign whenever you pose limbs.
+- `rotation` is in **degrees** (XYZ Euler). For a limb hanging along −Y from a pivot, a positive X rotation swings it toward **−Z**. The mannequin faces its own +Z, so for it, negative X = forward (hip flexion, raising an arm, bending the elbow) and positive X at the knee bends the shin back. For the spine (pointing +Y), positive X leans forward.
 - In an XR session with the default `local-floor` reference space, the camera's `position.y` is the real head height above the floor. On desktop it is the fixed `1.6`. Don't compute a calibration baseline until the session has started and the pose has settled.
-- Controller entities report `0,0,0` until they are tracked. Treat that as "no data", not as a valid position.
+- Controller entities sit at `0,0,0` until first tracked, and freeze at their last position when tracking is lost. Check `isHandTracked()` before trusting a position.
 
 ## Known problems (to fix, see README "Known issues")
 
 1. No AR: needs an `immersive-ar` session (`xr-mode-ui` / `webxr` settings), the background and floor hidden in AR (`hide-on-enter-ar`), and passthrough.
-2. Mannequin: floats about 40 cm above the floor, has no elbows or knees, hip rotation sign is reversed, plank lies face-up, and the pose isn't reset between exercises.
 
 ## Working style
 

@@ -1,5 +1,5 @@
 import { EXERCISES } from './exercises/index.js';
-import { buildMannequin } from './avatar.js';
+import { buildMannequin, resetPose } from './avatar.js';
 
 // The gym-app component: builds the menu, switches between the menu and
 // exercise screens, and drives the current exercise every frame.
@@ -64,6 +64,7 @@ export const gymApp = {
     const ctx = { scene: this.el.sceneEl, camera: this.camera, rHand: this.rHand, lHand: this.lHand };
     this.current.ex.update(ctx, this.current.st, delta);
     this.repText.setAttribute('value', this.current.ex.label(this.current.st));
+    resetPose(this.mannequin);
     this.current.ex.demo(this.mannequin, this.clock);
   }
 };

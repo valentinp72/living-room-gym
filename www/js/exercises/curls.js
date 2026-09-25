@@ -1,4 +1,5 @@
 import { isHandTracked } from '../tracking.js';
+import { rot, turn } from '../avatar.js';
 
 // Hand height is measured relative to the eyes, in meters. Thresholds are
 // relative to each arm's own lowest/highest point so they fit any body size.
@@ -40,8 +41,13 @@ export default {
     return st.left.tracked || st.right.tracked ? text : text + '\nWaiting for controllers';
   },
   demo(parts, t) {
-    const ang = -((Math.sin(t * 2) + 1) / 2) * 110;
-    parts.shoulderL.setAttribute('rotation', { x: ang, y: 0, z: 0 });
-    parts.shoulderR.setAttribute('rotation', { x: ang, y: 0, z: 0 });
+    // Alternate arms: 0 = arm straight down, 1 = hand at the shoulder.
+    const l = (1 - Math.cos(t * 2)) / 2;
+    const r = (1 + Math.cos(t * 2)) / 2;
+    rot(parts.elbowL, -10 - 130 * l);
+    rot(parts.elbowR, -10 - 130 * r);
+    rot(parts.shoulderL, -5);   // elbows stay by the sides
+    rot(parts.shoulderR, -5);
+    turn(parts, 60);
   }
 };
