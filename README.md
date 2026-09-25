@@ -27,8 +27,10 @@ variant of a set is another entry with different reps, seconds and rest.
 |-------------------|-------|------|----------------------------------------------|
 | Full body starter | Easy  | 20 s | 10 squats, 10 bicep curls (each arm), 20 s plank |
 
-During a set, the panel shows the step (`1/3  SQUATS`) and progress (`4 / 10`). **Skip**
-jumps to the next step or ends the rest early. Sounds:
+During a set, the panel shows the step (`1/3  SQUATS`) and progress (`4 / 10`). Rest looks
+different on purpose: a blue panel with a cyan countdown, and the avatar just stands and
+breathes. The title turns to `GET READY` for the last 3 seconds, and the next exercise's
+demo appears only when it starts. **Skip** jumps to the next step or ends the rest early. Sounds:
 
 | Sound           | When                                                     |
 |-----------------|----------------------------------------------------------|

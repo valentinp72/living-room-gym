@@ -2,7 +2,7 @@ import { EXERCISES } from './exercises/index.js';
 import { WORKOUTS } from './workouts.js';
 import { validateWorkout, createRun, updateRun, skip, currentStep, nextStep, targetOf,
   describeStep, exerciseById } from './workout-runner.js';
-import { buildMannequin, resetPose } from './avatar.js';
+import { buildMannequin, resetPose, idle } from './avatar.js';
 import { readHands } from './tracking.js';
 import { play, unlockAudio } from './sound.js';
 
@@ -55,6 +55,16 @@ const RECENTER_DELAY = 0.5;
 const FLOOR_HEAD_Y = 0.9;
 const FLOOR_AHEAD = 0.2;
 
+// Exercise vs rest look: rest gets a blue panel and a cyan countdown so it
+// can't be mistaken for an exercise.
+const LOOK = {
+  exercise: { bg: '#000000', opacity: 0.65, counter: '#ffeb3b' },
+  rest: { bg: '#0b3d5c', opacity: 0.85, counter: '#80deea' },
+};
+// Seconds before the end of a rest when the title turns to "GET READY"
+// (together with the countdown beeps).
+const GET_READY = 3;
+
 // "4 / 10" or "12 / 30 s"
 function progressText(ex, st, step) {
   const target = targetOf(step);
@@ -65,7 +75,8 @@ function progressText(ex, st, step) {
 // The gym-app component (on #stage): builds the menu, runs single exercises
 // and training sets (see workouts.js), and recenters the stage in front of
 // the user.
-//   this.current  the exercise on screen: { ex, st } (null on the menu)
+//   this.current  the exercise on screen: { ex, st } ({ ex: null } while
+//                 resting, null on the menu)
 //   this.run      the training set being run (see workout-runner.js), or null
 export const gymApp = {
   init: function () {
@@ -80,6 +91,7 @@ export const gymApp = {
     this.instrText = document.querySelector('#instrText');
     this.repText = document.querySelector('#repText');
     this.skipBtn = document.querySelector('#btnSkip');
+    this.exerciseBg = document.querySelector('#exerciseBg');
     this.floorLabel = document.querySelector('#floorLabel');
     this.floorLabelText = document.querySelector('#floorLabelText');
     this.mannequin = buildMannequin(this.el);
@@ -175,8 +187,15 @@ export const gymApp = {
     this.mannequin.root.setAttribute('visible', false);
     this.floorLabel.setAttribute('visible', false);
   },
+  setLook: function (name) {
+    const look = LOOK[name];
+    this.exerciseBg.setAttribute('material', { color: look.bg, opacity: look.opacity });
+    this.repText.setAttribute('color', look.counter);
+    this.floorLabelText.setAttribute('color', look.counter);
+  },
   // Exercise screen, shared by single exercises and training sets.
   showExerciseScreen: function (skippable) {
+    this.setLook('exercise');
     this.clock = 0;
     this.lastCount = 0;
     setShown(this.menuPanel, false);
@@ -203,17 +222,19 @@ export const gymApp = {
     const steps = run.workout.steps;
     this.clock = 0;
     this.lastCount = 0;
+    this.setLook(run.phase === 'rest' ? 'rest' : 'exercise');
     if (run.phase === 'exercise') {
       this.current = { ex: run.ex, st: run.st };
       this.titleText.setAttribute('value', `${run.index + 1}/${steps.length}  ${run.ex.name.toUpperCase()}`);
       this.instrText.setAttribute('value', `${describeStep(currentStep(run))}. ${run.ex.instructions}`);
       this.skipBtn.querySelector('a-text').setAttribute('value', 'Skip');
     } else if (run.phase === 'rest') {
-      // The mannequin previews the next exercise.
+      // No exercise demo during rest: the mannequin idles (see tick).
       const next = exerciseById(nextStep(run).exercise);
-      this.current = { ex: next, st: null };
+      this.current = { ex: null, st: null };
       this.titleText.setAttribute('value', 'REST');
-      this.instrText.setAttribute('value', `Next: ${next.name}, ${describeStep(nextStep(run))}`);
+      this.instrText.setAttribute('value',
+        `Relax. Next: ${next.name}, ${describeStep(nextStep(run))}. It starts after the countdown.`);
       this.skipBtn.querySelector('a-text').setAttribute('value', 'Skip rest');
     } else {
       this.current = null;
@@ -254,8 +275,11 @@ export const gymApp = {
       if (phase === 'exercise') {
         this.tickPaced(ex, st);
         text = ex.label(st) + '\n' + progressText(ex, st, step);
-      } else {
+      } else if (phase === 'rest') {
         text = Math.ceil(run.restLeft) + 's';
+        if (run.restLeft <= GET_READY && this.titleText.getAttribute('value') === 'REST') {
+          this.titleText.setAttribute('value', 'GET READY');
+        }
       }
       this.handleEvents(events);
       if (!this.current) return;   // training set finished
@@ -268,7 +292,8 @@ export const gymApp = {
     this.repText.setAttribute('value', text);
     this.updateFloorLabel(text);
     resetPose(this.mannequin);
-    this.current.ex.demo(this.mannequin, this.clock);
+    if (this.current.ex) this.current.ex.demo(this.mannequin, this.clock);
+    else idle(this.mannequin, this.clock);
   },
   // Paced exercises: a tick for every rep the app counts.
   tickPaced: function (ex, st) {

@@ -57,6 +57,19 @@ export function resetPose(parts) {
   for (const name of JOINTS) rot(parts[name]);
 }
 
+// Resting between exercises: standing relaxed, breathing slowly. Clearly
+// not an exercise, so the user doesn't start the next one too early.
+export function idle(parts, t) {
+  const breath = (1 - Math.cos(t * 1.6)) / 2;   // ~4 s per breath
+  rot(parts.spine, -2 * breath);                // chest lifts a little
+  rot(parts.head, 4 - 3 * breath);
+  rot(parts.shoulderL, 0, 0, -8 - 2 * breath);  // arms loose, slightly out
+  rot(parts.shoulderR, 0, 0, 8 + 2 * breath);
+  rot(parts.elbowL, -12);
+  rot(parts.elbowR, -12);
+  turn(parts, 20);
+}
+
 const JOINTS = ['pelvis', 'spine', 'head', 'shoulderL', 'shoulderR', 'elbowL', 'elbowR',
   'hipL', 'hipR', 'kneeL', 'kneeR', 'ankleL', 'ankleR'];
 
