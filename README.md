@@ -17,7 +17,7 @@ but has several known issues. See [Known issues](#known-issues).
 | Exercise    | Muscle group | Tracking                                              |
 |-------------|--------------|-------------------------------------------------------|
 | Squats      | Legs         | Automatic: headset height drop vs. a baseline         |
-| Bicep Curls | Arms         | Automatic: controller height relative to the headset  |
+| Bicep Curls | Arms         | Automatic, per arm: controller height relative to the headset |
 | Plank Hold  | Abs          | Manual timer (Start / Stop button)                    |
 
 ## Running locally
@@ -56,6 +56,7 @@ Then:
         ├── main.js            # Entry point: registers A-Frame components
         ├── app.js             # gym-app component: menu, exercise screen, per-frame loop
         ├── avatar.js          # Demo mannequin with shoulder / hip pivots
+        ├── tracking.js        # Shared tracking helpers (is a controller tracked?)
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
             ├── squats.js
@@ -89,16 +90,9 @@ Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` arra
 1. **VR only, no AR / passthrough.** The scene never asks for an `immersive-ar` session,
    draws an opaque background and a floor plane, and has no AR entry button, so Quest
    passthrough can't be used.
-2. **Rep counting is unreliable** (reported for Bicep Curls):
-   - Curls: each hand is tracked separately and both increment the same `reps` counter,
-     so curling both arms counts 2 reps.
-   - Curls: the "up" threshold (hand within 15 cm below the eyes) is higher than a real
-     curl reaches (hand at shoulder height, about 25 to 30 cm below the eyes), so reps can
-     be missed.
-   - Curls: an untracked controller sits at position `0,0,0`, which is read as "arm down".
-   - Squats: the baseline height is taken from the first frame after selecting the
-     exercise. If that happens before entering VR, or while the user is moving, every later
-     rep is measured against the wrong height.
+2. **Squat rep counting can be wrong.** The standing height is taken from the first frame
+   after selecting the exercise. If that happens before entering VR, or while the user is
+   moving, every later rep is measured against the wrong height.
 3. **The demo avatar is misplaced and animates incorrectly:**
    - Its feet float about 40 cm above the floor (the torso sits at y = 1.1, and the
      hip pivot plus leg length only reach down to about y = 0.4).
@@ -118,8 +112,9 @@ Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` arra
 - [ ] AR / passthrough mode on Quest (with VR as a fallback)
 - [ ] A jointed avatar (elbows, knees, spine) that is placed on the floor, faces the user,
       and resets its pose per exercise
-- [ ] Robust rep detection: per-exercise calibration, hysteresis, per-arm counting,
-      ignoring untracked controllers
+- [x] Robust Bicep Curls counting: per-arm counts, movement-based thresholds, ignores
+      untracked controllers
+- [ ] Robust squat detection: calibrate standing height once in VR
 - [ ] More exercises (push-ups, lunges, shoulder press, crunches, …)
 - [ ] Sets, rest timers, and session history
 
