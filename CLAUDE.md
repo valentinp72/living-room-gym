@@ -45,7 +45,6 @@ www/
   - `update(ctx, st, dtMs)` runs each frame; `ctx = { scene, camera, hands }` (`camera` is the A-Frame entity; `hands` comes from `readHands()`)
   - `label(st)` returns the counter text
   - `demo(parts, tSeconds)` poses the mannequin; it's reset to standing before every call
-  - `manual`: if true, shows the Start/Stop button instead of automatic detection
 - Mannequin (`js/avatar.js`): joint tree `root > pelvis > spine > head / shoulderL,R > elbowL,R` and `pelvis > hipL,R > kneeL,R > ankleL,R`. `root` sits on the floor (y = 0) between the feet; `pelvis` is at `PELVIS_Y` when standing. Segment lengths are in `BODY`. Pose with `rot(el, x, y, z)` (degrees, writes `object3D` directly), `place(el, x, y, z)` and `turn(parts, deg)` (0 = facing the user). `app.js` calls `resetPose()` every frame before `demo()`. Keep the feet on the floor by computing the pelvis position from the leg angles (see squats), and check a pose from the side, not only from the user's spot.
 - Display modes (`js/components/xr-environment.js`, on `<a-scene>`): in AR the scene background turns transparent (passthrough), and elements with class `vr-only` (the virtual floor) are hidden. In any headset mode, elements with class `flat-only` (the desktop gaze cursor) are hidden. Don't set `background` on the scene directly; use `xr-environment="color: ..."`. `xr-mode-ui="XRMode: xr"` shows both the AR and VR buttons.
 - Layout during an exercise: the exercise panel is left of center and turned toward the user (`index.html`), and the mannequin stands to its right (`HOME` in `avatar.js`). The menu panel stays centered.
@@ -53,6 +52,8 @@ www/
 - `#stage` holds everything placed relative to the user: both panels and the mannequin. Positions inside it assume the user stands at the stage origin looking toward −Z. `recenter()` moves the stage under the head and turns it to the head's yaw (or to where the top of the head points when looking down). It runs 0.5 s after entering AR/VR, on B / Y, and from `.recenter` buttons, and leaving XR resets the stage. Put new user-facing content inside `#stage`, not directly in the scene.
 - Rig: `#rig > #camera` (with a gaze cursor), `#rightHand` and `#leftHand` (`laser-controls`). Buttons get class `button`; raycasters target `.clickable`, which `setShown()` in `app.js` adds only while a button is visible. A-Frame raycasters ignore `visible`, so hidden buttons would otherwise steal clicks. Always show or hide UI with `setShown()`, never with `setAttribute('visible')` alone.
 - Shared tracking and rep-detection helpers go in `js/tracking.js`. Exercises get `ctx.hands = readHands(scene)`: `{ left, right }`, each `{ tracked, kind: 'controller' | 'hand' | null, position }`. It is read straight from the WebXR session (grip space, or the wrist joint for hands without one), so controllers and bare hands work the same. Never read hand positions from the `#rightHand` / `#leftHand` entities: they only cover controllers, and they freeze at their last position when tracking is lost.
+- Plank (`js/exercises/plank.js`) is automatic, with no buttons. The head is "in plank" when it is 25 to 80 cm above the floor and tilted more than 60° from upright. The timer starts after 1 s in position (and counts it) and stops after 1 s out of position (without counting it). Keep exercises hands-free and automatic; the user asked for no Start/Stop.
+- Floor counter (`#floorLabel` in `#rig`, `updateFloorLabel()` in `app.js`): during any exercise, while the head is below 0.9 m, the counter text lies on the floor 20 cm ahead of the face, reading away from the user. Floor exercises need it because the panels are out of sight.
 - Input: controllers use `laser-controls` (`#rightHand` / `#leftHand`, trigger = click, A/B/X/Y events). Bare hands use `hand-pointer` (`js/components/hand-pointer.js`): a ray along the hand's WebXR target ray, where a pinch (the session `select` event) clicks the first `.clickable` hit. It ignores controller sources, so the trigger doesn't double-click. The `hand-tracking-controls` entities only draw hand models, and they are `vr-only` because in AR the real hands show through passthrough. Every action must be reachable without controllers (B / Y are only shortcuts).
 - Bicep Curls (`js/exercises/curls.js`) counts each arm separately. A rep = the hand rises 30 cm above its lowest point to at least chest height (45 cm below the eyes), then drops 30 cm. The thresholds are relative, so they work across body sizes.
 - Squats (`js/exercises/squats.js`) calibrates standing head height once the head stays within 3 cm for 1 s, and recalibrates whenever `xrMode(scene)` changes (flat, `vr`, `ar`). While standing, the baseline only moves up. A rep = head 25 cm below the baseline, then back within 8 cm.
@@ -71,7 +72,8 @@ www/
 ## Known problems (see README "Known issues")
 
 1. No awareness of real walls or furniture in AR. Recentering is manual (plus once on entering XR).
-2. AR has only been tested by simulating the session (`addState('ar-mode')` + `enter-vr`), not on a Quest.
+2. The plank is detected from the head only, so a knee plank or all-fours with the face down also counts.
+3. AR has only been tested by simulating the session (`addState('ar-mode')` + `enter-vr`), not on a Quest.
 
 ## Working style
 

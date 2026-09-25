@@ -14,8 +14,6 @@
  *                          so only set the joints that move (see avatar.js
  *                          for the joint names, rot/place/turn helpers and
  *                          rotation directions)
- *   manual (optional)    -> true if it needs a Start/Stop button instead
- *                          of automatic rep detection (e.g. timed holds)
  * then import it below and add it to EXERCISES (menu order).
  * Nothing else in the app needs to change.
  * ------------------------------------------------------------------- */

@@ -22,7 +22,7 @@ for testing. See [Known issues](#known-issues).
 |-------------|--------------|-------------------------------------------------------|
 | Squats      | Legs         | Automatic: headset height drop vs. calibrated standing height |
 | Bicep Curls | Arms         | Automatic, per arm: hand / controller height relative to the headset |
-| Plank Hold  | Abs          | Manual timer: Start / Stop button, or A / X on a controller |
+| Plank Hold  | Abs          | Automatic timer: detects the plank from head height and tilt |
 
 ## Running locally
 
@@ -96,7 +96,6 @@ export default {
   update(ctx, st, dtMs) { /* read ctx.scene / camera / hands */ },
   label: st => 'Reps: ' + st.reps,       // live counter text
   demo(parts, t) { rot(parts.kneeL, 40); /* see avatar.js for joints */ },
-  // manual: true                         // show Start/Stop instead of auto-detection
 };
 ```
 
@@ -107,7 +106,10 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 
 ## Known issues
 
-1. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
+1. **The plank is detected from the headset only.** Your head must be 25 to 80 cm above the
+   floor and facing down. A knee plank, or kneeling on all fours with your face down, also
+   counts.
+2. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
    simulating an AR session, not yet on a Quest.
 
 ## Roadmap
@@ -118,6 +120,8 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 - [x] Recenter the panels and avatar in front of the user (B / Y, panel button, on entering
       AR / VR)
 - [x] Hand tracking: pinch to click, curls counted from bare hands
+- [x] Automatic plank timer (no Start / Stop), with the counter shown on the floor under
+      your face
 - [ ] Room awareness in AR: keep the panels and avatar clear of real walls and furniture
 - [x] A jointed avatar (elbows, knees, ankles, spine) standing on the floor next to the
       exercise panel, with its pose reset every frame

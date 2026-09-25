@@ -29,6 +29,12 @@
     <a-entity id="leftHandPointer" hand-pointer="hand: left"></a-entity>
     <a-entity class="vr-only" hand-tracking-controls="hand: right"></a-entity>
     <a-entity class="vr-only" hand-tracking-controls="hand: left"></a-entity>
+    <!-- Counter shown on the floor in front of the face during floor
+         exercises (plank), where the panels are out of sight. -->
+    <a-entity id="floorLabel" visible="false">
+      <a-plane width="0.7" height="0.24" color="#000" opacity="0.6"></a-plane>
+      <a-text id="floorLabelText" value="" align="center" position="0 0 0.005" width="1.1" color="#ffeb3b"></a-text>
+    </a-entity>
   </a-entity>
 
   <a-plane class="vr-only" rotation="-90 0 0" width="20" height="20" color="#1b1f24"></a-plane>
@@ -54,10 +60,6 @@
       <a-text id="exerciseTitle" value="" align="center" position="0 0.85 0.01" width="3.2" color="#fff"></a-text>
       <a-text id="instrText" value="" align="center" position="0 0.5 0.01" width="2.6" color="#bbb"></a-text>
       <a-text id="repText" value="" align="center" position="0 0.05 0.01" width="3.8" color="#ffeb3b"></a-text>
-      <a-entity id="btnToggle" class="button" visible="false"
-        geometry="primitive:plane; width:1.4; height:0.3" material="color:#ad1457" position="0 -0.4 0.01">
-        <a-text value="Start / Stop" align="center" position="0 0 0.01" color="#fff" width="3.2"></a-text>
-      </a-entity>
       <a-entity id="btnBack" class="button" geometry="primitive:plane; width:0.95; height:0.3"
         material="color:#555" position="-0.5 -0.8 0.01">
         <a-text value="Back to Menu" align="center" position="0 0 0.01" color="#fff" width="2.4"></a-text>
