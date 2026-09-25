@@ -48,7 +48,7 @@ and debugging detection.
 | Exercise    | Muscle group | Tracking                                              |
 |-------------|--------------|-------------------------------------------------------|
 | Squats      | Legs         | Automatic: headset height drop vs. calibrated standing height |
-| Bicep Curls | Arms         | Automatic, per arm: hand / controller height relative to the headset |
+| Bicep Curls | Arms         | Automatic, per arm: hand height relative to the headset, and controller tilt (works with the hands out of view) |
 | Plank Hold  | Abs          | Automatic timer: detects the plank from head height and tilt |
 
 Exercises the headset and hands can't track (for example fire hydrants: on all fours,
@@ -195,7 +195,10 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 1. **The plank is detected from the headset only.** Your head must be 25 to 80 cm above the
    floor and facing down. A knee plank, or kneeling on all fours with your face down, also
    counts.
-2. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
+2. **Curl thresholds are unconfirmed on a real Quest.** Curls with controllers are also
+   detected from how much the controller tilts (70°, up to at least 30° above horizontal).
+   These values are estimates. Bare hands must stay in the headset's view.
+3. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
    simulating an AR session, not yet on a Quest.
 
 ## Roadmap
