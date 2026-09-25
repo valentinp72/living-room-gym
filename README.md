@@ -16,7 +16,7 @@ but has several known issues. See [Known issues](#known-issues).
 
 | Exercise    | Muscle group | Tracking                                              |
 |-------------|--------------|-------------------------------------------------------|
-| Squats      | Legs         | Automatic: headset height drop vs. a baseline         |
+| Squats      | Legs         | Automatic: headset height drop vs. calibrated standing height |
 | Bicep Curls | Arms         | Automatic, per arm: controller height relative to the headset |
 | Plank Hold  | Abs          | Manual timer (Start / Stop button)                    |
 
@@ -76,7 +76,7 @@ export default {
   id: 'lunges', name: 'Lunges', muscle: 'Legs', color: '#6a1b9a',
   instructions: 'Step forward and lower your back knee…',
   state: () => ({ reps: 0 }),            // fresh state per session
-  update(ctx, st, dtMs) { /* read ctx.camera / ctx.rHand / ctx.lHand */ },
+  update(ctx, st, dtMs) { /* read ctx.scene / camera / rHand / lHand */ },
   label: st => 'Reps: ' + st.reps,       // live counter text
   demo(parts, t) { /* pose parts.root / shoulderL/R / hipL/R */ },
   // manual: true                         // show Start/Stop instead of auto-detection
@@ -90,10 +90,7 @@ Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` arra
 1. **VR only, no AR / passthrough.** The scene never asks for an `immersive-ar` session,
    draws an opaque background and a floor plane, and has no AR entry button, so Quest
    passthrough can't be used.
-2. **Squat rep counting can be wrong.** The standing height is taken from the first frame
-   after selecting the exercise. If that happens before entering VR, or while the user is
-   moving, every later rep is measured against the wrong height.
-3. **The demo avatar is misplaced and animates incorrectly:**
+2. **The demo avatar is misplaced and animates incorrectly:**
    - Its feet float about 40 cm above the floor (the torso sits at y = 1.1, and the
      hip pivot plus leg length only reach down to about y = 0.4).
    - It has no elbow or knee joints. The "curl" swings the whole straight arm (a front raise),
@@ -114,7 +111,8 @@ Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` arra
       and resets its pose per exercise
 - [x] Robust Bicep Curls counting: per-arm counts, movement-based thresholds, ignores
       untracked controllers
-- [ ] Robust squat detection: calibrate standing height once in VR
+- [x] Robust squat detection: calibrates standing height once still, recalibrates on
+      entering / leaving VR or AR
 - [ ] More exercises (push-ups, lunges, shoulder press, crunches, …)
 - [ ] Sets, rest timers, and session history
 

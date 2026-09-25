@@ -32,14 +32,14 @@ www/
   js/main.js               # entry point: registers A-Frame components
   js/app.js                # gym-app component: menu / exercise flow, per-frame tick
   js/avatar.js             # buildMannequin(): demo avatar + joint pivots
-  js/tracking.js           # shared tracking helpers (isHandTracked)
+  js/tracking.js           # shared tracking helpers (isHandTracked, xrMode)
   js/exercises/index.js    # EXERCISES registry (menu order)
   js/exercises/<name>.js   # one exercise per file, default export
 ```
 
 - Exercise object: `id, name, muscle, color, instructions`, plus:
   - `state()` returns a fresh per-session state
-  - `update(ctx, st, dtMs)` runs each frame; `ctx = { camera, rHand, lHand }` (A-Frame entities)
+  - `update(ctx, st, dtMs)` runs each frame; `ctx = { scene, camera, rHand, lHand }` (A-Frame entities)
   - `label(st)` returns the counter text
   - `demo(parts, tSeconds)` poses the mannequin
   - `manual`: if true, shows the Start/Stop button instead of automatic detection
@@ -48,6 +48,7 @@ www/
 - Rig: `#rig > #camera` (with a gaze cursor), `#rightHand` and `#leftHand` (`laser-controls`). Interactive meshes use class `.clickable`.
 - Shared tracking and rep-detection helpers go in `js/tracking.js`. Use `isHandTracked(handEl)` before reading a controller's position: it checks for a live WebXR pose (`tracked-controls-webxr` has a `controller` and a non-null `pose`).
 - Bicep Curls (`js/exercises/curls.js`) counts each arm separately. A rep = the hand rises 30 cm above its lowest point to at least chest height (45 cm below the eyes), then drops 30 cm. The thresholds are relative, so they work across body sizes.
+- Squats (`js/exercises/squats.js`) calibrates standing head height once the head stays within 3 cm for 1 s, and recalibrates whenever `xrMode(scene)` changes (flat, `vr`, `ar`). While standing, the baseline only moves up. A rep = head 25 cm below the baseline, then back within 8 cm.
 
 **Component registration timing:** A-Frame 1.5 delays entity initialization until `document.readyState === 'complete'`, and module scripts run before that, so registering components from `js/main.js` works with components declared in the markup. Keep all `AFRAME.registerComponent` calls in modules imported by `main.js`, not in code that runs lazily after load.
 
@@ -63,8 +64,7 @@ www/
 ## Known problems (to fix, see README "Known issues")
 
 1. No AR: needs an `immersive-ar` session (`xr-mode-ui` / `webxr` settings), the background and floor hidden in AR (`hide-on-enter-ar`), and passthrough.
-2. Squat rep counting: the standing baseline is captured on the first frame, possibly before entering VR.
-3. Mannequin: floats about 40 cm above the floor, has no elbows or knees, hip rotation sign is reversed, plank lies face-up, and the pose isn't reset between exercises.
+2. Mannequin: floats about 40 cm above the floor, has no elbows or knees, hip rotation sign is reversed, plank lies face-up, and the pose isn't reset between exercises.
 
 ## Working style
 

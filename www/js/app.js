@@ -61,7 +61,7 @@ export const gymApp = {
   tick: function (t, delta) {
     if (!this.current) return;
     this.clock += delta / 1000;
-    const ctx = { camera: this.camera, rHand: this.rHand, lHand: this.lHand };
+    const ctx = { scene: this.el.sceneEl, camera: this.camera, rHand: this.rHand, lHand: this.lHand };
     this.current.ex.update(ctx, this.current.st, delta);
     this.repText.setAttribute('value', this.current.ex.label(this.current.st));
     this.current.ex.demo(this.mannequin, this.clock);

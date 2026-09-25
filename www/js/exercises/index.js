@@ -4,7 +4,7 @@
  * an object with:
  *   id, name, muscle, color, instructions
  *   state()             -> fresh per-session state object
- *   update(ctx, st, dt) -> read ctx.camera/ctx.rHand/ctx.lHand each frame,
+ *   update(ctx, st, dt) -> read ctx.scene/camera/rHand/lHand each frame,
  *                          mutate st (reps, time, etc.)
  *   label(st)           -> string shown as the live counter
  *   demo(parts, t)       -> pose the mannequin each frame (t = seconds
