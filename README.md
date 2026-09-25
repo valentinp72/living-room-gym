@@ -18,7 +18,7 @@ but has several known issues. See [Known issues](#known-issues).
 |-------------|--------------|-------------------------------------------------------|
 | Squats      | Legs         | Automatic: headset height drop vs. calibrated standing height |
 | Bicep Curls | Arms         | Automatic, per arm: controller height relative to the headset |
-| Plank Hold  | Abs          | Manual timer (Start / Stop button)                    |
+| Plank Hold  | Abs          | Manual timer: Start / Stop button, or A / X on a controller |
 
 ## Running locally
 

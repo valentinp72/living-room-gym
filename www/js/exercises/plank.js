@@ -2,7 +2,7 @@ import { BODY, place, rot, turn } from '../avatar.js';
 
 export default {
   id: 'plank', name: 'Plank Hold', muscle: 'Abs', color: '#ef6c00',
-  instructions: 'Get into plank position, then press Start/Stop below to time your hold.',
+  instructions: 'Press Start/Stop (or A / X on a controller), get into plank position, and press it again when you stop.',
   manual: true,
   state: () => ({ running: false, time: 0 }),
   update(ctx, st, dt) { if (st.running) st.time += dt / 1000; },
