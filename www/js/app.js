@@ -78,14 +78,26 @@ const FACE_AHEAD = 0.7;
 // more than FOLLOW_ANGLE degrees away from it, or walked more than
 // FOLLOW_DISTANCE meters from where it was placed, for FOLLOW_SECONDS, it
 // recenters in front of them. Pointing at a menu behind you with a bare hand
-// is awkward (Quest test). Not during exercises: people turn on the floor.
+// is awkward. Not during exercises: people turn on the floor.
 const FOLLOW_ANGLE = 60;
 const FOLLOW_DISTANCE = 1.5;
 const FOLLOW_SECONDS = 1.5;
 
+// Safety notice (#safetyPanel): shown instead of the menu until the user
+// accepts it once on this device. Bump the version when its text changes
+// in substance, so everyone sees it again.
+const SAFETY_KEY = 'living-room-gym-safety-accepted';
+const SAFETY_VERSION = '1';
+function safetyAccepted() {
+  try { return localStorage.getItem(SAFETY_KEY) === SAFETY_VERSION; } catch (e) { return false; }
+}
+function acceptSafety() {
+  try { localStorage.setItem(SAFETY_KEY, SAFETY_VERSION); } catch (e) { /* storage blocked: asked again next time */ }
+}
+
 // Equipment the user has (menu setting, kept in this browser): training
 // sets that need something they don't have are hidden.
-const KIT_KEY = 'xr-muscle-equipment';
+const KIT_KEY = 'living-room-gym-equipment';
 function loadKit() {
   const kit = { chair: true, band: true, weights: true };
   try { Object.assign(kit, JSON.parse(localStorage.getItem(KIT_KEY)) || {}); } catch (e) { /* storage blocked */ }
@@ -99,7 +111,7 @@ const PANEL_HEAD = new THREE.Vector3();
 
 // Exercise vs rest look: rest gets a blue panel and a cyan countdown so it
 // can't be mistaken for an exercise. Panels are nearly opaque: over
-// passthrough, a see-through panel is hard to read (Quest test).
+// passthrough, a see-through panel is hard to read.
 const LOOK = {
   exercise: { bg: '#000000', opacity: 0.88, counter: '#ffeb3b' },
   rest: { bg: '#0b3d5c', opacity: 0.92, counter: '#80deea' },
@@ -158,6 +170,9 @@ export const gymApp = {
     this.hands = readHands(this.el.sceneEl);
 
     this.buildMenu();
+    this.safetyPanel = document.querySelector('#safetyPanel');
+    this.safetyOk = safetyAccepted();
+    onClick(document.querySelector('#btnSafetyOk'), () => { acceptSafety(); this.safetyOk = true; this.showMenu(); });
     onClick(document.querySelector('#btnBack'), () => this.showMenu());
     onClick(this.skipBtn, () => this.handleEvents(skip(this.run)));
     // Recenter: panel buttons, B (right) / Y (left), and on entering AR.
@@ -373,8 +388,10 @@ export const gymApp = {
   showMenu: function () {
     this.current = null;
     this.run = null;
-    setShown(this.menuPanel, true);
-    this.showTab(this.tab);
+    // The safety notice comes first, until accepted.
+    setShown(this.safetyPanel, !this.safetyOk);
+    setShown(this.menuPanel, this.safetyOk);
+    if (this.safetyOk) this.showTab(this.tab);
     setShown(this.exercisePanel, false);
     this.mannequin.root.setAttribute('visible', false);
     this.floorLabel.setAttribute('visible', false);

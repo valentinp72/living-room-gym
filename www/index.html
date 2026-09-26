@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>XR Muscle Gym</title>
+<title>Living Room Gym</title>
 <link rel="icon" href="data:,">
 <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe-master.min.js"></script>
 <link rel="stylesheet" href="css/app.css">
@@ -52,10 +52,23 @@
   <!-- Everything the user interacts with, placed relative to the user.
        Recentering moves and turns this entity (see recenter() in app.js). -->
   <a-entity id="stage" gym-app>
+    <!-- Safety notice, shown instead of the menu until accepted once on this
+         device (see showMenu() in app.js). -->
+    <a-entity id="safetyPanel" position="0 1.45 -2" visible="false">
+      <a-plane id="safetyBg" width="2.6" height="1.9" color="#1a1206" opacity="0.92"></a-plane>
+      <a-text value="BEFORE YOU START" align="center" position="0 0.75 0.01" width="3.2" color="#ffcc80"></a-text>
+      <a-text id="safetyText" align="left" anchor="left" baseline="top" position="-1.15 0.55 0.01" width="2.3" wrap-count="46" color="#eee"
+        value="You train at your own risk.&#10;&#10;- Clear the space around you: no furniture, walls, stairs, pets or people within reach, and keep seeing your room.&#10;- Stop at once if you feel pain, dizziness or discomfort.&#10;- If you have a health condition, an injury or are pregnant, ask a doctor first.&#10;- Rep counts and demos are guides, not medical or coaching advice.&#10;&#10;The authors accept no responsibility for any injury or damage."></a-text>
+      <a-entity id="btnSafetyOk" class="button" geometry="primitive:plane; width:0.9; height:0.26"
+        material="color:#2e7d32" position="0 -0.73 0.01">
+        <a-text value="I understand" align="center" position="0 0 0.01" color="#fff" width="2.4"></a-text>
+      </a-entity>
+    </a-entity>
+
     <!-- Menu: buttons, layout and height are set by buildMenu() in app.js. -->
     <a-entity id="menuPanel" position="0 1.6 -2">
       <a-plane id="menuBg" width="2.6" height="2" color="#000" opacity="0.88"></a-plane>
-      <a-text value="XR MUSCLE GYM" align="center" position="0 0.75 0.01" width="3.2" color="#fff"></a-text>
+      <a-text value="LIVING ROOM GYM" align="center" position="0 0.75 0.01" width="3.2" color="#fff"></a-text>
       <a-entity id="workoutButtons"></a-entity>
       <a-entity id="menuButtons"></a-entity>
       <a-entity id="btnRecenterMenu" class="button recenter" geometry="primitive:plane; width:0.5; height:0.24"
@@ -92,6 +105,6 @@
     </a-entity>
   </a-entity>
 </a-scene>
-<div id="hint">On Meta Quest, open this page in the Browser and tap "AR" to train in your room (passthrough). There is no VR mode: you need to see your surroundings while you train. On desktop, look with the mouse and click the panels to test.</div>
+<div id="hint">On Meta Quest, open this page in the Browser and tap "AR" to train in your room (passthrough). There is no VR mode: you need to see your surroundings while you train. Clear the space around you and train at your own risk. On desktop, look with the mouse and click the panels to test.</div>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// Serves ../www on a free local port and runs the test suites against it, one
+// Serves ../www (or $WWW) on a free local port and runs the test suites against it, one
 // after the other. Usage: node run.mjs [suite ...]   (default: all suites)
 import http from 'node:http';
 import fs from 'node:fs';
@@ -7,7 +7,8 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const WWW = path.join(HERE, '..', 'www');
+// $WWW: another copy of the app to test, e.g. the one about to be deployed.
+const WWW = path.resolve(process.env.WWW || path.join(HERE, '..', 'www'));
 const SUITES = ['workout', 'desktop', 'clickbug', 'pointer', 'buttons', 'ar',
   'recenter', 'plank', 'curls', 'squats', 'exercises', 'avatar', 'textfit'];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',

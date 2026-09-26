@@ -20,9 +20,20 @@ export function chromePath() {
   return path;
 }
 
-export function launch() {
-  return puppeteer.launch({
+// Pages open with the safety notice already accepted, so suites start on
+// the menu; launch({ safetyAccepted: false }) to test the notice itself.
+export async function launch({ safetyAccepted = true } = {}) {
+  const browser = await puppeteer.launch({
     executablePath: chromePath(), headless: true,
     args: ['--no-sandbox', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
   });
+  if (safetyAccepted) {
+    const newPage = browser.newPage.bind(browser);
+    browser.newPage = async () => {
+      const page = await newPage();
+      await page.evaluateOnNewDocument(() => { try { localStorage.setItem('living-room-gym-safety-accepted', '1'); } catch (e) {} });
+      return page;
+    };
+  }
+  return browser;
 }

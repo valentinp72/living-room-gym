@@ -88,9 +88,22 @@ const menuSpan = await page.evaluate(() => {
   return { bottom: +b.min.y.toFixed(2), top: +b.max.y.toFixed(2) };
 });
 const menuOk = menuSpan.bottom > 0.2 && menuSpan.top < 2.7;
+// The safety notice's text stays inside its panel, above its button.
+const safety = await page.evaluate(() => {
+  const panel = document.querySelector('#safetyPanel').object3D;
+  panel.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(panel.matrixWorld).invert();
+  const t = new THREE.Box3().setFromObject(document.querySelector('#safetyText').getObject3D('text')).applyMatrix4(inv);
+  const bg = document.querySelector('#safetyBg');
+  const w = bg.getAttribute('width') / 2, h = bg.getAttribute('height') / 2;
+  const btnTop = document.querySelector('#btnSafetyOk').object3D.position.y + 0.13;
+  return { ok: t.min.x > -w + 0.05 && t.max.x < w - 0.05 && t.max.y < h && t.min.y > btnTop + 0.03,
+    box: [t.min.x, t.max.x, t.min.y, t.max.y].map(v => +v.toFixed(2)) };
+});
+console.log(`${safety.ok ? 'inside  ' : 'OUTSIDE '} safety notice text ${JSON.stringify(safety.box)}`);
 console.log(`${menuOk ? 'inside  ' : 'OUTSIDE '} menu panel from ${menuSpan.bottom} to ${menuSpan.top} m above the floor`);
 for (const l of labels) console.log(`${l.ok ? 'inside  ' : 'OUTSIDE '} [${l.left}, ${l.right}] in ±${l.half} button: ${l.text}`);
 for (const o of overlaps) console.log(`OVERLAP instructions (bottom ${o.bottom}) run into the counter: ${o.text}`);
 for (const o of out) console.log(`${outside(o) ? "OUTSIDE " : "inside  "} [${o.left}, ${o.right}] ${String(o.width).padEnd(5)} ${o.id.padEnd(14)} ${o.text}`);
 await browser.close();
-process.exit(out.some(outside) || overlaps.length || labels.some(l => !l.ok) || !menuOk || floorTexts.some(f => !f.ok) ? 1 : 0);
+process.exit(out.some(outside) || overlaps.length || labels.some(l => !l.ok) || !menuOk || !safety.ok || floorTexts.some(f => !f.ok) ? 1 : 0);

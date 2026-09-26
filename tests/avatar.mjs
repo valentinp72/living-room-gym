@@ -21,7 +21,7 @@ const open = async i => {
 // measure world-space boxes of body parts, grouped by the joint they hang on.
 const measure = t => page.evaluate(async t => {
   const app = document.querySelector('#stage').components['gym-app'];
-  const { resetPose } = await import('/js/avatar.js');
+  const { resetPose } = await import('/js/avatar.js' + new URL(document.querySelector('script[type=module]').src).search);
   const p = app.mannequin;
   resetPose(p);
   app.current.ex.demo(p, t);
@@ -252,7 +252,7 @@ check('split squats: goes down > 25 cm', ss[0].parts.head.maxY - ss[6].parts.hea
 // cuts through it.
 const inFrame = (i, t) => page.evaluate(async (i, t) => {
   const app = document.querySelector('#stage').components['gym-app'];
-  const { resetPose, idle } = await import('/js/avatar.js');
+  const { resetPose, idle } = await import('/js/avatar.js' + new URL(document.querySelector('script[type=module]').src).search);
   const p = app.mannequin, pose = i === null ? idle : app.pages.single.items[i].demo;
   if (app.centered !== pose) app.centerAvatars(pose);
   resetPose(p);

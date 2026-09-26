@@ -2,7 +2,7 @@
 import { launch } from './lib.mjs';
 const [url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const browser = await launch();
+const browser = await launch({ safetyAccepted: false });
 const page = await browser.newPage();
 await page.setViewport({ width: 1200, height: 800 });
 const errors = [];
@@ -24,6 +24,18 @@ const groupOf = i => page.evaluate(i => document.querySelector('#stage').compone
 const clickItem = async i => { await click('#group-' + await groupOf(i)); await click(['#menuButtons > *', i]); };
 const title = () => page.evaluate(() => document.querySelector('#exercisePanel').getAttribute('visible') ? document.querySelector('#exerciseTitle').getAttribute('value') : 'menu');
 const results = [];
+// First visit: the safety notice, not the menu; the mouse accepts it, and
+// it's not shown again after a reload.
+const visibleNow = sel => page.evaluate(s => document.querySelector(s).getAttribute('visible'), sel);
+results.push({ ok: await visibleNow('#safetyPanel') && !(await visibleNow('#menuPanel')), name: 'safety notice first' });
+results.push({ ok: !(await page.evaluate(() => [...document.querySelectorAll('#menuPanel .button')].some(b => b.classList.contains('clickable')))),
+  name: 'menu not clickable behind the notice' });
+await click('#btnSafetyOk');
+results.push({ ok: !(await visibleNow('#safetyPanel')) && await visibleNow('#menuPanel'), name: 'I understand opens the menu' });
+await page.reload({ waitUntil: 'load' });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await sleep(300);
+results.push({ ok: !(await visibleNow('#safetyPanel')) && await visibleNow('#menuPanel'), name: 'notice remembered after a reload' });
 // The menu opens on the training sets; exercises are on the other tab.
 const visible = sel => page.evaluate(s => document.querySelector(s).getAttribute('visible'), sel);
 results.push({ ok: await visible('#workoutButtons') && !(await visible('#menuButtons')), name: 'menu opens on training sets' });

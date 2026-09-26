@@ -1,5 +1,5 @@
 {
-  "name": "vr-muscle-tests",
+  "name": "living-room-gym-tests",
   "private": true,
   "type": "module",
   "description": "Headless browser tests for www/ (the app itself has no build step).",

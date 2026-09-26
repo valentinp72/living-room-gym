@@ -56,6 +56,8 @@ const check = (name, ok, info = '') => results.push({ name, ok, info });
 const eq = (name, got, want) => check(name, JSON.stringify(got) === JSON.stringify(want), `got=${JSON.stringify(got)} want=${JSON.stringify(want)}`);
 
 // Menu.
+// (Tests import app modules with the page's own ?v= version, if any, so they
+// get the same module instances as the app: see .github/scripts/cache-bust.mjs.)
 const menu = await page.evaluate(() => [...document.querySelectorAll('#workoutButtons > *')].map(b => b.querySelector('a-text').getAttribute('value')));
 eq('menu: training sets start with the easy ones', menu.slice(0, 5), ['Full body starter', 'Legs and glutes', 'Abs',
   'Chest and arms', 'Chair basics\nwith chair']);
@@ -88,7 +90,7 @@ await click('#kit-chair'); await sleep(100);
 eq('equipment: chair back', (await shownSets()).length, 5);
 // Every level has sets, and harder levels have shorter rests and more work.
 const levels = await page.evaluate(async () => {
-  const { WORKOUTS } = await import('/js/workouts.js');
+  const { WORKOUTS } = await import('/js/workouts.js' + new URL(document.querySelector('script[type=module]').src).search);
   const out = {};
   for (const w of WORKOUTS) (out[w.level] = out[w.level] || []).push({ rest: w.rest, reps: w.steps.reduce((n, s) => n + (s.reps || s.seconds / 2), 0) });
   const avg = (l, k) => out[l].reduce((n, w) => n + w[k], 0) / out[l].length;
@@ -224,15 +226,15 @@ await click('#btnBack');
 
 // Paced exercises: a tick per rep, single and in a training set (rest 0: done + go).
 await page.evaluate(async () => {
-  const { EXERCISES } = await import('/js/exercises/index.js');
-  const { paced } = await import('/js/exercises/paced.js');
+  const { EXERCISES } = await import('/js/exercises/index.js' + new URL(document.querySelector('script[type=module]').src).search);
+  const { paced } = await import('/js/exercises/paced.js' + new URL(document.querySelector('script[type=module]').src).search);
   EXERCISES.push({ ...paced({ secondsPerRep: 0.4 }), id: 'paced-test', name: 'Paced test', muscle: 'Test',
     color: '#888', instructions: 'Follow the beat.', demo() {} });
 });
 await sounds();
 const app = fn => page.evaluate(fn);
 await app(async () => {
-  const { exerciseById } = await import('/js/workout-runner.js');
+  const { exerciseById } = await import('/js/workout-runner.js' + new URL(document.querySelector('script[type=module]').src).search);
   document.querySelector('#stage').components['gym-app'].startExercise(exerciseById('paced-test'));
 });
 await sleep(1300);
@@ -246,7 +248,7 @@ eq('paced training set (no rest)', await sounds(), ['rep', 'rep', 'done', 'go', 
 
 // Broken training sets are rejected with a clear message.
 const errs = await app(async () => {
-  const { validateWorkout } = await import('/js/workout-runner.js');
+  const { validateWorkout } = await import('/js/workout-runner.js' + new URL(document.querySelector('script[type=module]').src).search);
   const bad = [
     { id: 'a', level: 'Easy', steps: [] },
     { id: 'b', level: 'Easy', steps: [{ exercise: 'pushups', reps: 5 }] },

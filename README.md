@@ -1,4 +1,6 @@
-# XR Muscle Gym
+# Living Room Gym
+
+[![Test and deploy](https://github.com/valentinp72/living-room-gym/actions/workflows/pages.yml/badge.svg)](https://github.com/valentinp72/living-room-gym/actions/workflows/pages.yml)
 
 A WebXR bodybuilding trainer for **Meta Quest**, built with [A-Frame](https://aframe.io).
 Pick a **training set** (a fixed sequence of exercises with rep or time targets and rests
@@ -12,13 +14,45 @@ It is made for **AR (mixed reality)**: you train in your own room with Quest pas
 and the UI panels and demo avatar appear in it. There is deliberately **no VR mode**:
 exercising without seeing your surroundings could hurt you, so VR sessions are refused.
 
-It is a plain static web app. There is no build step and nothing to install beyond Python 3,
-so it runs directly in the Quest Browser.
+It is a plain static web app: no install, no account, it runs directly in the Quest Browser.
 
-## Status
+**Try it: [https://valentinp72.github.io/living-room-gym/](https://valentinp72.github.io/living-room-gym/)**. On a Meta Quest, open the link in the Quest Browser and
+tap **AR**. On a computer, the same page shows a preview you can click through with the mouse.
 
-Early prototype. It runs in AR on Quest, and in a desktop browser (mouse look + click)
-for testing. See [Known issues](#known-issues).
+> [!WARNING]
+> **You use this app at your own risk.** Exercising while wearing a headset can lead to falls,
+> collisions and strain. Clear the space around you (furniture, walls, stairs, pets, people),
+> keep passthrough on and stay aware of your room, and stop at once if you feel pain,
+> dizziness or discomfort. If you have a health condition, an injury or are pregnant, ask a
+> doctor before training. Rep counts, timers and demos are guides, not medical or coaching
+> advice. The app is provided "as is", without warranty of any kind (see [LICENSE](LICENSE)),
+> and the authors accept no responsibility for any injury or damage resulting from its use.
+>
+> The app shows a short version of this notice before its first use on each device.
+
+## Using it
+
+- **Open it:** in the Quest Browser, go to [https://valentinp72.github.io/living-room-gym/](https://valentinp72.github.io/living-room-gym/), then tap the **AR** button
+  (bottom right). The panels appear about 2 m in front of you, in your room.
+- **Click:** point with the controller laser and pull the trigger. With hand tracking on
+  (Quest settings), put the controllers down, point with your hand and pinch your thumb and
+  index finger.
+- **Bring the panels in front of you** whenever you move (for example to a free patch of
+  floor): press **B / Y**, the **Recenter** button, or use the Quest's own recenter (hold the
+  Meta button, or the palm-up pinch with bare hands). On the menu, the panel also follows you
+  when you turn away or walk off for a moment.
+- **Pick a training set** (by level), or a single exercise to try its detection. On the
+  Training sets tab, the last row says which equipment you have: sets needing something you
+  don't have are hidden.
+- **Desktop preview:** open the same link on a computer, look around with the mouse (drag)
+  and click the panels. Nothing is counted there, but you can see every demo.
+
+## Privacy
+
+Nothing leaves your device: no account, no analytics, no server-side code (GitHub Pages only
+serves the files). Like any web page, the app can't see the passthrough camera image; it only
+gets the headset and hand positions WebXR gives every AR page. It stores two small settings in
+the browser: that you accepted the safety notice, and which equipment you have.
 
 ## Training sets
 
@@ -118,7 +152,14 @@ panel over a chair), the counter follows your face: on the floor under it when f
 On the Training sets tab, the last row says which equipment you have (**Chair**, **Band**,
 **Dumbbells**). Sets that need something you don't have are hidden. The headset remembers it.
 
-## Running locally
+## Development
+
+The app is plain static files in `www/`: native ES modules and [A-Frame](https://aframe.io)
+from a CDN, with no build step and no package manager. `tests/` is the only part with a
+`package.json`.
+
+### Running locally
+
 
 WebXR only works in a **secure context**, so the Quest must load the page over HTTPS.
 `server.py` serves `www/` over HTTPS using a self-signed certificate.
@@ -126,31 +167,20 @@ WebXR only works in a **secure context**, so the Quest must load the page over H
 ```sh
 # 1. (Once) generate a self-signed certificate, if cert.pem / key.pem don't exist yet
 openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-  -keyout key.pem -out cert.pem -subj "/CN=vr-muscle"
+  -keyout key.pem -out cert.pem -subj "/CN=living-room-gym"
 
 # 2. Start the server (serves ./www on port 8443)
 python3 server.py
 ```
 
-Then:
-
-- **Desktop:** open `https://localhost:8443`, accept the certificate warning, look around
-  with the mouse, and click the panels.
-- **Meta Quest:** make sure the headset is on the same network, open the Quest Browser at
-  `https://<your-computer-LAN-IP>:8443`, accept the certificate warning, then tap the **AR**
-  button (bottom right) to train in your room. The panels appear about 2 m in front of you. Whenever you move
-  (for example to a free patch of floor), press **B / Y** or **Recenter** to bring them in
-  front of you again, or use the Quest's own recenter (hold the Meta button, or the palm-up
-  pinch with bare hands). On the menu, the panel also follows you when you turn away or walk
-  off for a moment.
-- **Controllers or bare hands:** point with the controller laser and pull the trigger, or,
-  with hand tracking on (Quest settings), put the controllers down, point with your hand and
-  pinch your thumb and index finger to click. B / Y don't exist without controllers, so use
-  the Recenter button on the panel or the Quest's recenter gesture instead.
+Then open `https://localhost:8443` on the computer, or `https://<your-computer-LAN-IP>:8443`
+in the Quest Browser (same network), and accept the certificate warning. `server.py` tells
+browsers not to cache, so a normal reload picks up your changes.
 
 > `key.pem` is a private key. Never commit it or publish it.
 
-## Tests
+### Tests
+
 
 `tests/` holds headless browser tests (Node 18+ and a local Chrome or Chromium; the app
 itself still has no build step). They load the real page, simulate head poses and fake a
@@ -171,13 +201,30 @@ screenshots: `node tests/workout.mjs http://127.0.0.1:8000/ /tmp/shot` (several 
 a screenshot prefix as second argument). `views.mjs` isn't a test: it screenshots every demo
 pose from several sides.
 
+`WWW=/path/to/copy npm test` runs the suites against another copy of the app (the deploy
+workflow uses it to test exactly what it publishes).
+
 What they can't check: real tracking and passthrough, and whether the rep thresholds suit
 a real body. Those still need a Quest.
 
-## Project structure
+### Deployment
+
+`.github/workflows/pages.yml` publishes the app on GitHub Pages. On every push to `main`, it
+copies `www/` and adds the commit id to every local file link (`app.js?v=1a2b3c4`, see
+`.github/scripts/cache-bust.mjs`), so browsers never mix modules from two versions. It then
+runs the whole test suite against that copy and deploys it only if everything passes. Pull
+requests are built and tested but not deployed.
+
+To set it up on a fork: repository **Settings > Pages > Source: GitHub Actions**, then push to
+`main` (or run the workflow by hand from the **Actions** tab).
+
+### Project structure
+
 
 ```
 .
+├── .github/                   # Deploy workflow (tests + GitHub Pages) and its cache-busting script
+├── LICENSE                    # MIT
 ├── server.py                  # Minimal HTTPS static server for ./www (port 8443)
 ├── cert.pem / key.pem         # Self-signed TLS cert + private key (local dev only, not committed)
 ├── tests/                     # Headless browser tests (puppeteer-core), see "Tests"
@@ -210,7 +257,7 @@ a real body. Those still need a Quest.
 The JavaScript uses native ES modules, so the page has to be served over HTTP(S).
 Opening `index.html` directly from disk won't work.
 
-### Adding a training set
+#### Adding a training set
 
 Add an entry to `WORKOUTS` in `www/js/workouts.js`:
 
@@ -231,7 +278,7 @@ exercises counted in reps and `seconds` for timed ones. A mistake (unknown exerc
 unit, target ≤ 0, unknown level) stops the app on load with an error that names the set and
 step. The equipment a set needs is worked out from its exercises.
 
-### Adding an exercise
+#### Adding an exercise
 
 Create `www/js/exercises/<name>.js`:
 
@@ -270,18 +317,20 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
    (lying down) or rises 12 cm (sitting back). When you are low but not in position, the counter
    says what is off, with the measured height or angle. A knee plank, or kneeling on all
    fours with your face down, also counts.
-2. **New exercise thresholds are estimates.** Crunches (head rises 12 cm), push-ups (head
-   drops 15 cm), lunges, and the exercises added with equipment (chair dips 15 cm, incline
-   push-ups, split squats, Romanian deadlifts, wall sit, side plank) have only been checked
-   with a simulated headset, not on a Quest. The wall sit also counts sitting on a real chair,
-   and the side plank only checks that the head is low and tilted sideways.
-3. **Curl thresholds are unconfirmed on a real Quest.** Curls with controllers are also
-   detected from how much the controller tilts (70°, up to at least 30° above horizontal).
-   These values are estimates. Bare hands must stay in the headset's view.
-4. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
-   simulating an AR session, not yet on a Quest.
+2. **Detection is tuned on one person.** It was tested on a Quest 3 (mostly with bare hands)
+   by one person. Thresholds are relative where possible (to your standing
+   height, or to where a hold started), but other bodies and styles may need tuning: the
+   counter's hints (like `Head lower (85 cm)`) give the numbers to report in an issue.
+3. **Head-only detection has blind spots.** The wall sit also counts sitting on a chair, and
+   the side plank only checks that the head is low and tilted sideways.
+4. **Bare hands must stay in view for curls.** With controllers, curls are also detected from
+   the controller's tilt, so the hands can be out of view.
+5. **Quest Browser only.** Other WebXR headsets with passthrough AR may work but haven't been
+   tried.
 
 ## Roadmap
+
+Early prototype: it runs in AR on Quest 3, and in a desktop browser for previewing.
 
 - [x] Split the code into ES modules (exercises, avatar, UI, rep-detection helpers) while
       keeping the no-build setup
@@ -312,3 +361,8 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 - [A-Frame 1.5.0](https://aframe.io/docs/1.5.0/) (loaded from jsDelivr)
 - WebXR Device API (Meta Quest Browser)
 - Python 3 standard library for the dev server
+
+## License
+
+[MIT](LICENSE) © 2026 Valentin Pelloin. Provided "as is", without warranty: see the safety
+notice above.
