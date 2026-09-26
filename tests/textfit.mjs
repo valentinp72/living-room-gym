@@ -50,8 +50,15 @@ const labels = await page.evaluate(() => [...document.querySelectorAll('#menuPan
   const half = btn.getAttribute('geometry').width / 2;
   return { text: t.getAttribute('value'), ok: w.min.x > -half + 0.02 && w.max.x < half - 0.02, left: +w.min.x.toFixed(2), right: +w.max.x.toFixed(2), half };
 }));
+// The menu panel stays clear of the floor and within reach of the eyes.
+const menuSpan = await page.evaluate(() => {
+  const b = new THREE.Box3().setFromObject(document.querySelector('#menuBg').object3D);
+  return { bottom: +b.min.y.toFixed(2), top: +b.max.y.toFixed(2) };
+});
+const menuOk = menuSpan.bottom > 0.2 && menuSpan.top < 2.7;
+console.log(`${menuOk ? 'inside  ' : 'OUTSIDE '} menu panel from ${menuSpan.bottom} to ${menuSpan.top} m above the floor`);
 for (const l of labels) console.log(`${l.ok ? 'inside  ' : 'OUTSIDE '} [${l.left}, ${l.right}] in ±${l.half} button: ${l.text}`);
 for (const o of overlaps) console.log(`OVERLAP instructions (bottom ${o.bottom}) run into the counter: ${o.text}`);
 for (const o of out) console.log(`${o.left < -1.2 || o.right > 1.2 ? "OUTSIDE " : "inside  "} [${o.left}, ${o.right}] ${String(o.width).padEnd(5)} ${o.id.padEnd(14)} ${o.text}`);
 await browser.close();
-process.exit(out.some(o => o.left < -1.2 || o.right > 1.2) || overlaps.length || labels.some(l => !l.ok) ? 1 : 0);
+process.exit(out.some(o => o.left < -1.2 || o.right > 1.2) || overlaps.length || labels.some(l => !l.ok) || !menuOk ? 1 : 0);

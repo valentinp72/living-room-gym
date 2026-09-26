@@ -46,6 +46,9 @@ function makeText(value, color, width) {
   return text;
 }
 
+// Height of the middle of the menu panel above the floor (m).
+const MENU_CENTER_Y = 1.45;
+
 // Menu tab colors: selected / not selected.
 const TAB = { on: '#0277bd', off: '#37474f' };
 
@@ -128,12 +131,14 @@ export const gymApp = {
   },
   // Menu: a top row with two tabs, "Training sets" and "Single exercises"
   // (each shows its page of buttons) plus Recenter, then the page. The
-  // background fits the longest page, so switching tabs doesn't resize it.
+  // background fits the longest page, so switching tabs doesn't resize it,
+  // and the panel is raised or lowered so its middle is at MENU_CENTER_Y:
+  // it never reaches into the floor.
   buildMenu: function () {
-    const TOP = 1.0;       // top edge of the panel, relative to its center
+    const TOP = 1.0;       // top edge of the panel, relative to the panel entity
     const ROW_Y = 0.45;    // tabs + recenter row
     const PAGE_Y = 0.28;   // top of the pages
-    const ROW = 0.3;       // page row height
+    const ROW = 0.27;      // page row height
     this.pages = {
       sets: {
         tab: makeButton('Training sets', TAB.off, 0.95, 0.24, 2.2),
@@ -144,7 +149,7 @@ export const gymApp = {
       single: {
         tab: makeButton('Single exercises', TAB.off, 0.95, 0.24, 2.2),
         container: document.querySelector('#menuButtons'),
-        items: EXERCISES, cols: 2, width: 1.2, textWidth: 2.6,
+        items: EXERCISES, cols: 3, width: 0.8, textWidth: 2.0,
         label: ex => ex.name, start: ex => this.startExercise(ex),
       },
     };
@@ -155,7 +160,7 @@ export const gymApp = {
       this.menuPanel.appendChild(page.tab);   // not in the container: it only holds buttons
       onClick(page.tab, () => this.showTab(name));
       page.items.forEach((item, j) => {
-        const btn = makeButton(page.label(item), item.color, page.width, 0.24, page.textWidth);
+        const btn = makeButton(page.label(item), item.color, page.width, 0.22, page.textWidth);
         const col = j % page.cols, row = Math.floor(j / page.cols);
         const x = (col - (page.cols - 1) / 2) * (page.width + 0.06);
         btn.setAttribute('position', `${x} ${PAGE_Y - ROW / 2 - row * ROW} 0.01`);
@@ -169,6 +174,7 @@ export const gymApp = {
     const bg = document.querySelector('#menuBg');
     bg.setAttribute('height', TOP - bottom);
     bg.setAttribute('position', `0 ${(TOP + bottom) / 2} 0`);
+    this.menuPanel.object3D.position.y = MENU_CENTER_Y - (TOP + bottom) / 2;
     this.tab = 'sets';
   },
   showTab: function (name) {
