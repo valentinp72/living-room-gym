@@ -9,7 +9,7 @@ const NECK = BODY.shoulderY + 0.08;        // pelvis -> head joint (see buildMan
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'glute-bridges', name: 'Glute Bridges', muscle: 'Glutes', color: '#6a1b9a',
+  id: 'glute-bridges', name: 'Glute Bridges', muscle: 'Glutes', color: '#6a1b9a', floor: true,
   instructions: 'Lie on your back, knees bent, feet flat. On each beat, squeeze your glutes and lift your hips, then lower them.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2 * Math.PI / SECONDS_PER_REP)) / 2;   // one bridge per beat

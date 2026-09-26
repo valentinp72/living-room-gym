@@ -24,7 +24,10 @@ const aim = async (from, targetSel) => {
     Object.assign(fakeXR.hands.right, { kind: 'controller', lost: false, ray: { from, to: [tp.x, tp.y, tp.z] } });
     return name(target);
   }, from, targetSel, nameFn);
-  await sleep(120);
+  // Two animation frames: at least one full scene tick has moved the
+  // pointer (a fixed sleep could miss one on a busy machine and read the
+  // previous aim).
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   const hit = await page.evaluate(nameFn => {
     const name = eval(nameFn);
     const el = document.querySelector('#rightPointer');
@@ -46,15 +49,22 @@ for (const ex of [0, 1, 2]) {
   for (const [spot, from] of Object.entries(spots))
     for (const b of ['#btnBack', '#btnRecenter']) check({ screen: 'exercise ' + ex, spot, ...(await aim(from, b)) });
 }
-// Menu buttons (exercise panel hidden), on both tabs: the hidden tab's
-// buttons sit exactly where the shown ones are.
+// Menu buttons (exercise panel hidden), on both tabs and in every group:
+// the hidden tab's and groups' buttons sit exactly where the shown ones are.
 await page.evaluate(() => document.querySelector('#btnBack').emit('click')); await sleep(150);
-for (const [tab, list] of [['#tabSets', '#workoutButtons'], ['#tabSingle', '#menuButtons']]) {
+for (const [tab, page_, list] of [['#tabSets', 'sets', '#workoutButtons'], ['#tabSingle', 'single', '#menuButtons']]) {
   await page.evaluate(t => document.querySelector(t).emit('click'), tab); await sleep(100);
-  const n = await page.evaluate(l => document.querySelectorAll(l + ' > *').length, list);
+  const groups = await page.evaluate(p => document.querySelector('#stage').components['gym-app'].pages[p].groups.map(g => g.id), page_);
+  for (const g of groups) {
+    await page.evaluate(g => document.querySelector('#group-' + g).emit('click'), g); await sleep(50);
+    const shown = await page.evaluate((p, g) => document.querySelector('#stage').components['gym-app'].pages[p].buttons
+      .map((b, i) => b.group === g ? i : -1).filter(i => i >= 0), page_, g);
+    for (const [spot, from] of Object.entries(spots)) {
+      for (const i of shown) check({ screen: 'menu', spot, ...(await aim(from, [list + ' > *', i])) });
+    }
+  }
   for (const [spot, from] of Object.entries(spots)) {
-    for (let i = 0; i < n; i++) check({ screen: 'menu', spot, ...(await aim(from, [list + ' > *', i])) });
-    for (const t of ['#tabSets', '#tabSingle']) check({ screen: 'menu', spot, ...(await aim(from, t)) });
+    for (const t of ['#tabSets', '#tabSingle', ...groups.map(g => '#group-' + g)]) check({ screen: 'menu', spot, ...(await aim(from, t)) });
   }
 }
 for (const [spot, from] of Object.entries(spots)) check({ screen: 'menu', spot, ...(await aim(from, '#btnRecenterMenu')) });

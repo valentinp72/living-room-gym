@@ -19,6 +19,9 @@ const screenOf = sel => page.evaluate(sel => {
   return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height];
 }, sel);
 const click = async sel => { const [x, y] = await screenOf(sel); await page.mouse.move(x, y); await sleep(100); await page.mouse.down(); await page.mouse.up(); await sleep(250); };
+// Exercises are grouped (Standing, Floor, Chair...): pick the button's group first.
+const groupOf = i => page.evaluate(i => document.querySelector('#stage').components['gym-app'].pages.single.buttons[i].group, i);
+const clickItem = async i => { await click('#group-' + await groupOf(i)); await click(['#menuButtons > *', i]); };
 const title = () => page.evaluate(() => document.querySelector('#exercisePanel').getAttribute('visible') ? document.querySelector('#exerciseTitle').getAttribute('value') : 'menu');
 const results = [];
 // The menu opens on the training sets; exercises are on the other tab.
@@ -27,7 +30,7 @@ results.push({ ok: await visible('#workoutButtons') && !(await visible('#menuBut
 await click('#tabSingle');
 results.push({ ok: !(await visible('#workoutButtons')) && await visible('#menuButtons'), name: 'mouse switches tab' });
 for (const [i, want] of [[2, 'PLANK HOLD - Abs'], [1, 'BICEP CURLS - Arms'], [0, 'SQUATS - Legs']]) {
-  await click(['#menuButtons > *', i]);
+  await clickItem(i);
   const got = await title(); results.push({ ok: got === want, name: 'mouse opens ' + want, got });
   await click('#btnBack');
   const m = await title(); results.push({ ok: m === 'menu', name: 'mouse Back', got: m });
@@ -35,7 +38,7 @@ for (const [i, want] of [[2, 'PLANK HOLD - Abs'], [1, 'BICEP CURLS - Arms'], [0,
 // Every exercise button opens its own exercise.
 const names = await page.evaluate(() => [...document.querySelectorAll('#menuButtons > *')].map(b => b.querySelector('a-text').getAttribute('value')));
 for (const [i, name] of names.entries()) {
-  await click(['#menuButtons > *', i]);
+  await clickItem(i);
   const got = await title(); results.push({ ok: got.startsWith(name.toUpperCase() + ' - '), name: 'mouse opens ' + name, got });
   await click('#btnBack');
 }

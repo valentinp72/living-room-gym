@@ -57,8 +57,27 @@ const eq = (name, got, want) => check(name, JSON.stringify(got) === JSON.stringi
 
 // Menu.
 const menu = await page.evaluate(() => [...document.querySelectorAll('#workoutButtons > *')].map(b => b.querySelector('a-text').getAttribute('value')));
-eq('menu lists the training sets', menu, ['Full body starter (Easy)', 'Legs and glutes (Easy)', 'Abs (Easy)',
-  'Chest and arms (Easy)', 'Full body (Medium)']);
+eq('menu: training sets start with the easy ones', menu.slice(0, 5), ['Full body starter', 'Legs and glutes', 'Abs',
+  'Chest and arms', 'Chair basics\nwith chair']);
+check('menu: equipment on the label', menu.includes('Leg day\nwith dumbbells, chair'), JSON.stringify(menu));
+// Only the chosen level's sets are shown (and clickable).
+const shownSets = () => page.evaluate(() => [...document.querySelectorAll('#workoutButtons > *')]
+  .filter(b => b.getAttribute('visible') && b.classList.contains('clickable')).map(b => b.querySelector('a-text').getAttribute('value').split('\n')[0]));
+eq('menu: easy sets shown first', await shownSets(), ['Full body starter', 'Legs and glutes', 'Abs', 'Chest and arms', 'Chair basics']);
+await click('#group-hard'); await sleep(100);
+eq('menu: hard sets', await shownSets(), ['Full body challenge', 'Core crusher', 'Leg day', 'Upper body', 'Cardio blast']);
+await click('#group-easy'); await sleep(100);
+// Every level has sets, and harder levels have shorter rests and more work.
+const levels = await page.evaluate(async () => {
+  const { WORKOUTS } = await import('/js/workouts.js');
+  const out = {};
+  for (const w of WORKOUTS) (out[w.level] = out[w.level] || []).push({ rest: w.rest, reps: w.steps.reduce((n, s) => n + (s.reps || s.seconds / 2), 0) });
+  const avg = (l, k) => out[l].reduce((n, w) => n + w[k], 0) / out[l].length;
+  return ['Easy', 'Medium', 'Hard'].map(l => ({ l, n: out[l].length, rest: avg(l, 'rest'), work: avg(l, 'reps') }));
+});
+check('levels: each has sets', levels.every(l => l.n >= 3), JSON.stringify(levels));
+check('levels: rests get shorter, work longer', levels[0].rest > levels[1].rest && levels[1].rest > levels[2].rest &&
+  levels[0].work < levels[1].work && levels[1].work < levels[2].work, JSON.stringify(levels));
 // Every training set is valid (validateWorkout runs on load; a throw would be a page error).
 if (shot) await page.screenshot({ path: shot + '-menu.png' });
 
@@ -196,17 +215,19 @@ eq('paced training set (no rest)', await sounds(), ['rep', 'rep', 'done', 'go', 
 const errs = await app(async () => {
   const { validateWorkout } = await import('/js/workout-runner.js');
   const bad = [
-    { id: 'a', steps: [] },
-    { id: 'b', steps: [{ exercise: 'pushups', reps: 5 }] },
-    { id: 'c', steps: [{ exercise: 'plank', reps: 5 }] },
-    { id: 'd', steps: [{ exercise: 'squats', reps: 0 }] },
+    { id: 'a', level: 'Easy', steps: [] },
+    { id: 'b', level: 'Easy', steps: [{ exercise: 'pushups', reps: 5 }] },
+    { id: 'c', level: 'Easy', steps: [{ exercise: 'plank', reps: 5 }] },
+    { id: 'd', level: 'Easy', steps: [{ exercise: 'squats', reps: 0 }] },
+    { id: 'e', level: 'Expert', steps: [{ exercise: 'squats', reps: 5 }] },
   ];
   return bad.map(w => { try { validateWorkout(w); return 'accepted'; } catch (e) { return e.message; } });
 });
 eq('validation messages', errs, ['Training set "a" has no steps',
   'Training set "b", step 1: unknown exercise "pushups"',
   'Training set "c", step 1: "plank" needs seconds, got reps',
-  'Training set "d", step 1: target must be > 0']);
+  'Training set "d", step 1: target must be > 0',
+  'Training set "e": level must be one of Easy, Medium, Hard']);
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : '   ' + r.info));
 console.log('page errors:', errors.length ? errors : 'none');

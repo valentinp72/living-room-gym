@@ -129,8 +129,71 @@ export function resetPose(parts) {
   place(parts.root, parts.shiftX || 0);
   turn(parts, DEFAULT_TURN);
   place(parts.pelvis, 0, PELVIS_Y, 0);
-  for (const name of JOINTS) rot(parts[name]);
+  for (const name of JOINTS) {
+    rot(parts[name]);
+    parts[name].object3D.rotation.order = 'XYZ';   // a demo may change it
+  }
+  hideProps(parts);
 }
+
+// Props (chair, dumbbells, band, wall): built with the mannequin, hidden
+// until a demo shows them. Hidden props are taken out of the scene graph,
+// not just made invisible, so they never count in bounding boxes
+// (centerDemo(), tests).
+function hideProps(parts) {
+  for (const prop of Object.values(parts.props)) {
+    if (prop.el.object3D.parent) prop.el.object3D.removeFromParent();
+  }
+}
+function showProp(parts, name) {
+  const prop = parts.props[name];
+  if (!prop.el.object3D.parent) prop.parent.add(prop.el.object3D);
+  return prop.el;
+}
+
+// A chair (seat top CHAIR_SEAT_Y high, CHAIR_SIZE square, backrest on its
+// own -z side) with the middle of its seat at root { x, z }, turned `yaw`
+// degrees. yaw 0: the front edge of the seat faces +z.
+export const CHAIR_SEAT_Y = 0.45;
+export const CHAIR_SIZE = 0.42;
+export function showChair(parts, z, yaw = 0, x = 0) {
+  const chair = showProp(parts, 'chair');
+  place(chair, x, 0, z);
+  rot(chair, 0, yaw, 0);
+}
+
+// Dumbbells in one or both hands ('L', 'R' or 'LR'), across the palm.
+export function showDumbbells(parts, sides = 'LR') {
+  for (const s of sides) showProp(parts, 'dumbbell' + s);
+}
+
+// A wall behind the mannequin, its surface at root z = `z`.
+export function showWall(parts, z) {
+  place(showProp(parts, 'wall'), 0, 0.7, z - 0.02);
+}
+
+// Elastic band pieces (band1, band2) stretched between two points of the
+// body, given as { el, at } where `at` is a point in el's own frame (e.g. a
+// hand: { el: parts.elbowR, at: [0, -HAND, 0] }). Call it after posing the
+// body: it reads the joints' current transforms.
+export function showBand(parts, name, a, b) {
+  const band = showProp(parts, name);
+  const root = parts.root.object3D;
+  root.updateMatrixWorld(true);
+  const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const pa = new THREE.Vector3(...a.at).applyMatrix4(a.el.object3D.matrixWorld).applyMatrix4(toRoot);
+  const pb = new THREE.Vector3(...b.at).applyMatrix4(b.el.object3D.matrixWorld).applyMatrix4(toRoot);
+  const o = band.object3D;
+  o.position.addVectors(pa, pb).multiplyScalar(0.5);
+  const dir = pb.sub(pa);
+  o.scale.set(1, Math.max(dir.length(), 1e-3), 1);   // the band is 1 m long, along +y
+  o.quaternion.setFromUnitVectors(UP, dir.normalize());
+}
+const UP = new THREE.Vector3(0, 1, 0);
+// Points for showBand(): the middle of a hand, a knee, the front of a foot.
+export const handOf = (parts, s) => ({ el: parts['elbow' + s], at: [0, -HAND, 0] });
+export const kneeOf = (parts, s) => ({ el: parts['knee' + s], at: [0, 0, 0] });
+export const footOf = (parts, s) => ({ el: parts['ankle' + s], at: [0, -BODY.ankle / 2, 0.13] });
 
 // Center a demo sideways in its holder: poses lying down stick out further
 // on one side (the legs are longer than the torso and head). Samples
@@ -169,6 +232,8 @@ const JOINTS = ['pelvis', 'spine', 'head', 'shoulderL', 'shoulderR', 'elbowL', '
 
 // Soft, friendly colors: light "skin", a teal shirt, dark shorts and shoes.
 const SKIN = '#e8ecf2', SHIRT = '#4db6ac', SHORTS = '#455a64', SHOES = '#37474f', EYES = '#37474f';
+// Props: a light wooden chair, dark dumbbells, an orange band, a pale wall.
+const WOOD = '#a1887f', IRON = '#546e7a', BAND = '#ff7043', WALL = '#90a4ae';
 
 // Builds a mannequin inside `parentEl`, with its root entity's id `id`.
 // Every body part has class "part" (tests measure them).
@@ -238,6 +303,50 @@ export function buildMannequin(parentEl, id) {
   const [hipL, kneeL, ankleL] = leg(-1);
   const [hipR, kneeR, ankleR] = leg(1);
 
-  return { root, pelvis, spine, head, shoulderL, shoulderR, elbowL, elbowR,
-    hipL, hipR, kneeL, kneeR, ankleL, ankleR };
+  // Props (class "prop", not "part": they aren't body parts).
+  function prop(parent, color, geometry, pos, extra = {}) {
+    const e = document.createElement('a-entity');
+    e.classList.add('prop');
+    e.setAttribute('geometry', geometry);
+    e.setAttribute('material', { color, roughness: 0.85 });
+    e.setAttribute('position', pos);
+    for (const [k, v] of Object.entries(extra)) e.setAttribute(k, v);
+    parent.appendChild(e);
+    return e;
+  }
+  const S = CHAIR_SIZE, Y = CHAIR_SEAT_Y;
+  const chair = node(root, '0 0 0');
+  prop(chair, WOOD, { primitive: 'box', width: S, height: 0.04, depth: S }, `0 ${Y - 0.02} 0`);
+  for (const x of [-1, 1]) for (const z of [-1, 1]) {
+    prop(chair, WOOD, { primitive: 'box', width: 0.035, height: Y - 0.04, depth: 0.035 },
+      `${x * (S / 2 - 0.03)} ${(Y - 0.04) / 2} ${z * (S / 2 - 0.03)}`);
+  }
+  prop(chair, WOOD, { primitive: 'box', width: S, height: 0.42, depth: 0.03 }, `0 ${Y + 0.21} ${-S / 2 + 0.015}`);
+  // Dumbbells: on the hand balls, across the palm (along x).
+  const dumbbell = handBall => {
+    const d = node(handBall, '0 0 0');
+    prop(d, IRON, { primitive: 'cylinder', radius: 0.012, height: 0.2 }, '0 0 0', { rotation: '0 0 90' });
+    for (const x of [-0.09, 0.09]) prop(d, IRON, { primitive: 'cylinder', radius: 0.045, height: 0.05 }, `${x} 0 0`, { rotation: '0 0 90' });
+    return d;
+  };
+  const band = () => {
+    const b = node(root, '0 0 0');
+    prop(b, BAND, { primitive: 'cylinder', radius: 0.01, height: 1 }, '0 0 0');
+    return b;
+  };
+  const wall = node(root, '0 0.7 0');
+  prop(wall, WALL, { primitive: 'box', width: 0.9, height: 1.4, depth: 0.04 }, '0 0 0', { material: { color: WALL, opacity: 0.55, transparent: true } });
+  const hand = elbow => elbow.querySelector(':scope > .part:last-child');
+  const props = {};
+  const keep = (name, el) => { props[name] = { el, parent: el.parentNode.object3D }; };
+  keep('chair', chair);
+  keep('dumbbellL', dumbbell(hand(elbowL)));
+  keep('dumbbellR', dumbbell(hand(elbowR)));
+  keep('band1', band());
+  keep('band2', band());
+  keep('wall', wall);
+
+  const parts = { root, pelvis, spine, head, shoulderL, shoulderR, elbowL, elbowR,
+    hipL, hipR, kneeL, kneeR, ankleL, ankleR, props };
+  return parts;
 }

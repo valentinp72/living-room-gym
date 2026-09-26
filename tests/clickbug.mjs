@@ -42,14 +42,15 @@ const expect = (name, got, want) => results.push({ name, ok: JSON.stringify(got)
 
 await page.evaluate(() => document.querySelector('#tabSingle').emit('click'));
 for (const kind of ['hand', 'controller']) {
-  // Head looks at Squats, hand points at Plank Hold, left hand points at Bicep Curls.
+  // Head looks at Squats, hand points at Lunges, left hand points at Bicep Curls
+  // (all three in the Standing group, shown first).
   await lookAt(['#menuButtons > *', 0]);
-  await point('right', kind, ['#menuButtons > *', 2]);
+  await point('right', kind, ['#menuButtons > *', 7]);
   await point('left', kind, ['#menuButtons > *', 1]);
   await sleep(200);
   await page.evaluate(() => { starts.length = 0; fakeSelect('right'); });
   await sleep(200);
-  expect(`${kind}: right select opens only Plank`, await page.evaluate(() => starts), ['Plank Hold']);
+  expect(`${kind}: right select opens only Lunges`, await page.evaluate(() => starts), ['Lunges']);
   await back(); await sleep(200);
 }
 

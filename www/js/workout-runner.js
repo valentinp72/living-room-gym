@@ -2,6 +2,7 @@
 // reached, a rest between steps, then done. Pure logic: the app feeds it
 // frames and turns the returned events into sounds and UI.
 import { EXERCISES } from './exercises/index.js';
+import { LEVELS } from './workouts.js';
 
 export const exerciseById = id => EXERCISES.find(e => e.id === id);
 
@@ -14,6 +15,7 @@ export const describeStep = step => (step.reps !== undefined ? step.reps + ' rep
 // up as soon as the app loads.
 export function validateWorkout(w) {
   if (!w.steps || !w.steps.length) throw new Error(`Training set "${w.id}" has no steps`);
+  if (!LEVELS.includes(w.level)) throw new Error(`Training set "${w.id}": level must be one of ${LEVELS.join(', ')}`);
   w.steps.forEach((step, i) => {
     const ex = exerciseById(step.exercise);
     const where = `Training set "${w.id}", step ${i + 1}`;
@@ -23,6 +25,9 @@ export function validateWorkout(w) {
     if (!(targetOf(step) > 0)) throw new Error(`${where}: target must be > 0`);
   });
 }
+
+// Equipment a training set needs ('chair', 'band', 'weights'), in step order.
+export const equipmentOf = w => [...new Set(w.steps.map(s => exerciseById(s.exercise).equipment).filter(Boolean))];
 
 function beginStep(run, index) {
   run.index = index;

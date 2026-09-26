@@ -1,15 +1,16 @@
 import { BODY, place, rot, turn, along, armTo, onToesY, HAND, HAND_R } from '../avatar.js';
 import { gazeY } from '../tracking.js';
 
-// Push-ups (full or on the knees), from the headset alone: face down with
-// the head low, each push-up takes the head down and back up.
-const MAX_Y = 0.9;        // head above this (m) = not in push-up position
-const FACE_DOWN = -0.5;   // gaze y below this = looking at the floor
-const DOWN = 0.15;        // head goes this far below its highest point...
-const UP = 0.12;          // ...then back up this far = 1 rep
+// Push-ups (full, on the knees, or hands on a chair), from the headset
+// alone: face down with the head low, each push-up takes the head down and
+// back up. Defaults are for push-ups on the floor:
+//   maxY      head above this (m) = not in push-up position
+//   faceDown  gaze y below this = looking at the floor
+//   down, up  the head goes `down` below its highest point, then back up
+//             `up` = 1 rep
 const GRACE_MS = 500;     // out of position this long forgets a rep in progress
 
-export function pushUpReps() {
+export function pushUpReps({ maxY = 0.9, faceDown = -0.5, down = 0.15, up = 0.12 } = {}) {
   return {
     unit: 'reps',
     state: () => ({ reps: 0, ready: false, down: false, high: null, low: null, outMs: 0 }),
@@ -17,7 +18,7 @@ export function pushUpReps() {
       const head = ctx.camera.object3D;
       if (!head) return;
       const y = head.position.y;
-      if (y > MAX_Y || gazeY(head) > FACE_DOWN) {
+      if (y > maxY || gazeY(head) > faceDown) {
         st.outMs += dt;
         if (st.outMs > GRACE_MS) { st.down = false; st.high = st.low = null; }
         return;
@@ -26,10 +27,10 @@ export function pushUpReps() {
       st.ready = true;
       if (!st.down) {
         st.high = st.high === null ? y : Math.max(st.high, y);
-        if (st.high - y > DOWN) { st.down = true; st.low = y; }
+        if (st.high - y > down) { st.down = true; st.low = y; }
       } else {
         st.low = Math.min(st.low, y);
-        if (y - st.low > UP) { st.down = false; st.high = y; st.reps++; }
+        if (y - st.low > up) { st.down = false; st.high = y; st.reps++; }
       }
     },
     count: st => st.reps,
@@ -44,7 +45,7 @@ const KNEE_Y = 0.06;   // knee joint height when kneeling (half the thigh box)
 
 // Body tilt (degrees from vertical) that puts the shoulders at height h:
 // solved numerically, the tilt -> height curve only goes down.
-function tiltFor(h, heightAt) {
+export function tiltFor(h, heightAt) {
   let lo = 20, hi = 89.9;
   for (let i = 0; i < 30; i++) {
     const mid = (lo + hi) / 2;
@@ -55,6 +56,7 @@ function tiltFor(h, heightAt) {
 
 // Push-up demo; `knees` = on the knees instead of the toes. The body stays
 // straight from the toes (or knees) to the head, the hands stay planted.
+// Returns the pelvis position and the body's tilt.
 export function pushUpDemo(parts, t, knees) {
   const c = (1 - Math.cos(t * 2)) / 2;   // 0 = arms straight, 1 = chest low
   const h = TOP_Y + (BOTTOM_Y - TOP_Y) * c;
@@ -79,11 +81,12 @@ export function pushUpDemo(parts, t, knees) {
   }
   rot(parts.head, -20);                    // look at the floor ahead
   turn(parts, 90);
+  return { pelvis, tilt };
 }
 
 export default {
   ...pushUpReps(),
-  id: 'push-ups', name: 'Push-ups', muscle: 'Chest', color: '#c62828',
+  id: 'push-ups', name: 'Push-ups', muscle: 'Chest', color: '#c62828', floor: true,
   instructions: 'Hands under your shoulders, body straight. Lower your chest to the floor, then push back up.',
   demo: (parts, t) => pushUpDemo(parts, t, false),
 };

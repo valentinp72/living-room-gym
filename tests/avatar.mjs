@@ -29,22 +29,35 @@ const measure = t => page.evaluate(async t => {
   // Everything in the holder's frame, unscaled: meters of a full-size
   // mannequin standing on y = 0 (the holder shrinks it on the panel).
   const toHolder = new THREE.Matrix4().copy(p.root.parentNode.object3D.matrixWorld).invert();
+  // Also in the mannequin's own frame (root: +z = its front, before
+  // turn()), for checks against props, which demos place in that frame.
+  const toRoot = new THREE.Matrix4().copy(p.root.object3D.matrixWorld).invert();
+  // Box of the vertices in a frame (a box rotated afterwards would grow).
+  const v = new THREE.Vector3(), m = new THREE.Matrix4();
+  const vertexBox = (b, mesh, toFrame) => {
+    m.multiplyMatrices(toFrame, mesh.matrixWorld);
+    const pos = mesh.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) b.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(m));
+  };
   const box = el => {
-    const b = new THREE.Box3();
+    const b = new THREE.Box3(), rb = new THREE.Box3();
     // precise: from the vertices (a rotated sphere's box would stick out).
     for (const c of el.children) if (c.classList.contains('part')) b.expandByObject(c.getObject3D('mesh'), true);
+    for (const c of el.children) if (c.classList.contains('part')) vertexBox(rb, c.getObject3D('mesh'), toRoot);
     b.applyMatrix4(toHolder);
-    return { minY: b.min.y, maxY: b.max.y, cx: (b.min.x + b.max.x) / 2, cz: (b.min.z + b.max.z) / 2 };
+    return { minY: b.min.y, maxY: b.max.y, cx: (b.min.x + b.max.x) / 2, cz: (b.min.z + b.max.z) / 2,
+      minZ: rb.min.z, maxZ: rb.max.z };
   };
   const all = new THREE.Box3().expandByObject(p.root.object3D, true).applyMatrix4(toHolder);
   // Hand centers (the spheres on the elbows).
   const hand = el => { const v = new THREE.Vector3(); el.querySelector(':scope > .part:last-child').object3D.getWorldPosition(v); v.applyMatrix4(toHolder); return { y: r(v.y), z: r(v.z), x: r(v.x) }; };
   const r = n => Math.round(n * 1000) / 1000;
   const parts = {};
-  for (const k of ['spine', 'head', 'elbowL', 'elbowR', 'kneeL', 'kneeR', 'ankleL', 'ankleR']) {
+  for (const k of ['pelvis', 'spine', 'head', 'elbowL', 'elbowR', 'kneeL', 'kneeR', 'ankleL', 'ankleR']) {
     const b = box(p[k]); parts[k] = Object.fromEntries(Object.entries(b).map(([a, v]) => [a, r(v)]));
   }
-  return { minY: r(all.min.y), maxY: r(all.max.y), parts, handL: hand(p.elbowL), pelvisRot: r(p.pelvis.object3D.rotation.x) };
+  const handR = hand(p.elbowR);
+  return { minY: r(all.min.y), maxY: r(all.max.y), parts, handL: hand(p.elbowL), handR, pelvisRot: r(p.pelvis.object3D.rotation.x) };
 }, t);
 
 const results = [];
@@ -158,6 +171,80 @@ check('fire hydrants: hands on floor', onFloor(fh, ['elbowL', 'elbowR']), lows(f
 check('fire hydrants: a knee always down', fh.every(p => near(p.parts.kneeL.minY, 0) || near(p.parts.kneeR.minY, 0)));
 check('fire hydrants: each knee lifts', fh.some(p => p.parts.kneeL.minY > 0.15) && fh.some(p => p.parts.kneeR.minY > 0.15),
   lows(fh, 'kneeL') + ' | ' + lows(fh, 'kneeR'));
+
+// Exercises added with equipment and more floor work. openId: by id.
+const cycleOf = async (id, period, n = 12) => {
+  const i = await page.evaluate(id => document.querySelector('#stage').components['gym-app'].pages.single.items.findIndex(e => e.id === id), id);
+  return cycle(i, period, n);
+};
+const flat = (poses, parts) => onFloor(poses, parts, 0.015);
+const someOnFloor = (poses, parts) => poses.every(p => parts.some(k => near(p.parts[k].minY, 0, 0.02)));
+const SEAT = 0.45;
+const range = (poses, f) => { const v = poses.map(f); return [Math.min(...v), Math.max(...v)].map(n => +n.toFixed(3)); };
+
+// Standing exercises: nothing below the floor, feet on the floor.
+for (const [id, period, feet] of [['jumping-jacks', 1.5, ['ankleL', 'ankleR']], ['goblet-squats', 2 * Math.PI / 1.6, ['ankleL', 'ankleR']],
+  ['romanian-deadlifts', 2 * Math.PI / 1.6, ['ankleL', 'ankleR']], ['shoulder-press', 2.5, ['ankleL', 'ankleR']],
+  ['bent-over-rows', 2.5, ['ankleL', 'ankleR']], ['lateral-raises', 3, ['ankleL', 'ankleR']],
+  ['band-pull-aparts', 2.5, ['ankleL', 'ankleR']], ['wall-sit', 4, ['ankleL', 'ankleR']]]) {
+  const po = await cycleOf(id, period);
+  check(id + ': nothing below floor', above(po), po.map(p => p.minY).join(' '));
+  check(id + ': feet flat on floor', flat(po, feet), feet.map(k => lows(po, k)).join(' | '));
+}
+const rdl = await cycleOf('romanian-deadlifts', 2 * Math.PI / 1.6);
+check('romanian deadlifts: head drops > 35 cm', rdl[0].parts.head.maxY - rdl[6].parts.head.maxY > 0.35, rdl[0].parts.head.maxY - rdl[6].parts.head.maxY);
+check('romanian deadlifts: feet do not slide', rdl.every(p => near(p.parts.ankleL.cz, rdl[0].parts.ankleL.cz) && near(p.parts.ankleL.cx, rdl[0].parts.ankleL.cx)));
+const ws = await cycleOf('wall-sit', 4);
+check('wall sit: thighs level (knees at hip height)', ws.every(p => near(p.parts.kneeL.maxY, p.parts.pelvis.maxY - 0.02, 0.06)), range(ws, p => p.parts.kneeL.maxY - p.parts.pelvis.maxY));
+check('wall sit: back against the wall (z = -0.1)', ws.every(p => p.parts.spine.minZ > -0.1 && p.parts.spine.minZ < -0.07), range(ws, p => p.parts.spine.minZ));
+const bs = await cycleOf('band-side-steps', 3, 12);
+check('band side steps: nothing below floor', above(bs), bs.map(p => p.minY).join(' '));
+check('band side steps: a foot always on the floor', someOnFloor(bs, ['ankleL', 'ankleR']), lows(bs, 'ankleL') + ' | ' + lows(bs, 'ankleR'));
+
+// Floor exercises: what touches the floor.
+const sp = await cycleOf('side-plank', 4);
+check('side plank: nothing below floor', above(sp), sp.map(p => p.minY).join(' '));
+check('side plank: on the forearm and foot', flat(sp, ['elbowR', 'ankleR']), lows(sp, 'elbowR') + ' | ' + lows(sp, 'ankleR'));
+check('side plank: hips off the floor', sp.every(p => p.parts.pelvis.minY > 0.12), range(sp, p => p.parts.pelvis.minY));
+const mc = await cycleOf('mountain-climbers', 2, 16);
+check('mountain climbers: nothing below floor', above(mc), mc.map(p => p.minY).join(' '));
+check('mountain climbers: hands on floor', flat(mc, ['elbowL', 'elbowR']), lows(mc, 'elbowL'));
+check('mountain climbers: a foot always down', someOnFloor(mc, ['ankleL', 'ankleR']), lows(mc, 'ankleL') + ' | ' + lows(mc, 'ankleR'));
+check('mountain climbers: each knee comes forward', ['kneeL', 'kneeR'].every(k => mc.some(p => p.parts[k].maxZ > mc[0].parts.kneeL.maxZ + 0.3)), range(mc, p => p.parts.kneeL.maxZ) + ' | ' + range(mc, p => p.parts.kneeR.maxZ));
+for (const [id, period] of [['bird-dogs', 6], ['donkey-kicks', 4]]) {
+  const po = await cycleOf(id, period, 16);
+  check(id + ': nothing below floor', above(po), po.map(p => p.minY).join(' '));
+  check(id + ': a hand always down', someOnFloor(po, ['elbowL', 'elbowR']), lows(po, 'elbowL') + ' | ' + lows(po, 'elbowR'));
+  check(id + ': a knee always down', someOnFloor(po, ['kneeL', 'kneeR']), lows(po, 'kneeL') + ' | ' + lows(po, 'kneeR'));
+  check(id + ': each leg lifts', ['kneeL', 'kneeR'].every(k => po.some(p => p.parts[k].minY > 0.2)), lows(po, 'kneeL') + ' | ' + lows(po, 'kneeR'));
+}
+const br = await cycleOf('band-rows', 2.5);
+check('band rows: nothing below floor', above(br), br.map(p => p.minY).join(' '));
+check('band rows: sitting, legs on the floor', flat(br, ['pelvis']) && onFloor(br, ['kneeL', 'kneeR'], 0.03), lows(br, 'pelvis') + ' | ' + lows(br, 'kneeL'));
+
+// Chair exercises: the seat's top is at y = 0.45 in the mannequin's frame.
+const cd = await cycleOf('chair-dips', Math.PI);
+check('chair dips: nothing below floor', above(cd), cd.map(p => p.minY).join(' '));
+check('chair dips: hands on the seat', cd.every(p => near(p.parts.elbowL.minY, SEAT, 0.015)), lows(cd, 'elbowL'));
+check('chair dips: feet flat on floor', flat(cd, ['ankleL', 'ankleR']), lows(cd, 'ankleL'));
+check('chair dips: hips stay in front of the seat', cd.every(p => p.parts.pelvis.minZ > -0.005 && p.parts.spine.minZ > -0.005), range(cd, p => p.parts.pelvis.minZ));
+check('chair dips: shoulders go down > 18 cm', cd[0].parts.head.maxY - cd[6].parts.head.maxY > 0.18);
+const ip = await cycleOf('incline-push-ups', Math.PI);
+check('incline push-ups: nothing below floor', above(ip), ip.map(p => p.minY).join(' '));
+check('incline push-ups: hands on the seat', ip.every(p => near(p.parts.elbowL.minY, SEAT, 0.015)), lows(ip, 'elbowL'));
+check('incline push-ups: toes on the floor', onFloor(ip, ['ankleL', 'ankleR']), lows(ip, 'ankleL'));
+check('incline push-ups: head stays above the seat', ip.every(p => p.parts.head.minY > SEAT + 0.1), lows(ip, 'head'));
+check('incline push-ups: chest goes down', ip[0].parts.spine.maxY - ip[6].parts.spine.maxY > 0.2);
+const cs = await cycleOf('chair-squats', 2 * Math.PI / 1.6);
+check('chair squats: feet flat on floor', flat(cs, ['ankleL', 'ankleR']), lows(cs, 'ankleL'));
+check('chair squats: sits on the seat at the bottom', near(cs[6].parts.pelvis.minY, SEAT, 0.02), cs[6].parts.pelvis.minY);
+check('chair squats: never through the seat', cs.every(p => p.parts.pelvis.minY > SEAT - 0.02), lows(cs, 'pelvis'));
+const ss = await cycleOf('split-squats', 2 * Math.PI / 1.6);
+check('split squats: nothing below floor', above(ss), ss.map(p => p.minY).join(' '));
+check('split squats: front foot flat on floor', flat(ss, ['ankleL']), lows(ss, 'ankleL'));
+check('split squats: back foot on the seat', ss.every(p => near(p.parts.ankleR.minY, SEAT, 0.02)), lows(ss, 'ankleR'));
+check('split squats: back knee stays up', ss.every(p => p.parts.kneeR.minY > 0.08), lows(ss, 'kneeR'));
+check('split squats: goes down > 25 cm', ss[0].parts.head.maxY - ss[6].parts.head.maxY > 0.25);
 
 // On the panel: every demo (and the resting idle pose) stays inside the
 // avatar's frame as the user sees it (projected onto the panel from eye

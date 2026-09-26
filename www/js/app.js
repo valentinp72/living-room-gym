@@ -1,7 +1,7 @@
-import { EXERCISES, movesOf } from './exercises/index.js';
-import { WORKOUTS } from './workouts.js';
+import { EXERCISES, GROUPS, groupOf, EQUIPMENT_NAMES, movesOf } from './exercises/index.js';
+import { WORKOUTS, LEVELS } from './workouts.js';
 import { validateWorkout, createRun, updateRun, skip, currentStep, nextStep, targetOf,
-  describeStep, exerciseById } from './workout-runner.js';
+  describeStep, exerciseById, equipmentOf } from './workout-runner.js';
 import { buildMannequin, resetPose, idle, centerDemo } from './avatar.js';
 import { readHands, gazeY } from './tracking.js';
 import { play, unlockAudio } from './sound.js';
@@ -22,7 +22,9 @@ function onClick(el, fn) {
   el.addEventListener('click', () => { unlockAudio(); fn(); });
 }
 
-function makeButton(label, color, width, height, textWidth = 3.2) {
+// wrapCount: characters per line (a-text's default is 40 per `textWidth`),
+// so long labels go on two lines.
+function makeButton(label, color, width, height, textWidth = 3.2, wrapCount = null) {
   const btn = document.createElement('a-entity');
   btn.setAttribute('class', 'button');
   btn.setAttribute('geometry', { primitive: 'plane', width, height });
@@ -32,6 +34,7 @@ function makeButton(label, color, width, height, textWidth = 3.2) {
   text.setAttribute('align', 'center');
   text.setAttribute('color', '#fff');
   text.setAttribute('width', textWidth);
+  if (wrapCount) text.setAttribute('wrap-count', wrapCount);
   text.setAttribute('position', '0 0 0.01');
   btn.appendChild(text);
   return btn;
@@ -49,8 +52,10 @@ function makeText(value, color, width) {
 // Height of the middle of the menu panel above the floor (m).
 const MENU_CENTER_Y = 1.45;
 
-// Menu tab colors: selected / not selected.
+// Menu tab colors: selected / not selected. Group chips (the row under the
+// tabs) have their own, so the two rows don't look alike.
 const TAB = { on: '#0277bd', off: '#37474f' };
+const CHIP = { on: '#00897b', off: '#263238' };
 
 // Seconds to wait after entering AR before recentering, so the headset
 // pose has settled.
@@ -142,27 +147,36 @@ export const gymApp = {
 
     this.showMenu();
   },
-  // Menu: a top row with two tabs, "Training sets" and "Single exercises"
-  // (each shows its page of buttons) plus Recenter, then the page. The
-  // background fits the longest page, so switching tabs doesn't resize it,
-  // and the panel is raised or lowered so its middle is at MENU_CENTER_Y:
-  // it never reaches into the floor.
+  // Menu: a top row with two tabs, "Training sets" and "Single exercises",
+  // plus Recenter. Under it, a row of group chips for the current tab
+  // (training sets by level, exercises by position / equipment), then that
+  // group's buttons. Each page's container holds all its buttons, in list
+  // order (tests index them); only the current group's are shown. The
+  // background fits the largest group, so switching doesn't resize it, and
+  // the panel is raised or lowered so its middle is at MENU_CENTER_Y: it
+  // never reaches into the floor.
   buildMenu: function () {
     const TOP = 1.0;       // top edge of the panel, relative to the panel entity
     const ROW_Y = 0.45;    // tabs + recenter row
-    const PAGE_Y = 0.28;   // top of the pages
+    const CHIP_Y = 0.17;   // group chips row
+    const PAGE_Y = 0.03;   // top of the pages
     const ROW = 0.27;      // page row height
+    const WIDTH = 2.4;     // usable width
+    const equipment = w => equipmentOf(w).map(e => EQUIPMENT_NAMES[e]).join(', ');
     this.pages = {
       sets: {
         tab: makeButton('Training sets', TAB.off, 0.95, 0.24, 2.2),
         container: document.querySelector('#workoutButtons'),
-        items: WORKOUTS, cols: 1, width: 2.4, textWidth: 3.2,
-        label: w => `${w.name} (${w.level})`, start: w => this.startWorkout(w),
+        items: WORKOUTS, cols: 2, width: 1.17, height: 0.24, textWidth: 2.0,
+        groups: LEVELS.map(l => ({ id: l.toLowerCase(), name: l })), groupOf: w => w.level.toLowerCase(),
+        label: w => equipment(w) ? `${w.name}\nwith ${equipment(w)}` : w.name,
+        start: w => this.startWorkout(w),
       },
       single: {
         tab: makeButton('Single exercises', TAB.off, 0.95, 0.24, 2.2),
         container: document.querySelector('#menuButtons'),
-        items: EXERCISES, cols: 3, width: 0.8, textWidth: 2.0,
+        items: EXERCISES, cols: 3, width: 0.8, height: 0.22, textWidth: 0.74, wrapCount: 16,
+        groups: GROUPS, groupOf,
         label: ex => ex.name, start: ex => this.startExercise(ex),
       },
     };
@@ -172,18 +186,36 @@ export const gymApp = {
       page.tab.setAttribute('position', `${-0.775 + i * 1.0} ${ROW_Y} 0.01`);
       this.menuPanel.appendChild(page.tab);   // not in the container: it only holds buttons
       onClick(page.tab, () => this.showTab(name));
-      page.items.forEach((item, j) => {
-        const btn = makeButton(page.label(item), item.color, page.width, 0.22, page.textWidth);
+      // Group chips, across the full width.
+      page.chips = document.createElement('a-entity');
+      this.menuPanel.appendChild(page.chips);
+      const chipW = (WIDTH - (page.groups.length - 1) * 0.06) / page.groups.length;
+      page.chipButtons = page.groups.map((g, j) => {
+        const chip = makeButton(g.name, CHIP.off, chipW, 0.18, 1.6);
+        chip.id = 'group-' + g.id;
+        chip.setAttribute('position', `${-WIDTH / 2 + chipW / 2 + j * (chipW + 0.06)} ${CHIP_Y} 0.01`);
+        onClick(chip, () => this.showGroup(name, g.id));
+        page.chips.appendChild(chip);
+        return { chip, id: g.id };
+      });
+      // Buttons, laid out within their group.
+      const placed = {};
+      page.buttons = page.items.map(item => {
+        const group = page.groupOf(item);
+        const j = placed[group] = (placed[group] ?? -1) + 1;
+        const btn = makeButton(page.label(item), item.color, page.width, page.height, page.textWidth, page.wrapCount);
         const col = j % page.cols, row = Math.floor(j / page.cols);
         const x = (col - (page.cols - 1) / 2) * (page.width + 0.06);
         btn.setAttribute('position', `${x} ${PAGE_Y - ROW / 2 - row * ROW} 0.01`);
         onClick(btn, () => page.start(item));
         page.container.appendChild(btn);
+        return { btn, group };
       });
-      rows = Math.max(rows, Math.ceil(page.items.length / page.cols));
+      for (const n of Object.values(placed)) rows = Math.max(rows, Math.ceil((n + 1) / page.cols));
+      page.group = page.groups[0].id;
     });
     document.querySelector('#btnRecenterMenu').setAttribute('position', `1.0 ${ROW_Y} 0.01`);
-    const bottom = PAGE_Y - rows * ROW - 0.1;
+    const bottom = PAGE_Y - rows * ROW - 0.08;
     const bg = document.querySelector('#menuBg');
     bg.setAttribute('height', TOP - bottom);
     bg.setAttribute('position', `0 ${(TOP + bottom) / 2} 0`);
@@ -193,9 +225,20 @@ export const gymApp = {
   showTab: function (name) {
     this.tab = name;
     for (const [n, page] of Object.entries(this.pages)) {
-      setShown(page.container, n === name);
-      page.tab.setAttribute('material', 'color', n === name ? TAB.on : TAB.off);
+      const on = n === name;
+      page.tab.setAttribute('material', 'color', on ? TAB.on : TAB.off);
+      setShown(page.chips, on);
+      if (on) this.showGroup(n, page.group);
+      else setShown(page.container, false);
     }
+  },
+  // Show one group of a page (the page's tab must be the current one).
+  showGroup: function (pageName, groupId) {
+    const page = this.pages[pageName];
+    page.group = groupId;
+    page.container.setAttribute('visible', true);
+    for (const { btn, group } of page.buttons) setShown(btn, group === groupId);
+    for (const { chip, id } of page.chipButtons) chip.setAttribute('material', 'color', id === groupId ? CHIP.on : CHIP.off);
   },
   // Head-top direction on the floor (unit x/z), for someone facing down;
   // falls back to the gaze direction when upright.

@@ -12,14 +12,16 @@ await page.goto(url, { waitUntil: 'load' });
 await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
 await page.evaluate(() => document.querySelector('#camera').setAttribute('look-controls', 'enabled: false'));
 
-// Head pose: height (m) and pitch (degrees, + = looking up).
-const head = async (y, pitch = 0, ms = 120) => {
-  await page.evaluate((y, pitch) => {
+// Head pose: height (m), pitch (degrees, + = looking up) and roll
+// (degrees, head tilted toward a shoulder).
+const head = async (y, pitch = 0, ms = 120, roll = 0) => {
+  await page.evaluate((y, pitch, roll) => {
     const o = document.querySelector('#camera').object3D;
-    o.position.set(0, y, 0); o.rotation.set(pitch * Math.PI / 180, 0, 0, 'YXZ');
-  }, y, pitch);
+    o.position.set(0, y, 0); o.rotation.set(pitch * Math.PI / 180, 0, roll * Math.PI / 180, 'YXZ');
+  }, y, pitch, roll);
   await sleep(ms);
 };
+const secs = (text, key) => { const m = text.match(new RegExp(key + ': ([\\d.]+)s')); return m ? parseFloat(m[1]) : null; };
 const label = () => page.evaluate(() => document.querySelector('#repText').getAttribute('value'));
 const open = async id => {
   await page.evaluate(id => {
@@ -33,6 +35,7 @@ const open = async id => {
 
 const results = [];
 const expect = (name, got, want) => results.push({ ok: got === want, name, got, want });
+const check = (name, ok, got) => results.push({ ok, name, got, want: '(see check)' });
 
 // Crunches: lying on the back = head low, looking up.
 await head(1.6); await open('crunches');
@@ -87,6 +90,55 @@ expect('lunges: 2 lunges', await label(), 'Reps: 2');
 await head(1.6); await open('calf-raises');
 await sleep(2300);
 expect('calf raises: paced', await label(), 'Follow the beat: 1');
+
+// Head-dip exercises added with equipment: calibrate at the top, then the
+// head goes down by their depth and back.
+for (const [id, top, depth, still] of [['chair-squats', 1.6, 0.33, 'Stand still...'], ['split-squats', 1.6, 0.23, 'Stand still...'],
+  ['goblet-squats', 1.6, 0.28, 'Stand still...'], ['romanian-deadlifts', 1.6, 0.33, 'Stand still...'],
+  ['chair-dips', 1.0, 0.17, 'Hold still at the top...']]) {
+  await head(top); await open(id);
+  expect(id + ': calibrates first', await label(), still);
+  await sleep(1300);
+  for (let i = 0; i < 2; i++) { await head(top - depth); await head(top - 0.02); }
+  expect(id + ': 2 reps', await label(), 'Reps: 2');
+  await head(top - depth + 0.06); await head(top - 0.02);
+  expect(id + ': too shallow ignored', await label(), 'Reps: 2');
+}
+
+// Incline push-ups: face down toward the chair, head higher than on the floor.
+await head(1.6); await open('incline-push-ups');
+await head(1.1, -60);
+for (let i = 0; i < 3; i++) { await head(0.95, -65); await head(1.1, -60); }
+expect('incline push-ups: 3 reps', await label(), 'Reps: 3');
+await head(1.6); await open('incline-push-ups');
+for (let i = 0; i < 3; i++) { await head(1.6, -80); await head(1.4, -80); }
+expect('incline push-ups: standing, looking down: nothing', await label(), 'Get into push-up position');
+
+// Wall sit: after the standing calibration, head 30-80 cm lower and looking ahead.
+await head(1.6); await open('wall-sit');
+expect('wall sit: calibrates first', await label(), 'Stand still...');
+await sleep(1300);
+expect('wall sit: prompt', await label(), 'Slide down the wall');
+await head(1.15, 0, 1600);
+check('wall sit: holding', secs(await label(), 'Hold') >= 0.5, await label());
+await head(1.4, 0, 1400);
+check('wall sit: standing up ends the hold', /^Head lower/.test(await label()) || /^Last: /.test(await label()), await label());
+await head(1.6, 0, 300);
+await head(1.15, -80, 1600);
+check('wall sit: bent over is not a wall sit', /^Look ahead/.test(await label()), await label());
+
+// Side plank: head low, tilted to the side, looking ahead.
+await head(1.6); await open('side-plank');
+expect('side plank: prompt', await label(), 'Get into a side plank');
+await head(0.5, 0, 1600, 70);
+check('side plank: holding', secs(await label(), 'Hold') >= 0.5, await label());
+await head(0.3, 0, 1400, 70);
+check('side plank: dropping the hips ends it', !/^Hold/.test(await label()), await label());
+await head(1.6, 0, 300);
+await head(0.4, -80, 1600);
+check('side plank: a regular plank is not one', /^Face forward/.test(await label()), await label());
+await head(0.2, 80, 1600, 0);
+check('side plank: lying on the back is not one', !/^Hold/.test(await label()), await label());
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : `  got=${JSON.stringify(r.got)} want=${JSON.stringify(r.want)}`));
 console.log('page errors:', errors.length ? errors : 'none');

@@ -6,7 +6,7 @@ const SECONDS_PER_REP = 3;
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'leg-raises', name: 'Leg Raises', muscle: 'Abs', color: '#ef6c00',
+  id: 'leg-raises', name: 'Leg Raises', muscle: 'Abs', color: '#ef6c00', floor: true,
   instructions: 'Lie on your back, legs straight. On each beat, raise your legs up, then lower them slowly without touching the floor.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2 * Math.PI / SECONDS_PER_REP)) / 2;   // one raise per beat

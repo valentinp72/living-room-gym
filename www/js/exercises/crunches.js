@@ -10,7 +10,7 @@ const RISE = 0.12;          // head rises this far above its lying height...
 const DROP = 0.08;          // ...then comes back down this far = 1 rep
 
 export default {
-  id: 'crunches', name: 'Crunches', muscle: 'Abs', color: '#ef6c00',
+  id: 'crunches', name: 'Crunches', muscle: 'Abs', color: '#ef6c00', floor: true,
   instructions: 'Lie on your back, knees bent, feet flat. Lift your head and shoulders off the floor, then lower them.',
   unit: 'reps',
   state: () => ({ reps: 0, ready: false, up: false, low: null, high: null }),
