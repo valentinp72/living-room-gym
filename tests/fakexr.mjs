@@ -3,12 +3,10 @@
 //   { kind: 'controller' | 'hand', grip: bool (hands only: expose gripSpace),
 //     pos: [x, y, z], ray: { from: [..], to: [..] } | null, lost: bool,
 //     emulated: bool (position only estimated, like a controller out of view) }
-// and window.fakeXR.planes = [{ orientation: 'vertical' | 'horizontal',
-//     semanticLabel, points: [[x, y, z], ...] (world) }] (the room scan).
 export async function installFakeXR(page) {
   await page.evaluate(() => {
     const side = s => ({ kind: 'controller', grip: false, pos: [s * 0.2, 0.8, -0.2], ray: null, lost: true });
-    window.fakeXR = { hands: { left: side(-1), right: side(1) }, planes: [] };
+    window.fakeXR = { hands: { left: side(-1), right: side(1) } };
     const session = new EventTarget();
     const sources = () => Object.entries(fakeXR.hands).map(([handedness, h]) => ({
       handedness,
@@ -22,8 +20,6 @@ export async function installFakeXR(page) {
     Object.defineProperty(session, 'inputSources', { get: sources });
     session.requestReferenceSpace = () => Promise.resolve({ fake: true });
     const pose = space => {
-      // Planes: points are given in world space, so their space is the identity.
-      if (space.plane) return { transform: { matrix: new THREE.Matrix4().toArray() } };
       const h = fakeXR.hands[space.handedness];
       if (!h || h.lost) return null;
       if (space.space === 'ray') {
@@ -37,11 +33,7 @@ export async function installFakeXR(page) {
       return { emulatedPosition: !!h.emulated, transform: { position: { x: h.pos[0], y: h.pos[1], z: h.pos[2] } } };
     };
     // fillPoses / fillJointRadii: used by hand-tracking-controls (models); report no joint data.
-    const frame = { getPose: pose, getJointPose: pose, fillPoses: () => false, fillJointRadii: () => false,
-      get detectedPlanes() {
-        return new Set(fakeXR.planes.map(p => ({ orientation: p.orientation, semanticLabel: p.semanticLabel,
-          planeSpace: { plane: true }, polygon: p.points.map(([x, y, z]) => ({ x, y, z })) })));
-      } };
+    const frame = { getPose: pose, getJointPose: pose, fillPoses: () => false, fillJointRadii: () => false };
     const scene = document.querySelector('a-scene');
     Object.defineProperty(scene, 'xrSession', { get: () => session, set() {}, configurable: true });
     Object.defineProperty(scene, 'frame', { get: () => frame, set() {}, configurable: true });

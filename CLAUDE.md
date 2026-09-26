@@ -44,8 +44,7 @@ www/
   js/workout-runner.js     # runs a training set; pure logic returning events
   js/sound.js              # play(name) feedback sounds (Web Audio), unlockAudio()
   js/avatar.js             # jointed demo mannequin, resetPose + rot/place/turn helpers
-  js/tracking.js           # shared tracking helpers (readHands, gazeY, readSurfaces, xrMode)
-  js/room.js               # room awareness: buildRoom(), placeStage(); pure 2D logic, no THREE
+  js/tracking.js           # shared tracking helpers (readHands, xrMode)
   js/components/*.js       # other A-Frame components (registered in main.js)
   js/exercises/index.js    # EXERCISES registry (menu order)
   js/exercises/<name>.js   # one exercise per file, default export
@@ -62,10 +61,7 @@ www/
   - `demo(parts, tSeconds)` poses the mannequin; it's reset to standing before every call
 - Training sets (`js/workouts.js`): `{ id, name, level, color, rest, steps: [{ exercise, reps } | { exercise, seconds }] }`, validated on load by `validateWorkout()`. The product direction is **training sets first, with configurable difficulty** (same exercises, other targets / rest). Single exercises stay for testing and debugging. `workout-runner.js` is pure logic: `updateRun()` / `skip()` return events (`stepDone`, `count`, `go`, `finished`), and `app.js` turns them into sounds (`sound.js`) and panel updates. Rest must never look like an exercise: blue panel and cyan countdown (`LOOK` / `setLook()` in `app.js`), the mannequin idles (`idle()` in `avatar.js`) instead of demoing the next exercise, and the title turns to `GET READY` for the last 3 s together with the countdown beeps. The next exercise's demo only appears when its step starts.
 - Sounds (`js/sound.js`): every finished step plays a sound (a fanfare for the last one), paced reps tick, and the rest counts down 3-2-1. Browsers need a user gesture before audio plays, so handlers go through `onClick()` in `app.js`, which calls `unlockAudio()`.
-- Menu (`buildMenu()` / `showTab()` in `app.js`): a top row with two tabs (`#tabSets`, `#tabSingle`) and `#btnRecenterMenu`, then one page at a time. The "Training sets" page (`#workoutButtons`) is one column, and the "Single exercises" page (`#menuButtons`) is a 3-column grid in `EXERCISES` order. The containers hold only buttons (tests index them; keep squats, curls and plank as the first three). The hidden page goes through `setShown()` so its buttons can't catch clicks.
-  - The background fits the longest page (currently 5 rows), plus the room status line (`#roomText`).
-  - `buildMenu()` sets the panel's height so its middle is at `MENU_CENTER_Y`. `textfit` checks that it stays above the floor.
-  - Beyond about 6 rows, add paging.
+- Menu (`buildMenu()` / `showTab()` in `app.js`): a top row with two tabs (`#tabSets`, `#tabSingle`) and `#btnRecenterMenu`, then one page at a time. The "Training sets" page (`#workoutButtons`) is one column, and the "Single exercises" page (`#menuButtons`) is a 2-column grid in `EXERCISES` order. The containers hold only buttons (tests index them; keep squats, curls and plank as the first three). The hidden page goes through `setShown()` so its buttons can't catch clicks. The background fits the longest page (currently 6 rows). Beyond about 7 rows, add paging.
 - Text: A-Frame's default font only has basic Latin characters. An em dash (—), middle dot (·) or similar just disappears, so use plain `-`, `:` or `,`. Keep `a-text` `width` (its wrap width) inside the panel.
 - Mannequin (`js/avatar.js`): joint tree `root > pelvis > spine > head / shoulderL,R > elbowL,R` and `pelvis > hipL,R > kneeL,R > ankleL,R`. `root` sits on the floor (y = 0) between the feet; `pelvis` is at `PELVIS_Y` when standing. Segment lengths are in `BODY`. Pose with `rot(el, x, y, z)` (degrees, writes `object3D` directly), `place(el, x, y, z)` and `turn(parts, deg)` (0 = facing the user). `app.js` calls `resetPose()` every frame before `demo()`.
   - Side-view IK helpers work in the mannequin's own y/z plane: `legTo()` (ankle to a point, foot angle), `armTo()` (hand to a point), `along()`, `limbAngle()`, `lieOnBack()`, `onToesY()`. Use them to keep feet, hands and knees planted instead of hand-tuning angles.
@@ -75,12 +71,6 @@ www/
 - Layout during an exercise: the exercise panel is left of center and turned toward the user (`index.html`), and the mannequin stands to its right (`HOME` in `avatar.js`). The menu panel stays centered.
 - `gym-app` component (on `#stage` in the markup) owns the UI state, the per-frame `tick`, and `recenter()`.
 - `#stage` holds everything placed relative to the user: both panels and the mannequin. Positions inside it assume the user stands at the stage origin looking toward −Z. `recenter()` moves the stage under the head and turns it to the head's yaw (or to where the top of the head points when looking down). It runs 0.5 s after entering AR/VR, on B / Y, and from `.recenter` buttons, and leaving XR resets the stage. Put new user-facing content inside `#stage`, not directly in the scene.
-- Room awareness (AR), all without the user doing anything:
-  - **Reading the scan:** the session requests `plane-detection` and `mesh-detection` (optional). Once a second, `updateRoom()` reads the scan with `readSurfaces()` and turns it into floor-plane walls (segments) and obstacles (footprints) with `buildRoom()`. The first time a scan appears, it recenters once.
-  - **Placement:** `recenter()` runs `placeStage()` separately for each screen (`screenLayouts()`: the menu, or the exercise panel plus the mannequin). The screens are never shown together, and in a small room they may not fit in the same spot. `placeScreen()` moves the stage to the spot of the screen on show.
-  - **Search:** `placeStage()` tries turns (±180° in 15° steps), pulls (up to 0.9 m closer), sideways shifts (±0.4 m), and, for the mannequin, other spots (`MANNEQUIN_SPOTS`) and sizes (100%, 75%, 60%, via `setHome()`). It keeps the cheapest candidate with nothing in the way, always ranking panel problems (behind or through a wall or furniture) before mannequin problems.
-  - **Status:** `#roomText` at the bottom of the menu (AR only) says what happened.
-  - **Testing:** `room.js` is pure, so `tests/room.mjs` imports it in Node. Fake room planes go through `fakeXR.planes`.
 - Rig: `#rig > #camera`, `#rightPointer` / `#leftPointer` (`xr-pointer`), `#rightHand` / `#leftHand` (controller models + button events), `#floorLabel`. Buttons get class `button`; raycasters target `.clickable`, which `setShown()` in `app.js` adds only while a button is visible. A-Frame raycasters ignore `visible`, so hidden buttons would otherwise steal clicks. Always show or hide UI with `setShown()`, never with `setAttribute('visible')` alone.
 - Shared tracking and rep-detection helpers go in `js/tracking.js`. Exercises get `ctx.hands = readHands(scene)`: `{ left, right }`, each `{ tracked, kind: 'controller' | 'hand' | null, position, emulated, rayTracked, ray }`. `emulated` = position only estimated (don't detect moves with it), and `ray` = pointing direction (the laser). It is read straight from the WebXR session (grip space, or the wrist joint for hands without one), so controllers and bare hands work the same. Never read hand positions from the `#rightHand` / `#leftHand` entities: they only cover controllers, and they freeze at their last position when tracking is lost.
 - Plank (`js/exercises/plank.js`) is automatic, with no buttons. The head is "in plank" when it is 25 to 80 cm above the floor and tilted more than 60° from upright. The timer starts after 1 s in position (and counts it) and stops after 1 s out of position (without counting it). Keep exercises hands-free and automatic; the user asked for no Start/Stop.
@@ -109,7 +99,7 @@ www/
 
 ## Known problems (see README "Known issues")
 
-1. Room awareness only knows what's in the Quest's room scan (Space Setup). Without one, placement is straight ahead as before. The user's own floor space isn't checked, and it's untested on a real Quest.
+1. No awareness of real walls or furniture in AR. Recentering is manual (plus once on entering XR).
 2. The plank is detected from the head only, so a knee plank or all-fours with the face down also counts. Push-ups and crunches are head-only too, and their thresholds are estimates not yet tried on a Quest.
 3. AR has only been tested by simulating the session (`addState('ar-mode')` + `enter-vr`), not on a Quest.
 

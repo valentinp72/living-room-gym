@@ -94,16 +94,6 @@ Then:
   gym instead. The panels and avatar appear 2 to 3 m in front of you. Whenever you move
   (for example to a free patch of floor), press **B / Y** or **Recenter** to bring them in
   front of you again.
-- **Room awareness (AR):** if your Quest has a room scan (Settings > Physical space >
-  Space Setup), the app reads your walls and furniture. When the default spot is blocked,
-  it places the panels and avatar where they're clear, by turning them a little, bringing
-  them closer or sliding them sideways. In a cramped room it moves the avatar or makes it
-  smaller. The Quest asks once for permission to use spatial data. A line at the bottom
-  of the menu tells you what it found:
-  - *Room scan: 4 walls and 2 objects avoided*: all clear.
-  - *Tight space*: the panels fit, but the avatar may overlap a wall or furniture.
-  - *Not enough free space here*: move somewhere clearer and press Recenter.
-  - *No room scan found*: run Space Setup, or everything is placed straight ahead as before.
 - **Controllers or bare hands:** point with the controller laser and pull the trigger, or,
   with hand tracking on (Quest settings), put the controllers down, point with your hand and
   pinch your thumb and index finger to click. B / Y don't exist without controllers, so use
@@ -152,8 +142,7 @@ a real body. Those still need a Quest.
         ├── workout-runner.js  # Runs a training set: steps, targets, rests, events
         ├── sound.js           # Feedback sounds (Web Audio, no files)
         ├── avatar.js          # Jointed demo mannequin + posing helpers
-        ├── tracking.js        # Shared tracking helpers (hand / controller poses, room scan, AR/VR/flat)
-        ├── room.js            # Room awareness: walls + furniture from the scan, stage placement
+        ├── tracking.js        # Shared tracking helpers (hand / controller poses, AR/VR/flat)
         ├── components/
         │   ├── xr-environment.js  # AR passthrough: transparent background, hides VR-only scenery
         │   └── xr-pointer.js      # XR pointing ray + click (controller trigger or pinch)
@@ -231,9 +220,6 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
    These values are estimates. Bare hands must stay in the headset's view.
 4. **Only tested in simulation for AR.** AR mode has been checked in a desktop browser by
    simulating an AR session, not yet on a Quest.
-5. **Room awareness only knows what the room scan has.** Anything not in the scan (a chair
-   moved since, a bag on the floor) isn't avoided. It also doesn't check that *you* have
-   floor space for floor exercises.
 
 ## Roadmap
 
@@ -245,7 +231,7 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 - [x] Hand tracking: pinch to click, curls counted from bare hands
 - [x] Automatic plank timer (no Start / Stop), with the counter shown on the floor under
       your face
-- [x] Room awareness in AR: keep the panels and avatar clear of real walls and furniture
+- [ ] Room awareness in AR: keep the panels and avatar clear of real walls and furniture
 - [x] A jointed avatar (elbows, knees, ankles, spine) standing on the floor next to the
       exercise panel, with its pose reset every frame
 - [x] Robust Bicep Curls counting: per-arm counts, movement-based thresholds, ignores
