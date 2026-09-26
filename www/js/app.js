@@ -61,20 +61,48 @@ const CHIP = { on: '#00897b', off: '#263238' };
 // pose has settled.
 const RECENTER_DELAY = 0.5;
 
-// Floor counter: shown while the head is below FLOOR_HEAD_Y during an
-// exercise, FLOOR_AHEAD meters ahead of the head along the floor. Lying on
-// the back (looking up, gaze y above FACE_UP), it floats CEILING_AHEAD
-// meters in front of the face instead, facing it.
+// Counter near the face (#floorLabel), during an exercise, when the panel
+// is out of sight or unreadable: the head is below FLOOR_HEAD_Y, or closer
+// than NEAR_PANEL to the panel's plane (or behind it), e.g. leaning over a
+// chair. Low and facing the floor (gaze y below FACE_DOWN: plank,
+// push-ups), it lies on the floor FLOOR_AHEAD meters ahead of the head.
+// Otherwise (lying on the back, side plank, near the panel) it floats
+// FACE_AHEAD meters in front of the face, facing it.
 const FLOOR_HEAD_Y = 0.9;
+const NEAR_PANEL = 0.9;
 const FLOOR_AHEAD = 0.2;
-const FACE_UP = 0.5;
-const CEILING_AHEAD = 0.7;
+const FACE_DOWN = -0.5;
+const FACE_AHEAD = 0.7;
+
+// Menu follow (XR only): when the menu is on screen and the user has turned
+// more than FOLLOW_ANGLE degrees away from it, or walked more than
+// FOLLOW_DISTANCE meters from where it was placed, for FOLLOW_SECONDS, it
+// recenters in front of them. Pointing at a menu behind you with a bare hand
+// is awkward (Quest test). Not during exercises: people turn on the floor.
+const FOLLOW_ANGLE = 60;
+const FOLLOW_DISTANCE = 1.5;
+const FOLLOW_SECONDS = 1.5;
+
+// Equipment the user has (menu setting, kept in this browser): training
+// sets that need something they don't have are hidden.
+const KIT_KEY = 'xr-muscle-equipment';
+function loadKit() {
+  const kit = { chair: true, band: true, weights: true };
+  try { Object.assign(kit, JSON.parse(localStorage.getItem(KIT_KEY)) || {}); } catch (e) { /* storage blocked */ }
+  return kit;
+}
+function saveKit(kit) {
+  try { localStorage.setItem(KIT_KEY, JSON.stringify(kit)); } catch (e) { /* storage blocked */ }
+}
+const KIT_LABELS = { chair: 'Chair', band: 'Band', weights: 'Dumbbells' };
+const PANEL_HEAD = new THREE.Vector3();
 
 // Exercise vs rest look: rest gets a blue panel and a cyan countdown so it
-// can't be mistaken for an exercise.
+// can't be mistaken for an exercise. Panels are nearly opaque: over
+// passthrough, a see-through panel is hard to read (Quest test).
 const LOOK = {
-  exercise: { bg: '#000000', opacity: 0.65, counter: '#ffeb3b' },
-  rest: { bg: '#0b3d5c', opacity: 0.85, counter: '#80deea' },
+  exercise: { bg: '#000000', opacity: 0.88, counter: '#ffeb3b' },
+  rest: { bg: '#0b3d5c', opacity: 0.92, counter: '#80deea' },
 };
 // Seconds before the end of a rest when the title turns to "GET READY"
 // (together with the countdown beeps).
@@ -151,7 +179,10 @@ export const gymApp = {
   // plus Recenter. Under it, a row of group chips for the current tab
   // (training sets by level, exercises by position / equipment), then that
   // group's buttons. Each page's container holds all its buttons, in list
-  // order (tests index them); only the current group's are shown. The
+  // order (tests index them); only the current group's are shown, laid out
+  // in order (showGroup()). The training sets page ends with the equipment
+  // setting ("I have: Chair: yes ..."): sets needing missing equipment are
+  // hidden. The
   // background fits the largest group, so switching doesn't resize it, and
   // the panel is raised or lowered so its middle is at MENU_CENTER_Y: it
   // never reaches into the floor.
@@ -171,6 +202,7 @@ export const gymApp = {
         groups: LEVELS.map(l => ({ id: l.toLowerCase(), name: l })), groupOf: w => w.level.toLowerCase(),
         label: w => equipment(w) ? `${w.name}\nwith ${equipment(w)}` : w.name,
         start: w => this.startWorkout(w),
+        usable: w => equipmentOf(w).every(e => this.kit[e]),
       },
       single: {
         tab: makeButton('Single exercises', TAB.off, 0.95, 0.24, 2.2),
@@ -178,8 +210,11 @@ export const gymApp = {
         items: EXERCISES, cols: 3, width: 0.8, height: 0.22, textWidth: 0.74, wrapCount: 16,
         groups: GROUPS, groupOf,
         label: ex => ex.name, start: ex => this.startExercise(ex),
+        usable: () => true,
       },
     };
+    this.kit = loadKit();
+    this.layout = { PAGE_Y, ROW };
     let rows = 0;
     Object.entries(this.pages).forEach(([name, page], i) => {
       page.tab.id = name === 'sets' ? 'tabSets' : 'tabSingle';
@@ -198,22 +233,37 @@ export const gymApp = {
         page.chips.appendChild(chip);
         return { chip, id: g.id };
       });
-      // Buttons, laid out within their group.
-      const placed = {};
+      // Buttons (placed by showGroup()).
+      const counts = {};
       page.buttons = page.items.map(item => {
         const group = page.groupOf(item);
-        const j = placed[group] = (placed[group] ?? -1) + 1;
+        counts[group] = (counts[group] || 0) + 1;
         const btn = makeButton(page.label(item), item.color, page.width, page.height, page.textWidth, page.wrapCount);
-        const col = j % page.cols, row = Math.floor(j / page.cols);
-        const x = (col - (page.cols - 1) / 2) * (page.width + 0.06);
-        btn.setAttribute('position', `${x} ${PAGE_Y - ROW / 2 - row * ROW} 0.01`);
         onClick(btn, () => page.start(item));
         page.container.appendChild(btn);
-        return { btn, group };
+        return { btn, group, item };
       });
-      for (const n of Object.values(placed)) rows = Math.max(rows, Math.ceil((n + 1) / page.cols));
+      page.rows = Math.max(...Object.values(counts).map(n => Math.ceil(n / page.cols)));
       page.group = page.groups[0].id;
     });
+    // Equipment setting, under the training sets.
+    const sets = this.pages.sets;
+    sets.kit = document.createElement('a-entity');
+    this.menuPanel.appendChild(sets.kit);
+    const kitY = PAGE_Y - ROW / 2 - sets.rows * ROW;
+    const have = makeText('I have:', '#ccc', 1.6);
+    have.setAttribute('position', `${-WIDTH / 2 + 0.2} ${kitY} 0.01`);
+    sets.kit.appendChild(have);
+    const kitW = 0.6;   // three buttons after the label, ending with the chips row
+    sets.kitButtons = Object.keys(KIT_LABELS).map((k, j) => {
+      const btn = makeButton('', CHIP.off, kitW, 0.2, 1.5);
+      btn.id = 'kit-' + k;
+      btn.setAttribute('position', `${WIDTH / 2 - kitW / 2 - (2 - j) * (kitW + 0.06)} ${kitY} 0.01`);
+      onClick(btn, () => { this.kit[k] = !this.kit[k]; saveKit(this.kit); this.showGroup('sets', sets.group); });
+      sets.kit.appendChild(btn);
+      return { btn, k };
+    });
+    rows = Math.max(this.pages.single.rows, sets.rows + 1);
     document.querySelector('#btnRecenterMenu').setAttribute('position', `1.0 ${ROW_Y} 0.01`);
     const bottom = PAGE_Y - rows * ROW - 0.08;
     const bg = document.querySelector('#menuBg');
@@ -228,17 +278,32 @@ export const gymApp = {
       const on = n === name;
       page.tab.setAttribute('material', 'color', on ? TAB.on : TAB.off);
       setShown(page.chips, on);
+      if (page.kit) setShown(page.kit, on);
       if (on) this.showGroup(n, page.group);
       else setShown(page.container, false);
     }
   },
-  // Show one group of a page (the page's tab must be the current one).
+  // Show one group of a page (the page's tab must be the current one): its
+  // usable buttons, in order, row by row.
   showGroup: function (pageName, groupId) {
     const page = this.pages[pageName];
+    const { PAGE_Y, ROW } = this.layout;
     page.group = groupId;
     page.container.setAttribute('visible', true);
-    for (const { btn, group } of page.buttons) setShown(btn, group === groupId);
+    let j = 0;
+    for (const { btn, group, item } of page.buttons) {
+      const shown = group === groupId && page.usable(item);
+      setShown(btn, shown);
+      if (!shown) continue;
+      const col = j % page.cols, row = Math.floor(j / page.cols);
+      btn.setAttribute('position', `${(col - (page.cols - 1) / 2) * (page.width + 0.06)} ${PAGE_Y - ROW / 2 - row * ROW} 0.01`);
+      j++;
+    }
     for (const { chip, id } of page.chipButtons) chip.setAttribute('material', 'color', id === groupId ? CHIP.on : CHIP.off);
+    for (const { btn, k } of page.kitButtons || []) {
+      btn.setAttribute('material', 'color', this.kit[k] ? CHIP.on : CHIP.off);
+      btn.querySelector('a-text').setAttribute('value', `${KIT_LABELS[k]}: ${this.kit[k] ? 'yes' : 'no'}`);
+    }
   },
   // Head-top direction on the floor (unit x/z), for someone facing down;
   // falls back to the gaze direction when upright.
@@ -252,13 +317,14 @@ export const gymApp = {
   // floor under the face, or above it when lying on the back.
   updateFloorLabel: function (text) {
     const head = this.camera.object3D;
-    const show = head.position.y < FLOOR_HEAD_Y;
+    const low = head.position.y < FLOOR_HEAD_Y;
+    const show = low || this.nearPanel(head);
     if (show !== this.floorLabel.getAttribute('visible')) this.floorLabel.setAttribute('visible', show);
     if (!show) return;
     this.floorLabelText.setAttribute('value', text);
     const o = this.floorLabel.object3D;
-    if (gazeY(head) > FACE_UP) {
-      o.position.set(0, 0, -CEILING_AHEAD).applyQuaternion(head.quaternion).add(head.position);
+    if (!low || gazeY(head) > FACE_DOWN) {
+      o.position.set(0, 0, -FACE_AHEAD).applyQuaternion(head.quaternion).add(head.position);
       o.quaternion.copy(head.quaternion);
       return;
     }
@@ -266,6 +332,12 @@ export const gymApp = {
     o.position.set(head.position.x + dir.x * FLOOR_AHEAD, 0.01, head.position.z + dir.z * FLOOR_AHEAD);
     // Lie flat, with the top of the text pointing away from the user.
     o.rotation.set(-Math.PI / 2, Math.atan2(-dir.x, -dir.z), 0, 'YXZ');
+  },
+  // Is the head too close to the exercise panel to read it (or behind it)?
+  nearPanel: function (head) {
+    head.getWorldPosition(PANEL_HEAD);
+    this.exercisePanel.object3D.worldToLocal(PANEL_HEAD);
+    return PANEL_HEAD.z < NEAR_PANEL;
   },
   // Move the stage (panels + mannequin) to the user: onto the floor under
   // their head, turned to face where they look. In AR the session origin is
@@ -277,6 +349,26 @@ export const gymApp = {
     const dir = this.headingOnFloor(head);
     this.el.object3D.position.set(head.position.x, 0, head.position.z);
     this.el.object3D.rotation.set(0, Math.atan2(-dir.x, -dir.z), 0);
+  },
+  // The Quest's own recenter (hold the Meta button, or the palm-up pinch
+  // gesture with bare hands) resets the reference space: recenter the stage
+  // too, a moment later, once the head pose has jumped.
+  watchSystemRecenter: function () {
+    const ref = this.el.sceneEl.xrSession && this.el.sceneEl.renderer.xr.getReferenceSpace();
+    if (!ref || ref === this.watchedRef || !ref.addEventListener) return;
+    this.watchedRef = ref;
+    ref.addEventListener('reset', () => { this.recenterIn = 0.1; });
+  },
+  // See FOLLOW_ANGLE.
+  followMenu: function (delta) {
+    if (!this.el.sceneEl.is('ar-mode') || this.recenterIn !== null) { this.awayFor = 0; return; }
+    const head = this.camera.object3D, stage = this.el.object3D;
+    const dir = this.headingOnFloor(head);
+    const turned = Math.abs(THREE.MathUtils.radToDeg(
+      Math.atan2(Math.sin(Math.atan2(-dir.x, -dir.z) - stage.rotation.y), Math.cos(Math.atan2(-dir.x, -dir.z) - stage.rotation.y))));
+    const moved = Math.hypot(head.position.x - stage.position.x, head.position.z - stage.position.z);
+    this.awayFor = turned > FOLLOW_ANGLE || moved > FOLLOW_DISTANCE ? (this.awayFor || 0) + delta / 1000 : 0;
+    if (this.awayFor >= FOLLOW_SECONDS) { this.awayFor = 0; this.recenter(); }
   },
   showMenu: function () {
     this.current = null;
@@ -349,8 +441,9 @@ export const gymApp = {
   // Sounds + screen changes for the runner's events.
   handleEvents: function (events) {
     if (!events.length) return;
-    // Confetti for every step done (not skipped), more for the last one.
-    if (events.includes('finished') && events.includes('stepDone')) this.throwConfetti(CONFETTI_FINISH);
+    // Confetti for every step done (not skipped), and more when the whole
+    // set is done, even if its last step was skipped.
+    if (events.includes('finished')) this.throwConfetti(CONFETTI_FINISH);
     else if (events.includes('stepDone')) this.throwConfetti(CONFETTI_STEP);
     for (const e of events) {
       if (e === 'stepDone' && !events.includes('finished')) play('done');
@@ -361,11 +454,12 @@ export const gymApp = {
     if (events.some(e => e !== 'count')) this.showStep();
   },
   tick: function (t, delta) {
+    this.watchSystemRecenter();
     if (this.recenterIn !== null) {
       this.recenterIn -= delta / 1000;
       if (this.recenterIn <= 0) { this.recenterIn = null; this.recenter(); }
     }
-    if (!this.current) return;
+    if (!this.current) { this.followMenu(delta); return; }
     this.clock += delta / 1000;
     const scene = this.el.sceneEl;
     const ctx = { scene, camera: this.camera, hands: readHands(scene, this.hands) };

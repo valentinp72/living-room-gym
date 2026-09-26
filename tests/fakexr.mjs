@@ -18,7 +18,11 @@ export async function installFakeXR(page) {
       targetRaySpace: { handedness, space: 'ray' },
     }));
     Object.defineProperty(session, 'inputSources', { get: sources });
-    session.requestReferenceSpace = () => Promise.resolve({ fake: true });
+    // The reference space can fire 'reset' like the Quest's own recenter:
+    // fakeXR.ref.dispatchEvent(new Event('reset')).
+    const ref = Object.assign(new EventTarget(), { fake: true });
+    fakeXR.ref = ref;
+    session.requestReferenceSpace = () => Promise.resolve(ref);
     const pose = space => {
       const h = fakeXR.hands[space.handedness];
       if (!h || h.lost) return null;
@@ -37,7 +41,7 @@ export async function installFakeXR(page) {
     const scene = document.querySelector('a-scene');
     Object.defineProperty(scene, 'xrSession', { get: () => session, set() {}, configurable: true });
     Object.defineProperty(scene, 'frame', { get: () => frame, set() {}, configurable: true });
-    scene.renderer.xr.getReferenceSpace = () => ({ fake: true });
+    scene.renderer.xr.getReferenceSpace = () => ref;
     // Pinch (or trigger) on one side: selectstart, select, selectend like a real session.
     window.fakeSelect = handedness => {
       const inputSource = sources().find(s => s.handedness === handedness);

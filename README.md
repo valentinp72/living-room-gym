@@ -111,8 +111,12 @@ Exercises the headset and hands can't track (on the floor with only the legs mov
 head movement too small to tell apart) are **paced**: the app counts reps at a fixed tempo
 with a tick for each one, and you follow along. See `www/js/exercises/paced.js`.
 
-During floor exercises the counter follows your face: on the floor under it when facing
-down, or floating above it when lying on your back.
+When the panels are out of sight or too close to read (on the floor, or leaning toward the
+panel over a chair), the counter follows your face: on the floor under it when facing down
+(plank, push-ups), or floating in front of it otherwise (lying on your back, side plank).
+
+On the Training sets tab, the last row says which equipment you have (**Chair**, **Band**,
+**Dumbbells**). Sets that need something you don't have are hidden. The headset remembers it.
 
 ## Running locally
 
@@ -136,11 +140,13 @@ Then:
   `https://<your-computer-LAN-IP>:8443`, accept the certificate warning, then tap the **AR**
   button (bottom right) to train in your room. The panels appear about 2 m in front of you. Whenever you move
   (for example to a free patch of floor), press **B / Y** or **Recenter** to bring them in
-  front of you again.
+  front of you again, or use the Quest's own recenter (hold the Meta button, or the palm-up
+  pinch with bare hands). On the menu, the panel also follows you when you turn away or walk
+  off for a moment.
 - **Controllers or bare hands:** point with the controller laser and pull the trigger, or,
   with hand tracking on (Quest settings), put the controllers down, point with your hand and
   pinch your thumb and index finger to click. B / Y don't exist without controllers, so use
-  the Recenter button on the panel instead.
+  the Recenter button on the panel or the Quest's recenter gesture instead.
 
 > `key.pem` is a private key. Never commit it or publish it.
 

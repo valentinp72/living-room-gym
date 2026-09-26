@@ -5,7 +5,9 @@ import { gazeY } from '../tracking.js';
 // Side plank, from the headset: the head is low, tilted sideways (the top
 // of the head points to the side) and looks ahead, neither at the floor
 // (plank) nor at the ceiling (lying on the back). Once holding, the head
-// must stay close to where it started.
+// must stay close to where it started. The tilt limits are loose (37° to
+// start, 26° to keep): on a Quest the first version (53°) never started,
+// people hold their head more upright than the body.
 const START_Y = [0.25, 0.8];
 const HOLD_DROP = 0.1, HOLD_RISE = 0.12;
 const DEG = Math.PI / 180;
@@ -33,8 +35,8 @@ const PELVIS_Y = SHOULDER_H + 0.19 * s - BODY.shoulderY * c + 0.012;
 
 export default {
   ...hold({
-    start: head => heightOff(head.position.y, ...START_Y) || sidewaysOff(head, 0.6, 0.5),
-    keep: (head, st) => keptHeight(head, st, HOLD_DROP, HOLD_RISE) || sidewaysOff(head, 0.75, 0.65),
+    start: head => heightOff(head.position.y, ...START_Y) || sidewaysOff(head, 0.8, 0.6),
+    keep: (head, st) => keptHeight(head, st, HOLD_DROP, HOLD_RISE) || sidewaysOff(head, 0.9, 0.75),
     prompt: 'Get into a side plank',
   }),
   id: 'side-plank', name: 'Side Plank', muscle: 'Abs', color: '#ef6c00', floor: true,

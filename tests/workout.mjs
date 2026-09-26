@@ -67,6 +67,25 @@ eq('menu: easy sets shown first', await shownSets(), ['Full body starter', 'Legs
 await click('#group-hard'); await sleep(100);
 eq('menu: hard sets', await shownSets(), ['Full body challenge', 'Core crusher', 'Leg day', 'Upper body', 'Cardio blast']);
 await click('#group-easy'); await sleep(100);
+// Equipment setting: sets needing what the user doesn't have are hidden,
+// and the rest close up.
+await click('#kit-chair'); await sleep(100);
+eq('equipment: no chair hides Chair basics', await shownSets(), ['Full body starter', 'Legs and glutes', 'Abs', 'Chest and arms']);
+eq('equipment: button says so', await page.evaluate(() => document.querySelector('#kit-chair a-text').getAttribute('value')), 'Chair: no');
+await click('#group-hard'); await sleep(100);
+eq('equipment: hard sets without a chair', await shownSets(), ['Core crusher', 'Cardio blast']);
+const firstPos = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('#workoutButtons > *')].find(b => b.classList.contains('clickable'));
+  return b.getAttribute('position').x;
+});
+check('equipment: shown sets move up to the first slot', firstPos < 0, firstPos);
+await page.reload({ waitUntil: 'load' });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await installFakeXR(page);
+await page.evaluate(() => document.querySelector('#camera').setAttribute('look-controls', 'enabled: false'));
+eq('equipment: remembered after a reload', await shownSets(), ['Full body starter', 'Legs and glutes', 'Abs', 'Chest and arms']);
+await click('#kit-chair'); await sleep(100);
+eq('equipment: chair back', (await shownSets()).length, 5);
 // Every level has sets, and harder levels have shorter rests and more work.
 const levels = await page.evaluate(async () => {
   const { WORKOUTS } = await import('/js/workouts.js');
@@ -168,6 +187,20 @@ check('finish: big confetti burst, above the floor', c.live === 260 && c.minY >=
 eq('complete screen', [u.title, u.rep, u.skip, u.mannequin], ['TRAINING COMPLETE', 'Well done!', false, false]);
 await head(1.6);
 await click('#btnBack'); await sleep(100);
+
+// Skipping the last step still finishes with the fanfare and confetti
+// (regression: no celebration when the last step was skipped).
+await page.evaluate(() => {
+  document.querySelector('#btnBack').emit('click');
+  document.querySelector('#stage').components['gym-app'].startWorkout({ id: 'x', name: 'X', level: 'Easy', rest: 5, steps: [{ exercise: 'squats', reps: 5 }] });
+});
+await sleep(100); await sounds();
+await click('#btnSkip'); await sleep(150);
+eq('skip last step: fanfare', await sounds(), ['finish']);
+c = await confetti();
+check('skip last step: big confetti', c.live >= 260, JSON.stringify(c));
+eq('skip last step: complete screen', (await ui()).title, 'TRAINING COMPLETE');
+await sleep(3500);
 
 // Skipping an exercise goes to the rest screen, silently (regression: the
 // skipped exercise stayed on screen, still running, during the rest).

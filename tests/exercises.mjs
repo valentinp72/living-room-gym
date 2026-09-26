@@ -139,6 +139,25 @@ await head(0.4, -80, 1600);
 check('side plank: a regular plank is not one', /^Face forward/.test(await label()), await label());
 await head(0.2, 80, 1600, 0);
 check('side plank: lying on the back is not one', !/^Hold/.test(await label()), await label());
+// Regression (Quest): a head held more upright than the body, looking a bit
+// down, still counts, and the counter floats in front of the face instead of
+// lying on the floor (looking down at it made the side plank fail).
+await head(1.6, 0, 300); await open('side-plank');
+await head(0.45, -25, 1600, 45);
+check('side plank: head tilted only 45 deg, looking a bit down', secs(await label(), 'Hold') >= 0.5, await label());
+const faceLabel = () => page.evaluate(() => {
+  const o = document.querySelector('#floorLabel').object3D, h = document.querySelector('#camera').object3D;
+  return { visible: o.visible, dist: +o.position.distanceTo(h.position).toFixed(2), facing: o.quaternion.angleTo(h.quaternion) < 1e-3 };
+});
+expect('side plank: counter in front of the face', JSON.stringify(await faceLabel()), JSON.stringify({ visible: true, dist: 0.7, facing: true }));
+
+// Near the exercise panel (leaning over a chair toward it), the counter shows
+// by the face (regression: the panel was too close to read).
+await head(1.6, 0, 300); await open('incline-push-ups');
+expect('near panel: no face counter from the usual spot', (await faceLabel()).visible, false);
+await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.position.set(0, 1.1, -1.5); o.rotation.set(-0.8, 0, 0, 'YXZ'); });
+await sleep(150);
+expect('near panel: counter by the face', JSON.stringify(await faceLabel()), JSON.stringify({ visible: true, dist: 0.7, facing: true }));
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : `  got=${JSON.stringify(r.got)} want=${JSON.stringify(r.want)}`));
 console.log('page errors:', errors.length ? errors : 'none');

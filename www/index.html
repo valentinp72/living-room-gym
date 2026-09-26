@@ -28,11 +28,12 @@
          the real controllers show through passthrough. No laser cursors. -->
     <a-entity id="rightHand" class="flat-only" oculus-touch-controls="hand: right"></a-entity>
     <a-entity id="leftHand" class="flat-only" oculus-touch-controls="hand: left"></a-entity>
-    <!-- Counter shown on the floor in front of the face during floor
-         exercises (plank), where the panels are out of sight, with a small
-         demo avatar (#floorAvatar) on its right. -->
+    <!-- Counter near the face when the panels are out of sight or too close
+         (on the floor during a plank, floating in front of the face
+         otherwise; see updateFloorLabel() in app.js), with a small demo
+         avatar (#floorAvatar) on its right. -->
     <a-entity id="floorLabel" visible="false">
-      <a-plane width="1.0" height="0.45" color="#000" opacity="0.6"></a-plane>
+      <a-plane width="1.0" height="0.45" color="#000" opacity="0.8"></a-plane>
       <a-text id="floorLabelText" value="" align="center" position="-0.22 0 0.005" width="0.55"
         wrap-count="18" color="#ffeb3b"></a-text>
       <a-entity id="floorAvatar" position="0.27 -0.2 0.03" scale="0.2 0.2 0.2"></a-entity>
@@ -53,7 +54,7 @@
   <a-entity id="stage" gym-app>
     <!-- Menu: buttons, layout and height are set by buildMenu() in app.js. -->
     <a-entity id="menuPanel" position="0 1.6 -2">
-      <a-plane id="menuBg" width="2.6" height="2" color="#000" opacity="0.65"></a-plane>
+      <a-plane id="menuBg" width="2.6" height="2" color="#000" opacity="0.88"></a-plane>
       <a-text value="XR MUSCLE GYM" align="center" position="0 0.75 0.01" width="3.2" color="#fff"></a-text>
       <a-entity id="workoutButtons"></a-entity>
       <a-entity id="menuButtons"></a-entity>
@@ -67,7 +68,7 @@
          demo avatar in a frame on the right (#demoAvatar holds a half-size
          mannequin, built by buildMannequin() in avatar.js). -->
     <a-entity id="exercisePanel" position="0 1.5 -2.1" visible="false">
-      <a-plane id="exerciseBg" width="2.9" height="2.3" color="#000" opacity="0.65"></a-plane>
+      <a-plane id="exerciseBg" width="2.9" height="2.3" color="#000" opacity="0.88"></a-plane>
       <a-text id="exerciseTitle" value="" align="center" position="0 0.98 0.01" width="3.2" color="#fff"></a-text>
       <a-text id="instrText" value="" align="left" anchor="left" baseline="top" position="-1.37 0.8 0.01"
         width="1.45" wrap-count="26" color="#bbb"></a-text>

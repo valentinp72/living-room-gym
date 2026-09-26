@@ -1,5 +1,6 @@
 // Recenter: the stage (panels + mannequin) moves in front of the user's head.
 import { launch } from './lib.mjs';
+import { installFakeXR } from './fakexr.mjs';
 const [url, shot] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const browser = await launch();
@@ -59,6 +60,26 @@ await page.evaluate(() => { const s = document.querySelector('a-scene'); s.addSt
 await head(2, 1.65, 1, 45);
 await sleep(900);
 expect('auto recenter on entering AR', await stage(), [2, 1, 0.79]);
+// 6. On the menu, in AR, the menu follows the user (regression: pointing at a
+// menu behind you with a bare hand was awkward).
+await click('#btnBack'); await sleep(100);
+await head(2, 1.65, 1, 165); await sleep(700);
+expect('menu follow: not at once', await stage(), [2, 1, 0.79]);
+await sleep(1300);
+expect('menu follow: turned away 120 deg', await stage(), [2, 1, 2.88]);
+await head(2, 1.65, 1, 200); await sleep(2000);
+expect('menu follow: a 35 deg turn keeps it', await stage(), [2, 1, 2.88]);
+await head(4, 1.65, 1, 165); await sleep(2000);
+expect('menu follow: walked 2 m away', await stage(), [4, 1, 2.88]);
+await page.evaluate(() => document.querySelectorAll('#menuButtons > *')[0].emit('click'));
+await head(4, 1.65, 1, 0); await sleep(2000);
+expect('menu follow: never during an exercise', await stage(), [4, 1, 2.88]);
+// 7. The Quest's own recenter (reference space 'reset') recenters the stage.
+await installFakeXR(page);
+await sleep(100);
+await page.evaluate(() => fakeXR.ref.dispatchEvent(new Event('reset')));
+await sleep(400);
+expect('system recenter', await stage(), [4, 1, 0]);
 await page.evaluate(() => { const s = document.querySelector('a-scene'); s.removeState('ar-mode'); s.emit('exit-vr', { target: s }); });
 expect('reset on exit', await stage(), [0, 0, 0]);
 
