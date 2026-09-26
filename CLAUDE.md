@@ -11,7 +11,7 @@ A WebXR bodybuilding trainer for Meta Quest, built with A-Frame and served as st
 ## Commands
 
 ```sh
-python3 server.py          # HTTPS static server for ./www on https://0.0.0.0:8443
+python3 server.py          # HTTPS static server for ./www on https://0.0.0.0:8443 (Cache-Control: no-cache)
 ```
 
 ```sh
@@ -67,7 +67,7 @@ www/
   - Beyond about 6 rows, add paging.
 - Text: A-Frame's default font only has basic Latin characters. An em dash (—), middle dot (·) or similar just disappears, so use plain `-`, `:` or `,`. Keep `a-text` `width` (its wrap width) inside the panel.
 - Mannequin (`js/avatar.js`): joint tree `root > pelvis > spine > head / shoulderL,R > elbowL,R` and `pelvis > hipL,R > kneeL,R > ankleL,R`. `root` sits on the floor (y = 0) between the feet; `pelvis` is at `PELVIS_Y` when standing. Segment lengths are in `BODY`. Pose with `rot(el, x, y, z)` (degrees, writes `object3D` directly), `place(el, x, y, z)` and `turn(parts, deg)` (0 = facing the viewer, 90 = side view). `app.js` calls `resetPose()` every frame before `demo()`.
-  - Look: rounded and friendly (the user found the old boxy one chunky and a bit scary). Body parts are capsules (`geometry="primitive: capsule"`, registered from `js/components/capsule.js`) and spheres, in soft colors, with small eyes. Every body part has class `part` (tests measure them). Keep it slim, and keep the torso `BODY.torsoDepth` deep (lying poses rest on it).
+  - Look: rounded and friendly (the user found the old boxy one chunky and a bit scary). Body parts are capsules (`geometry="primitive: capsule"`, defined in `js/components/capsule.js` and registered by `avatar.js` itself, its only user) and spheres, in soft colors, with small eyes. Every body part has class `part` (tests measure them). Keep it slim, and keep the torso `BODY.torsoDepth` deep (lying poses rest on it).
   - `buildMannequin(holder, id)` builds one inside any holder entity, which places and scales it. There are two: `#demoAvatar` (45% size, in the exercise panel's frame, root id `mannequin`) and `#floorAvatar` (on the floor counter, root id `floorMannequin`). Both show the same pose. Demos always pose a full-size body standing on the holder's y = 0, seen from the holder's +Z.
   - `centerDemo()` shifts each demo sideways (`parts.shiftX`) so all its poses are centered in the frame, since lying poses stick out further on the legs' side. `app.js` calls it when the pose changes (`centerAvatars()`).
   - Side-view IK helpers work in the mannequin's own y/z plane: `legTo()` (ankle to a point, foot angle), `armTo()` (hand to a point), `along()`, `limbAngle()`, `lieOnBack()`, `onToesY()`. Use them to keep feet, hands and knees planted instead of hand-tuning angles.
@@ -96,6 +96,8 @@ www/
 - Paced (untracked): leg raises, calf raises (the head only rises a few cm), glute bridges and fire hydrants. A demo's cycle should match `secondsPerRep`, so the mannequin moves with the beat.
 
 **Component registration timing:** A-Frame 1.5 delays entity initialization until `document.readyState === 'complete'`, and module scripts run before that, so registering components from `js/main.js` works with components declared in the markup. Keep all `AFRAME.registerComponent` calls in modules imported by `main.js`, not in code that runs lazily after load.
+
+**Browser cache:** the Quest Browser caches each module separately. With a stale mix, a module that registers something (a geometry, a component) can be old while its user is new. `server.py` sends `Cache-Control: no-cache` for that reason, and whatever a module needs to be registered should be registered by that module (or one it imports), not only elsewhere.
 
 **Module scripts need HTTP(S).** Opening `index.html` via `file://` fails. Always use `server.py` (or `python3 -m http.server --directory www` for desktop-only testing).
 

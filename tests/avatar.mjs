@@ -49,6 +49,20 @@ const measure = t => page.evaluate(async t => {
 
 const results = [];
 const check = (name, ok, info = '') => results.push({ ok, name, info });
+
+// Every body part of both avatars has a mesh (a part whose geometry failed,
+// like an unregistered "capsule", simply doesn't show).
+const meshes = await page.evaluate(() => ['#mannequin', '#floorMannequin'].map(sel => {
+  const parts = [...document.querySelectorAll(sel + ' .part')];
+  return { sel, parts: parts.length, missing: parts.filter(p => !p.getObject3D('mesh')).length };
+}));
+if (!meshes.every(m => m.parts >= 20 && m.missing === 0)) {
+  // Nothing below can be measured without the meshes.
+  console.log('FAIL every body part is drawn   ' + JSON.stringify(meshes));
+  await browser.close();
+  process.exit(1);
+}
+check('every body part is drawn', true);
 const near = (a, b, tol = 0.015) => Math.abs(a - b) <= tol;
 
 // Squats: sample a full cycle.

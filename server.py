@@ -8,10 +8,16 @@ DIRECTORY = "./www"
 HOST = "0.0.0.0"
 PORT = 8443
 
-handler = functools.partial(
-    http.server.SimpleHTTPRequestHandler,
-    directory=DIRECTORY,
-)
+class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
+    # Make the browser check for a newer version of every file on each load
+    # (it gets a quick 304 when nothing changed). Without this, the Quest
+    # Browser can mix cached old modules with new ones after an update.
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
+
+handler = functools.partial(NoCacheHandler, directory=DIRECTORY)
 
 server = http.server.ThreadingHTTPServer((HOST, PORT), handler)
 

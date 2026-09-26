@@ -16,13 +16,6 @@
 //     │ ├ shoulderL/R  → elbowL/R
 //     └ hipL/R         → kneeL/R → ankleL/R
 
-import { capsuleGeometry } from './components/capsule.js';
-
-// The rounded body parts need the "capsule" geometry. It's registered here,
-// by its only user, so the two files can't get out of step: with a stale
-// main.js (browser cache) that didn't register it, only the spheres showed.
-if (!AFRAME.geometries.capsule) AFRAME.registerGeometry('capsule', capsuleGeometry);
-
 const DEG = Math.PI / 180;
 
 // Segment lengths (meters), for a ~1.75 m tall figure.

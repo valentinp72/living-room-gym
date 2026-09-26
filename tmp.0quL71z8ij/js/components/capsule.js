@@ -1,6 +1,6 @@
 // `geometry="primitive: capsule; radius: r; length: l"`: a cylinder of
 // length l (along Y) with half-sphere caps, so it's l + 2r long overall.
-// Used for the mannequin's rounded body parts; avatar.js registers it.
+// Used for the mannequin's rounded body parts.
 export const capsuleGeometry = {
   schema: {
     radius: { default: 0.05, min: 0 },
