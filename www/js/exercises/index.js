@@ -11,6 +11,9 @@
  *                          mutate st (reps, time, etc.)
  *   count(st)           -> progress toward a training-set target, in `unit`
  *   label(st)           -> string shown as the live counter
+ *   moves(st) (optional) -> moves done so far; each new one gets a ding
+ *                          and a counter pop. Default: whole reps, or
+ *                          every 10 s for 'seconds' (see movesOf below)
  *   paced (optional)    -> true for untracked exercises built with paced()
  *                          (exercises/paced.js): the app ticks each rep
  *   demo(parts, t)       -> pose the mannequin each frame (t = seconds
@@ -38,3 +41,11 @@ import fireHydrants from './fire-hydrants.js';
 
 export const EXERCISES = [squats, curls, plank, crunches, legRaises, pushUps, kneePushUps,
   lunges, calfRaises, gluteBridges, fireHydrants];
+
+// Moves done so far, for the per-move ding (see tickMoves() in app.js).
+export const HOLD_DING_SECONDS = 10;
+export function movesOf(ex, st) {
+  if (ex.moves) return ex.moves(st);
+  const n = ex.count(st);
+  return Math.floor(ex.unit === 'seconds' ? n / HOLD_DING_SECONDS : n);
+}

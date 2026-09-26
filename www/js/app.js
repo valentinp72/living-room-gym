@@ -1,4 +1,4 @@
-import { EXERCISES } from './exercises/index.js';
+import { EXERCISES, movesOf } from './exercises/index.js';
 import { WORKOUTS } from './workouts.js';
 import { validateWorkout, createRun, updateRun, skip, currentStep, nextStep, targetOf,
   describeStep, exerciseById } from './workout-runner.js';
@@ -74,6 +74,14 @@ const LOOK = {
 // Seconds before the end of a rest when the title turns to "GET READY"
 // (together with the countdown beeps).
 const GET_READY = 3;
+// Counter pop on every move: how long (s) and how much bigger at first.
+const POP = 0.35;
+const POP_SCALE = 0.35;
+// Confetti pieces for a step done, and for the last one.
+const CONFETTI_STEP = 90;
+const CONFETTI_FINISH = 260;
+const CONFETTI_AT = new THREE.Vector3();
+const CONFETTI_DIR = new THREE.Vector3();
 
 // "4 / 10" or "12 / 30 s"
 function progressText(ex, st, step) {
@@ -111,7 +119,9 @@ export const gymApp = {
     this.current = null;
     this.run = null;
     this.clock = 0;
-    this.lastCount = 0;
+    this.lastMoves = 0;
+    this.pop = POP;   // seconds since the counter last popped (see popCounter)
+    this.confetti = document.querySelector('#confetti').components.confetti;
     this.hands = readHands(this.el.sceneEl);
 
     this.buildMenu();
@@ -244,7 +254,7 @@ export const gymApp = {
   showExerciseScreen: function (skippable) {
     this.setLook('exercise');
     this.clock = 0;
-    this.lastCount = 0;
+    this.lastMoves = 0;
     setShown(this.menuPanel, false);
     setShown(this.exercisePanel, true);
     setShown(this.skipBtn, skippable);
@@ -268,7 +278,7 @@ export const gymApp = {
     const run = this.run;
     const steps = run.workout.steps;
     this.clock = 0;
-    this.lastCount = 0;
+    this.lastMoves = 0;
     this.setLook(run.phase === 'rest' ? 'rest' : 'exercise');
     if (run.phase === 'exercise') {
       this.current = { ex: run.ex, st: run.st };
@@ -296,6 +306,9 @@ export const gymApp = {
   // Sounds + screen changes for the runner's events.
   handleEvents: function (events) {
     if (!events.length) return;
+    // Confetti for every step done (not skipped), more for the last one.
+    if (events.includes('finished') && events.includes('stepDone')) this.throwConfetti(CONFETTI_FINISH);
+    else if (events.includes('stepDone')) this.throwConfetti(CONFETTI_STEP);
     for (const e of events) {
       if (e === 'stepDone' && !events.includes('finished')) play('done');
       else if (e === 'finished') play('finish');
@@ -320,7 +333,7 @@ export const gymApp = {
       const phase = run.phase, ex = run.ex, st = run.st, step = currentStep(run);
       const events = updateRun(run, ctx, delta);
       if (phase === 'exercise') {
-        this.tickPaced(ex, st);
+        this.tickMoves(ex, st, events.includes('stepDone'));
         text = ex.label(st) + '\n' + progressText(ex, st, step);
       } else if (phase === 'rest') {
         text = Math.ceil(run.restLeft) + 's';
@@ -333,11 +346,12 @@ export const gymApp = {
     } else {
       const { ex, st } = this.current;
       ex.update(ctx, st, delta);
-      this.tickPaced(ex, st);
+      this.tickMoves(ex, st, false);
       text = ex.label(st);
     }
     this.repText.setAttribute('value', text);
     this.updateFloorLabel(text);
+    this.popCounter(delta);
     const pose = this.current.ex ? this.current.ex.demo : idle;
     if (pose !== this.centered) this.centerAvatars(pose);
     const avatars = this.floorLabel.getAttribute('visible') ? [this.mannequin, this.floorMannequin] : [this.mannequin];
@@ -352,11 +366,34 @@ export const gymApp = {
     centerDemo(this.mannequin, pose);
     this.floorMannequin.shiftX = this.mannequin.shiftX;
   },
-  // Paced exercises: a tick for every rep the app counts.
-  tickPaced: function (ex, st) {
-    if (!ex.paced) return;
-    const n = Math.floor(ex.count(st));
-    if (n > this.lastCount) play('rep');
-    this.lastCount = n;
+  // Every move done (see movesOf()): the counter pops, and a ding plays
+  // (paced exercises tick instead: that sound is their beat). quiet: the
+  // step's last move, which gets the step's sound instead of a ding.
+  tickMoves: function (ex, st, quiet) {
+    const n = movesOf(ex, st);
+    if (n > this.lastMoves) {
+      this.pop = 0;
+      if (ex.paced) play('rep');
+      else if (!quiet) play('ding');
+    }
+    this.lastMoves = n;
+  },
+  // The counter grows for a moment, then eases back (this.pop = 0 starts it).
+  popCounter: function (delta) {
+    this.pop = Math.min(this.pop + delta / 1000, POP);
+    const k = 1 - this.pop / POP;
+    const s = 1 + POP_SCALE * k * k;
+    this.repText.object3D.scale.setScalar(s);
+    this.floorLabelText.object3D.scale.setScalar(s);
+  },
+  // A confetti burst in front of the face, wherever it looks (standing,
+  // face down in a plank, or up at the ceiling).
+  throwConfetti: function (count) {
+    const head = this.camera.object3D;
+    head.getWorldPosition(CONFETTI_AT);
+    head.getWorldDirection(CONFETTI_DIR).negate();   // the camera looks along -Z
+    CONFETTI_AT.addScaledVector(CONFETTI_DIR, 0.8);
+    CONFETTI_AT.y = Math.max(CONFETTI_AT.y, 0.3);
+    this.confetti.burst(CONFETTI_AT, count);
   }
 };

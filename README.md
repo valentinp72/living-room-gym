@@ -5,7 +5,8 @@ Pick a **training set** (a fixed sequence of exercises with rep or time targets 
 in between), or a single exercise. A friendly demo avatar, framed on the exercise panel,
 shows each movement (and a small one on the floor counter during floor exercises), and the app counts
 your reps (or times your holds) using headset tracking and either Touch controllers or
-bare-hand tracking. Sounds confirm each finished exercise.
+bare-hand tracking. Every counted move gets a little ding and a pop of the counter, and each
+finished exercise of a training set gets a chime and a burst of confetti.
 
 It is made for **AR (mixed reality)**: you train in your own room with Quest passthrough,
 and the UI panels and demo avatar appear in it. There is deliberately **no VR mode**:
@@ -40,10 +41,11 @@ demo appears only when it starts. **Skip** jumps to the next step or ends the re
 
 | Sound           | When                                                     |
 |-----------------|----------------------------------------------------------|
-| Two-tone chime  | A step's target is reached                               |
+| Ding            | A move is counted: a rep, one arm's curl, 10 s of a hold |
+| Two-tone chime  | A step's target is reached (+ confetti)                  |
 | 3 short beeps   | The last 3 seconds of a rest                             |
 | High beep       | The next step starts                                     |
-| Fanfare         | The training set is complete                             |
+| Fanfare         | The training set is complete (+ more confetti)           |
 | Tick            | Each rep of a *paced* exercise (see below)               |
 
 The menu has two tabs: **Training sets**, and **Single exercises** (no target), which is
@@ -147,7 +149,8 @@ a real body. Those still need a Quest.
         ├── components/
         │   ├── xr-environment.js  # AR passthrough (transparent background), refuses VR
         │   ├── xr-pointer.js      # XR pointing ray + click (controller trigger or pinch)
-        │   └── capsule.js         # "capsule" geometry for the mannequin's rounded limbs
+        │   ├── capsule.js         # "capsule" geometry for the mannequin's rounded limbs
+        │   └── confetti.js        # Confetti bursts when a step is done
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
             ├── paced.js       # Helper for untracked exercises: app-paced reps

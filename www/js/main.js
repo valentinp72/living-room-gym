@@ -4,7 +4,9 @@
 import { gymApp } from './app.js';
 import { xrEnvironment } from './components/xr-environment.js';
 import { xrPointer } from './components/xr-pointer.js';
+import { confetti } from './components/confetti.js';
 
 AFRAME.registerComponent('gym-app', gymApp);
 AFRAME.registerComponent('xr-environment', xrEnvironment);
 AFRAME.registerComponent('xr-pointer', xrPointer);
+AFRAME.registerComponent('confetti', confetti);

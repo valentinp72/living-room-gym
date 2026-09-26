@@ -28,11 +28,11 @@ await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, {
 await installFakeXR(page);
 await page.evaluate(() => document.querySelector('#camera').setAttribute('look-controls', 'enabled: false'));
 
-const NAMES = { 880: 'rep', 660: 'done', 520: 'count', 1040: 'go', 523: 'finish' };
+const NAMES = { 880: 'rep', 1320: 'ding', 3300: null, 660: 'done', 520: 'count', 1040: 'go', 523: 'finish' };
 // Sounds played since the last call, by name.
 const sounds = () => page.evaluate(NAMES => {
   const out = [];
-  for (const t of __tones) if (t.first) out.push(NAMES[t.f] || t.f);
+  for (const t of __tones) if (t.first && NAMES[t.f] !== null) out.push(NAMES[t.f] || t.f);
   __tones.length = 0; return out;
 }, NAMES);
 const ui = () => page.evaluate(() => ({
@@ -73,10 +73,30 @@ check('skip shown in a training set', u.skip);
 for (let i = 0; i < 4; i++) { await head(1.25); await head(1.58); }
 check('progress 4 / 10', (await ui()).rep.endsWith('\n4 / 10'), (await ui()).rep);
 if (shot) await page.screenshot({ path: shot + '-step.png' });
-for (let i = 0; i < 6; i++) { await head(1.25); await head(1.58); }
+eq('a ding per squat', await sounds(), ['ding', 'ding', 'ding', 'ding']);
+// The counter pops on each rep, then eases back.
+await head(1.25);
+await page.evaluate(() => document.querySelector('#camera').object3D.position.set(0, 1.58, 0));
+await sleep(60);
+const popped = await page.evaluate(() => document.querySelector('#repText').object3D.scale.x);
+await sleep(500);
+const settled = await page.evaluate(() => document.querySelector('#repText').object3D.scale.x);
+check('counter pops on a rep', popped > 1.1 && settled === 1, `popped=${popped} settled=${settled}`);
+await sounds();
+const confetti = () => page.evaluate(() => {
+  const c = document.querySelector('#confetti').components.confetti;
+  return { live: c.live().length, visible: c.mesh.visible, minY: Math.min(...c.live().map(p => p.pos.y)) };
+});
+eq('no confetti yet', (await confetti()).live, 0);
+for (let i = 0; i < 5; i++) { await head(1.25); await head(1.58); }
 await sleep(150);
 u = await ui();
-eq('squats done: chime', await sounds(), ['done']);
+eq('squats done: dings, the last rep chimes', await sounds(), [...Array(4).fill('ding'), 'done']);
+let c = await confetti();
+check('step done: confetti burst', c.live === 90 && c.visible, JSON.stringify(c));
+await sleep(3500);
+c = await confetti();
+check('confetti gone after a few seconds', c.live === 0 && !c.visible, JSON.stringify(c));
 eq('then rest', u.title, 'REST');
 eq('rest explains what comes next', u.instr, 'Relax. Next: Bicep Curls, 10 reps. It starts after the countdown.');
 check('rest countdown shown', /^(19|20)s$/.test(u.rep), u.rep);
@@ -101,7 +121,8 @@ await page.evaluate(() => { for (const s of ['left', 'right']) Object.assign(fak
 await sleep(150);
 for (let i = 0; i < 10; i++) { await hands(1.35); await hands(0.8); }
 await sleep(150);
-eq('curls done: chime', await sounds(), ['done']);
+// Both arms curl together here: one ding per pair (alternating arms get one each).
+eq('curls done: dings, the last one chimes', await sounds(), [...Array(9).fill('ding'), 'done']);
 eq('rest again', (await ui()).title, 'REST');
 
 // Full 20 s rest: 3-2-1 countdown then go; "GET READY" for the last 3 s.
@@ -122,7 +143,9 @@ check('plank progress on the floor counter', /\n(9|10|11) \/ 20 s$/.test(await p
 if (shot) await page.screenshot({ path: shot + '-plank.png' });
 await sleep(10600);
 u = await ui();
-eq('finish: fanfare only', await sounds(), ['finish']);
+eq('plank: a ding at 10 s, fanfare at the end', await sounds(), ['ding', 'finish']);
+c = await confetti();
+check('finish: big confetti burst, above the floor', c.live === 260 && c.minY >= 0.003, JSON.stringify(c));
 eq('complete screen', [u.title, u.rep, u.skip, u.mannequin], ['TRAINING COMPLETE', 'Well done!', false, false]);
 await head(1.6);
 await click('#btnBack'); await sleep(100);

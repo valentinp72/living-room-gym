@@ -81,6 +81,8 @@ export default {
   },
   // One rep = one curl with each arm.
   count: st => Math.min(st.left.reps, st.right.reps),
+  // A ding for each arm's curl.
+  moves: st => st.left.reps + st.right.reps,
   label(st) {
     const text = 'Left: ' + st.left.reps + '    Right: ' + st.right.reps;
     if (!st.left.tracked && !st.right.tracked) return text + '\nShow your hands or controllers';

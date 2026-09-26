@@ -1,5 +1,6 @@
 // Short feedback sounds, generated with Web Audio (no files to load).
-//   rep     paced exercises: one tick per rep
+//   rep     paced exercises: one tick per rep (the beat)
+//   ding    a tracked move is done (a rep, one arm's curl, 10 s of a hold)
 //   done    a step's target is reached
 //   count   rest countdown: 3, 2, 1
 //   go      the next step starts
@@ -8,8 +9,10 @@
 // from click handlers (a trigger pull / pinch counts as one).
 
 const SOUNDS = {
-  // [frequency Hz, start s, duration s]
+  // [frequency Hz, start s, duration s, volume (default 0.3)]
   rep: [[880, 0, 0.07]],
+  // A little bell: a high tone with a quieter overtone, fading out.
+  ding: [[1320, 0, 0.45, 0.25], [3300, 0, 0.18, 0.06]],
   done: [[660, 0, 0.12], [990, 0.12, 0.22]],
   count: [[520, 0, 0.12]],
   go: [[1040, 0, 0.3]],
@@ -34,14 +37,14 @@ export function play(name) {
   const a = audio();
   if (!a) return;
   const t0 = a.currentTime + 0.01;
-  for (const [freq, start, dur] of SOUNDS[name]) {
+  for (const [freq, start, dur, vol = 0.3] of SOUNDS[name]) {
     const osc = a.createOscillator();
     const gain = a.createGain();
     osc.type = 'sine';
     osc.frequency.value = freq;
     // Quick fade in/out to avoid clicks.
     gain.gain.setValueAtTime(0, t0 + start);
-    gain.gain.linearRampToValueAtTime(0.3, t0 + start + 0.01);
+    gain.gain.linearRampToValueAtTime(vol, t0 + start + 0.01);
     gain.gain.linearRampToValueAtTime(0, t0 + start + dur);
     osc.connect(gain).connect(a.destination);
     osc.start(t0 + start);
