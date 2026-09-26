@@ -62,15 +62,37 @@ check('floor counter hidden again', (await floor()).visible === false, '');
 
 // Poses that are not a plank.
 for (const [name, y, pitch] of [['kneeling upright', 0.75, 0], ['standing, looking down', 1.6, -85],
-  ['lying flat on the floor', 0.15, -85], ['sitting, head tilted', 0.85, -70]]) {
+  ['lying on the back', 0.2, 80], ['sitting, head tilted', 0.85, -70]]) {
   await head(y, pitch); await sleep(1500);
-  check('not a plank: ' + name, await label() === done, await label());
+  const l = await label();
+  check('not a plank: ' + name, !l.startsWith('Hold') && secs(l, 'Best') === best, l);
 }
+
+// Looser than before (regression: a real forearm plank was missed): a low
+// head, looking 45° down instead of straight at the floor, still counts.
+await stand(); await sleep(300);
+await head(0.22, -45); await sleep(1600);
+check('low head looking ahead: a plank', secs(await label(), 'Hold') !== null, await label());
+// Hysteresis: once holding, 30° down still holds.
+await head(0.3, -30); await sleep(1500);
+check('holding: 30 deg down keeps it', secs(await label(), 'Hold') > 2.5, await label());
+await stand(); await sleep(1400);
+const done2 = await label();
+
+// When low but not in position, the label says what's off, with the value.
+for (const [name, y, pitch, want] of [['too high', 0.85, -80, /^Head lower \(85 cm\)/],
+  ['looking ahead', 0.4, -10, /^Face the floor \(10 deg\)/], ['too low', 0.07, -80, /^Head too low \(7 cm\)/]]) {
+  await head(y, pitch); await sleep(300);
+  const l = await label();
+  check('hint: ' + name, want.test(l) && l.includes('Best: '), l);
+}
+await stand(); await sleep(300);
+check('standing: no hint', await label() === done2, await label());
 
 // A second, shorter hold keeps the best.
 await plank(); await sleep(2000); await stand(); await sleep(1300);
 const again = await label();
-check('second hold: best kept', secs(again, 'Best') === best && secs(again, 'Last') < best, again);
+check('second hold: best kept', secs(again, 'Best') === secs(done2, 'Best') && secs(again, 'Last') < secs(again, 'Best'), again);
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : '   ' + r.info));
 console.log('page errors:', errors.length ? errors : 'none');

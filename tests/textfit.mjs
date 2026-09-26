@@ -59,7 +59,10 @@ const floorTexts = await page.evaluate(async () => {
   const plate = label.querySelector('a-plane');
   const w = plate.getAttribute('width') / 2, h = plate.getAttribute('height') / 2;
   const out = [];
-  for (const ex of app.pages.single.items) {
+  // Plus the plank's longest "what's off" hint, after a first hold.
+  const plank = app.pages.single.items.find(e => e.id === 'plank');
+  const hint = { ...plank, name: 'Plank hint', state: () => ({ ...plank.state(), off: 'Face the floor (-80 deg)', best: 30 }) };
+  for (const ex of [...app.pages.single.items, hint]) {
     t.setAttribute('value', ex.label(ex.state()) + '\n10 / 10' + (ex.unit === 'seconds' ? ' s' : ''));
     await new Promise(r => setTimeout(r, 50));
     label.object3D.updateMatrixWorld(true);

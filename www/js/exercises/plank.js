@@ -1,18 +1,32 @@
 import { BODY, place, rot, turn } from '../avatar.js';
+import { gazeY } from '../tracking.js';
 
 // Plank detection from the headset alone (works with controllers, bare hands
-// or nothing in hand). In a plank the head is low and face down.
-const MIN_Y = 0.25;      // head height above the floor (m): lower = lying flat
-const MAX_Y = 0.8;       // higher = kneeling / sitting up
-const MAX_UP_Y = 0.5;    // head tilted > 60° from upright (up vector's y = cos(tilt))
+// or nothing in hand). In a plank the head is low and faces the floor.
+// Forearm plank: the headset is about 25-45 cm above the floor, straight
+// arms about 55-75 cm. The floor height comes from the Quest's estimate,
+// which can be a few cm off, so the height window is wide.
+// Once holding, the limits loosen (hysteresis), so a wobble at the edge
+// doesn't stop the timer.
+const ENTER_LIMITS = { minY: 0.1, maxY: 0.8, minDown: 40 };
+const HOLD_LIMITS = { minY: 0.05, maxY: 0.95, minDown: 25 };
 const ENTER = 1.0;       // seconds in position before the timer starts (counted)
 const EXIT = 1.0;        // seconds out of position before it stops (not counted)
+const TRYING_Y = 0.9;    // below this, say what's missing instead of the prompt
 
-const UP = new THREE.Vector3();
+// How far the face points down, in degrees (90 = straight at the floor,
+// 0 = at the horizon, negative = up, e.g. lying on the back).
+const lookDown = head => -Math.asin(Math.max(-1, Math.min(1, gazeY(head)))) * 180 / Math.PI;
 
-function inPlank(head) {
-  if (head.position.y < MIN_Y || head.position.y > MAX_Y) return false;
-  return UP.set(0, 1, 0).applyQuaternion(head.quaternion).y < MAX_UP_Y;
+// null when in plank position, else what's wrong (shown to the user).
+function whatsOff(head, limits) {
+  const y = head.position.y;
+  const cm = Math.round(y * 100) + ' cm';
+  if (y > limits.maxY) return 'Head lower (' + cm + ')';
+  if (y < limits.minY) return 'Head too low (' + cm + ')';
+  const down = lookDown(head);
+  if (down < limits.minDown) return 'Face the floor (' + Math.round(down) + ' deg)';
+  return null;
 }
 
 const fmt = s => s.toFixed(1) + 's';
@@ -21,11 +35,14 @@ export default {
   id: 'plank', name: 'Plank Hold', muscle: 'Abs', color: '#ef6c00',
   instructions: 'Get into a forearm plank, facing the floor. The timer starts and stops by itself.',
   unit: 'seconds',
-  state: () => ({ holding: false, time: 0, inFor: 0, outFor: 0, last: null, best: 0, total: 0 }),
+  state: () => ({ holding: false, time: 0, inFor: 0, outFor: 0, last: null, best: 0, total: 0, off: null }),
   update(ctx, st, dt) {
     if (!ctx.camera.object3D) return;
     const s = dt / 1000;
-    const ok = inPlank(ctx.camera.object3D);
+    const head = ctx.camera.object3D;
+    const off = whatsOff(head, st.holding ? HOLD_LIMITS : ENTER_LIMITS);
+    const ok = !off;
+    st.off = head.position.y > TRYING_Y ? null : off;   // standing: just the prompt
     if (!st.holding) {
       st.inFor = ok ? st.inFor + s : 0;
       if (st.inFor >= ENTER) { st.holding = true; st.time = st.inFor; st.outFor = 0; }
@@ -46,6 +63,7 @@ export default {
   count: st => st.total + (st.holding ? st.time : 0),
   label(st) {
     if (st.holding) return 'Hold: ' + fmt(st.time) + (st.best ? '\nBest: ' + fmt(st.best) : '');
+    if (st.off) return st.off + (st.best ? '\nBest: ' + fmt(st.best) : '');
     if (st.last === null) return 'Get into plank position';
     return 'Last: ' + fmt(st.last) + '    Best: ' + fmt(st.best);
   },
