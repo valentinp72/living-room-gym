@@ -216,7 +216,8 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 ## Known issues
 
 1. **The plank is detected from the headset only.** Your head must be 10 to 80 cm above the
-   floor and facing down (at least 40°). When you are low but not in position, the counter
+   floor and facing down (at least 40°) to start. The hold then stops if your head drops 10 cm
+   (lying down) or rises 12 cm (sitting back). When you are low but not in position, the counter
    says what is off, with the measured height or angle. A knee plank, or kneeling on all
    fours with your face down, also counts.
 2. **New exercise thresholds are estimates.** Crunches (head rises 12 cm), push-ups (head

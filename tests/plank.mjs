@@ -16,7 +16,7 @@ const head = (y, pitch, yaw = 0) => page.evaluate((y, pitch, yaw) => {
   o.position.set(0, y, 0); o.rotation.set(pitch * Math.PI / 180, yaw * Math.PI / 180, 0, 'YXZ');
 }, y, pitch, yaw);
 const stand = () => head(1.6, 0);
-const plank = () => head(0.45, -80);
+const plank = () => head(0.38, -80);
 const label = () => page.evaluate(() => document.querySelector('#repText').getAttribute('value'));
 const secs = (text, key) => { const m = text.match(new RegExp(key + ': ([\\d.]+)s')); return m ? parseFloat(m[1]) : null; };
 const floor = () => page.evaluate(() => {
@@ -62,7 +62,8 @@ check('floor counter hidden again', (await floor()).visible === false, '');
 
 // Poses that are not a plank.
 for (const [name, y, pitch] of [['kneeling upright', 0.75, 0], ['standing, looking down', 1.6, -85],
-  ['lying on the back', 0.2, 80], ['sitting, head tilted', 0.85, -70]]) {
+  ['lying on the back', 0.2, 80], ['sitting, head tilted', 0.85, -70],
+  ['almost sitting, face down', 0.68, -70], ['lying face down', 0.1, -85]]) {
   await head(y, pitch); await sleep(1500);
   const l = await label();
   check('not a plank: ' + name, !l.startsWith('Hold') && secs(l, 'Best') === best, l);
@@ -73,11 +74,24 @@ for (const [name, y, pitch] of [['kneeling upright', 0.75, 0], ['standing, looki
 await stand(); await sleep(300);
 await head(0.22, -45); await sleep(1600);
 check('low head looking ahead: a plank', secs(await label(), 'Hold') !== null, await label());
-// Hysteresis: once holding, 30° down still holds.
-await head(0.3, -30); await sleep(1500);
-check('holding: 30 deg down keeps it', secs(await label(), 'Hold') > 2.5, await label());
+// Once holding: a small sag or rise, or 32° down, keeps it.
+await head(0.3, -32); await sleep(700);
+await head(0.15, -80); await sleep(700);
+check('holding: small moves keep it', secs(await label(), 'Hold') > 2.5, await label());
 await stand(); await sleep(1400);
 const done2 = await label();
+
+// The hold follows the head height it started at (regression: lying down or
+// almost sitting up still counted): 10 cm lower or 12 cm higher ends it.
+for (const [name, y] of [['lying down', 0.24], ['sitting back', 0.53]]) {
+  await plank(); await sleep(1500);
+  const before = secs(await label(), 'Hold');
+  await head(y, -80); await sleep(1400);
+  const l = await label();
+  check('hold ends: ' + name, before !== null && !l.startsWith('Hold'), `${before} then ${l}`);
+  await stand(); await sleep(300);
+}
+const done3 = await label();
 
 // When low but not in position, the label says what's off, with the value.
 for (const [name, y, pitch, want] of [['too high', 0.85, -80, /^Head lower \(85 cm\)/],
@@ -87,12 +101,12 @@ for (const [name, y, pitch, want] of [['too high', 0.85, -80, /^Head lower \(85 
   check('hint: ' + name, want.test(l) && l.includes('Best: '), l);
 }
 await stand(); await sleep(300);
-check('standing: no hint', await label() === done2, await label());
+check('standing: no hint', await label() === done3, await label());
 
 // A second, shorter hold keeps the best.
 await plank(); await sleep(2000); await stand(); await sleep(1300);
 const again = await label();
-check('second hold: best kept', secs(again, 'Best') === secs(done2, 'Best') && secs(again, 'Last') < secs(again, 'Best'), again);
+check('second hold: best kept', secs(again, 'Best') === secs(done3, 'Best') && secs(again, 'Last') < secs(again, 'Best'), again);
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : '   ' + r.info));
 console.log('page errors:', errors.length ? errors : 'none');
