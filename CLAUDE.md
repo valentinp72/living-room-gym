@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for coding agents (and human contributors) working in this repository: conventions, constraints and the reasons behind them. See `README.md` for the user-facing overview.
+Guidance for coding agents (and human contributors) working in this repository: conventions, constraints and the reasons behind them. `README.md` is for users (features, screenshots, how to train); `DEVELOPMENT.md` covers running, testing, deploying and extending the app.
 
 ## What this is
 
@@ -33,6 +33,7 @@ The app has no build step and no package manager. `tests/` is the only place wit
   - Tests that import app modules in the page do it with the page's own version: `import('/js/x.js' + new URL(document.querySelector('script[type=module]').src).search)`.
   - The workflow runs the whole test suite against the rewritten copy (`WWW=<dir> npm test`) and deploys only if it passes.
 - **Safety first.** The app is public: keep the safety notice (`#safetyPanel`, shown before the menu until accepted once per device, `SAFETY_VERSION` in `app.js`; bump it when the text changes in substance) and the README warning. Test launches accept it automatically (`launch()` in `tests/lib.mjs`; `launch({ safetyAccepted: false })` to test it). Don't add exercises that are risky with a headset on: big jumps or landings (jumping jacks are the limit, and their instructions ask for room around), moving across the room, long balance on one foot, or lying face down with the headset on the floor. Instructions for anything with equipment say how to keep it stable (a sturdy chair that can't slide).
+- **README screenshots** (`docs/screenshots/`, not deployed) come from `tests/screenshots.mjs` (desktop preview, frozen clock). When the UI or a demo shown there changes, regenerate them: serve `www/`, then `node tests/screenshots.mjs <url> docs/screenshots` (needs ImageMagick for the contact sheet and GIF), and look at them before committing. Keep the README user-oriented; technical material goes in `DEVELOPMENT.md`.
 - **License:** MIT (`LICENSE`). Only add code or assets under a compatible license, and keep A-Frame loaded from its CDN.
 - **A-Frame, not raw three.js**, for scene structure. Dropping down to `object3D` / `THREE` inside components is fine for math and performance.
 
@@ -128,7 +129,7 @@ www/
 - In an XR session with the default `local-floor` reference space, A-Frame writes the headset pose straight into `#camera`'s `object3D` (`renderer.xr.setPoseTarget`), so `position.y` is the real head height above the floor and `quaternion` is the head orientation. On desktop it is the fixed `1.6`. Don't compute a calibration baseline until the session has started and the pose has settled.
 - Hands and controllers can be untracked on any frame. Check `hand.tracked` before trusting a position.
 
-## Known problems (see README "Known issues")
+## Known problems (see README "Good to know")
 
 1. No awareness of real walls or furniture in AR. A version that kept panels clear of room geometry was tried and removed: it was glitchy, and most home rooms are too small for it to help. Placement relies on recentering (buttons, B / Y, the Quest's own recenter, on entering AR, and the menu following the user).
 2. The plank is detected from the head only, so a knee plank or all-fours with the face down also counts. Push-ups, crunches and the exercises with equipment are head-only too, and their thresholds come from simulation plus one person's tests. The wall sit counts sitting on a chair; the side plank only checks a low, sideways-tilted head.

@@ -2,22 +2,14 @@
 
 [![Test and deploy](https://github.com/valentinp72/living-room-gym/actions/workflows/pages.yml/badge.svg)](https://github.com/valentinp72/living-room-gym/actions/workflows/pages.yml)
 
-A WebXR bodybuilding trainer for **Meta Quest**, built with [A-Frame](https://aframe.io).
-Pick a **training set** (a fixed sequence of exercises with rep or time targets and rests
-in between), or a single exercise. A friendly demo avatar, framed on the exercise panel,
-shows each movement (and a small one on the floor counter during floor exercises), and the app counts
-your reps (or times your holds) using headset tracking and either Touch controllers or
-bare-hand tracking. Every counted move gets a little ding and a pop of the counter, and each
-finished exercise of a training set gets a chime and a burst of confetti.
+**A mixed reality home workout for Meta Quest.** A friendly coach shows you each move right
+in your living room, and the headset counts your reps and times your holds. There's nothing to
+install and no account: it runs in the Quest Browser.
 
-It is made for **AR (mixed reality)**: you train in your own room with Quest passthrough,
-and the UI panels and demo avatar appear in it. There is deliberately **no VR mode**:
-exercising without seeing your surroundings could hurt you, so VR sessions are refused.
+**[Open Living Room Gym](https://valentinp72.github.io/living-room-gym/)**: on your Quest,
+open the link in the Browser and tap **AR**.
 
-It is a plain static web app: no install, no account, it runs directly in the Quest Browser.
-
-**Try it: [https://valentinp72.github.io/living-room-gym/](https://valentinp72.github.io/living-room-gym/)**. On a Meta Quest, open the link in the Quest Browser and
-tap **AR**. On a computer, the same page shows a preview you can click through with the mouse.
+![A training set step: the chair dips demo, with the rep counter](docs/screenshots/exercise.jpg)
 
 > [!WARNING]
 > **You use this app at your own risk.** Exercising while wearing a headset can lead to falls,
@@ -28,40 +20,93 @@ tap **AR**. On a computer, the same page shows a preview you can click through w
 > advice. The app is provided "as is", without warranty of any kind (see [LICENSE](LICENSE)),
 > and the authors accept no responsibility for any injury or damage resulting from its use.
 >
-> The app shows a short version of this notice before its first use on each device.
+> The app shows [a short version of this notice](docs/screenshots/safety.jpg) before its first use on each device.
 
-## Using it
+## Features
 
-- **Open it:** in the Quest Browser, go to [https://valentinp72.github.io/living-room-gym/](https://valentinp72.github.io/living-room-gym/), then tap the **AR** button
-  (bottom right). The panels appear about 2 m in front of you, in your room.
-- **Click:** point with the controller laser and pull the trigger. With hand tracking on
-  (Quest settings), put the controllers down, point with your hand and pinch your thumb and
-  index finger.
-- **Bring the panels in front of you** whenever you move (for example to a free patch of
-  floor): press **B / Y**, the **Recenter** button, or use the Quest's own recenter (hold the
-  Meta button, or the palm-up pinch with bare hands). On the menu, the panel also follows you
-  when you turn away or walk off for a moment.
-- **Pick a training set** (by level), or a single exercise to try its detection. On the
-  Training sets tab, the last row says which equipment you have: sets needing something you
-  don't have are hidden.
-- **Desktop preview:** open the same link on a computer, look around with the mouse (drag)
-  and click the panels. Nothing is counted there, but you can see every demo.
+### Train in your own room
 
-## Privacy
+Living Room Gym is mixed reality only: the panels and the coach float in your real room, seen
+through the Quest's passthrough cameras. There is deliberately no VR mode, because you should
+always see where you are while you exercise.
 
-Nothing leaves your device: no account, no analytics, no server-side code (GitHub Pages only
-serves the files). Like any web page, the app can't see the passthrough camera image; it only
-gets the headset and hand positions WebXR gives every AR page. It stores two small settings in
-the browser: that you accepted the safety notice, and which equipment you have.
+### A coach that shows every move
+
+A small, friendly avatar demonstrates each exercise, with the chair, band or dumbbells when
+the exercise needs them. On the floor, it lies next to your counter so you can check your form
+without looking up.
+
+<p>
+  <img src="docs/screenshots/squats.gif" alt="The coach doing squats" width="280">
+</p>
+
+![Eight of the coach's demos: squats, push-ups, side plank, bird dogs, split squats on a chair, incline push-ups, band rows, shoulder press](docs/screenshots/coach.jpg)
+
+### Reps counted for you
+
+Most exercises are counted automatically from how your head and hands move: squats, lunges,
+push-ups, crunches, curls, chair dips and more. Planks, side planks and wall sits are timed on
+their own: get in position and the timer starts; stop and it stops. No buttons to press
+mid-exercise. For moves the headset can't follow, the app sets the pace with a beat and counts
+along with you.
+
+Every counted rep gets a little ding. When you're on the floor, the counter comes to you: on
+the floor under your face in a plank, or above you when you lie on your back.
+
+![Holding a plank: the timer and the coach on the floor, under your face](docs/screenshots/plank-floor.jpg)
+
+### Training sets for every level
+
+Pick a training set and follow it: each step has a target, with a rest in between. There are
+15 sets at three levels. Harder sets have more reps, longer holds and shorter rests.
+
+![The menu: training sets by level, and the equipment you have](docs/screenshots/menu-sets.jpg)
+
+Rest looks clearly different from exercise, so you never start too early: a blue screen, a
+countdown, and "GET READY" with three beeps before the next step. Finish a step and you get
+confetti; finish the whole set and you get a lot more.
+
+| Resting | Step done |
+|---|---|
+| ![The rest screen with its countdown](docs/screenshots/rest.jpg) | ![Confetti after a step](docs/screenshots/confetti.jpg) |
+
+### 29 exercises, at home
+
+Everything can be done at home. Many exercises need nothing; others use a sturdy **chair**, an
+elastic **band** or **dumbbells**. Tell the app what you have and it only shows the training
+sets you can do. The **Single exercises** tab lists every exercise on its own, without a
+target, to try it out.
+
+![Single exercises, sorted by standing, floor, chair, band and weights](docs/screenshots/menu-exercises.jpg)
+
+### Controllers or bare hands
+
+Point and click with the controllers, or put them down and pinch with your fingers. With a
+band or dumbbells in your hands, hand tracking is the easy way.
+
+## Getting started
+
+1. **Clear some space**: about 2 × 2 m, with room to lie down.
+2. On your Quest, open **[valentinp72.github.io/living-room-gym](https://valentinp72.github.io/living-room-gym/)**
+   in the Browser and tap **AR** (bottom right).
+3. Read the safety notice and tap **I understand** (only the first time).
+4. Pick a training set (start with **Easy**), or a single exercise.
+5. Follow the coach. Your reps are counted on the panel.
+
+**Tips**
+
+- **Panels in the wrong place?** Press **Recenter**, **B** or **Y**, or use the Quest's own
+  recenter (hold the Meta button). On the menu, the panel also follows you when you turn away.
+- **Standing exercises** start with "Stand still...": stand straight for a second so the app
+  learns your height.
+- **Not counted?** For holds, the counter tells you what's off, like `Head lower (85 cm)`.
+- **Skip** jumps to the next step or ends a rest early.
+- On a computer, the same link opens a preview: look around with the mouse and click the
+  panels. Nothing is counted there, but you can see every exercise.
 
 ## Training sets
 
-A training set runs its steps in order. Each step has a target in reps or seconds, and
-there is a fixed rest between steps. Sets come in three levels (a tab each in the menu):
-harder levels have more reps, longer holds and shorter rests. Sets that need equipment say
-so on their button (for example "with dumbbells, chair").
-
-| Training set        | Level  | Rest | Equipment        | Steps |
+| Training set        | Level  | Rest | Needs            | Steps |
 |---------------------|--------|------|------------------|-------|
 | Full body starter   | Easy   | 20 s |                  | 10 squats, 10 bicep curls (each arm), 20 s plank |
 | Legs and glutes     | Easy   | 20 s |                  | 10 squats, 10 lunges, 10 fire hydrants, 10 glute bridges, 15 calf raises |
@@ -70,7 +115,7 @@ so on their button (for example "with dumbbells, chair").
 | Chair basics        | Easy   | 25 s | chair            | 10 chair squats, 8 incline push-ups, 10 glute bridges, 6 chair dips, 8 bird dogs |
 | Full body           | Medium | 15 s |                  | 15 squats, 10 push-ups, 16 lunges, 15 crunches, 15 glute bridges, 40 s plank |
 | Core                | Medium | 15 s |                  | 15 crunches, 20 mountain climbers, 20 s side plank, 10 leg raises, 10 bird dogs, 40 s plank |
-| Legs and glutes     | Medium | 15 s | (a wall)         | 15 squats, 16 lunges, 40 s wall sit, 16 donkey kicks, 15 glute bridges, 20 calf raises |
+| Legs and glutes     | Medium | 15 s | a wall           | 15 squats, 16 lunges, 40 s wall sit, 16 donkey kicks, 15 glute bridges, 20 calf raises |
 | Band workout        | Medium | 20 s | band             | 15 band pull-aparts, 16 band side steps, 15 band rows, 15 squats, 15 band pull-aparts, 15 glute bridges |
 | Dumbbell full body  | Medium | 20 s | dumbbells        | 12 goblet squats, 10 shoulder presses, 12 bent-over rows, 12 Romanian deadlifts, 12 curls, 10 lateral raises |
 | Full body challenge | Hard   | 12 s | chair            | 30 jumping jacks, 15 push-ups, 20 split squats, 30 mountain climbers, 15 chair dips, 60 s plank |
@@ -82,288 +127,69 @@ so on their button (for example "with dumbbells, chair").
 For exercises that alternate sides (mountain climbers, bird dogs, donkey kicks, fire
 hydrants), each side counts as one rep.
 
-During a set, the panel shows the step (`1/3  SQUATS`) and progress (`4 / 10`). Rest looks
-different on purpose: a blue panel with a cyan countdown, and the avatar just stands and
-breathes. The title turns to `GET READY` for the last 3 seconds, and the next exercise's
-demo appears only when it starts. **Skip** jumps to the next step or ends the rest early. Sounds:
-
-| Sound           | When                                                     |
-|-----------------|----------------------------------------------------------|
-| Ding            | A move is counted: a rep, one arm's curl, 10 s of a hold |
-| Two-tone chime  | A step's target is reached (+ confetti)                  |
-| 3 short beeps   | The last 3 seconds of a rest                             |
-| High beep       | The next step starts                                     |
-| Fanfare         | The training set is complete (+ more confetti)           |
-| Tick            | Each rep of a *paced* exercise (see below)               |
-
-The menu has two tabs: **Training sets** (by level: Easy, Medium, Hard), and **Single
-exercises** (no target; by Standing, Floor, Chair, Band, Weights), which is handy for testing
-and debugging detection.
-
 ## Exercises
 
-All exercises can be done at home. Some need basic equipment: a sturdy **chair**, an
-elastic **band**, or **dumbbells**. The demo avatar shows the equipment too.
+**Counted**: the app counts your reps. **Timed**: the app times your hold. **Beat**: the app
+sets the pace with a tick and counts along; follow the coach.
 
-| Exercise           | Muscle group | Equipment | Tracking |
-|--------------------|--------------|-----------|----------|
-| Squats             | Legs         |           | Automatic: headset height drop vs. calibrated standing height |
-| Lunges             | Legs         |           | Automatic, like squats |
-| Calf Raises        | Legs         |           | Paced, one every 2 s |
-| Wall Sit           | Legs         | (a wall)  | Automatic timer: head 30 to 80 cm below the calibrated standing height, looking ahead |
-| Jumping Jacks      | Cardio       |           | Paced, one every 1.5 s |
-| Bicep Curls        | Arms         | (dumbbells optional, with bare hands) | Automatic, per arm: hand height relative to the headset, and controller tilt (works with the hands out of view) |
-| Plank Hold         | Abs          |           | Automatic timer: detects the plank from head height and tilt |
-| Side Plank         | Abs          |           | Automatic timer: head low, tilted sideways, looking ahead |
-| Crunches           | Abs          |           | Automatic: lying on your back (head low, looking up), the head rises and comes back down |
-| Leg Raises         | Abs          |           | Paced, one every 3 s |
-| Mountain Climbers  | Abs          |           | Paced, one knee every 1 s |
-| Push-ups           | Chest        |           | Automatic: face down with the head low, the head goes down and back up |
-| Knee Push-ups      | Chest        |           | Automatic, like push-ups |
-| Glute Bridges      | Glutes       |           | Paced, one every 3 s |
-| Fire Hydrants      | Glutes       |           | Paced, one every 2.5 s, alternating legs |
-| Donkey Kicks       | Glutes       |           | Paced, one every 2 s, alternating legs |
-| Bird Dogs          | Back         |           | Paced, one every 3 s, alternating sides |
-| Chair Dips         | Arms         | chair     | Automatic: calibrated at the top, the head drops 15 cm and comes back |
-| Incline Push-ups   | Chest        | chair     | Automatic, like push-ups, with the head higher |
-| Chair Squats       | Legs         | chair     | Automatic, like squats (the head drops 30 cm) |
-| Split Squats       | Legs         | chair     | Automatic, like squats (20 cm) |
-| Band Pull-Aparts   | Back         | band      | Paced, one every 2.5 s |
-| Band Rows          | Back         | band      | Paced, one every 2.5 s |
-| Band Side Steps    | Glutes       | band      | Paced, one step every 1.5 s |
-| Goblet Squats      | Legs         | dumbbell  | Automatic, like squats |
-| Romanian Deadlifts | Glutes       | dumbbells | Automatic, like squats (the head drops 30 cm) |
-| Shoulder Press     | Shoulders    | dumbbells | Paced, one every 2.5 s |
-| Bent-over Rows     | Back         | dumbbells | Paced, one every 2.5 s |
-| Lateral Raises     | Shoulders    | dumbbells | Paced, one every 3 s |
+| Exercise           | Works      | Needs     | How |
+|--------------------|------------|-----------|-----|
+| Squats             | Legs       |           | Counted |
+| Lunges             | Legs       |           | Counted |
+| Calf Raises        | Legs       |           | Beat, every 2 s |
+| Wall Sit           | Legs       | a wall    | Timed |
+| Jumping Jacks      | Cardio     |           | Beat, every 1.5 s |
+| Bicep Curls        | Arms       | dumbbells optional | Counted, each arm |
+| Plank Hold         | Abs        |           | Timed |
+| Side Plank         | Abs        |           | Timed |
+| Crunches           | Abs        |           | Counted |
+| Leg Raises         | Abs        |           | Beat, every 3 s |
+| Mountain Climbers  | Abs        |           | Beat, a knee every second |
+| Push-ups           | Chest      |           | Counted |
+| Knee Push-ups      | Chest      |           | Counted |
+| Glute Bridges      | Glutes     |           | Beat, every 3 s |
+| Fire Hydrants      | Glutes     |           | Beat, every 2.5 s |
+| Donkey Kicks       | Glutes     |           | Beat, every 2 s |
+| Bird Dogs          | Back       |           | Beat, every 3 s |
+| Chair Dips         | Arms       | chair     | Counted |
+| Incline Push-ups   | Chest      | chair     | Counted |
+| Chair Squats       | Legs       | chair     | Counted |
+| Split Squats       | Legs       | chair     | Counted |
+| Band Pull-Aparts   | Back       | band      | Beat, every 2.5 s |
+| Band Rows          | Back       | band      | Beat, every 2.5 s |
+| Band Side Steps    | Glutes     | band      | Beat, every 1.5 s |
+| Goblet Squats      | Legs       | a dumbbell | Counted |
+| Romanian Deadlifts | Glutes     | dumbbells | Counted |
+| Shoulder Press     | Shoulders  | dumbbells | Beat, every 2.5 s |
+| Bent-over Rows     | Back       | dumbbells | Beat, every 2.5 s |
+| Lateral Raises     | Shoulders  | dumbbells | Beat, every 3 s |
 
-With a band or dumbbells in your hands, controllers don't fit, so exercises that need them
-don't use the controllers: put them down (or use hand tracking to click). Timed holds show
-what's off when you're close but not in position (for example `Head lower (85 cm)`).
+## Privacy
 
-Exercises the headset and hands can't track (on the floor with only the legs moving, or a
-head movement too small to tell apart) are **paced**: the app counts reps at a fixed tempo
-with a tick for each one, and you follow along. See `www/js/exercises/paced.js`.
+Nothing leaves your device: no account, no analytics, no server (GitHub Pages only serves the
+files). Like any web page, the app can't see the passthrough camera image; it only gets the
+headset and hand positions that every AR page gets. It remembers two settings in the browser:
+that you accepted the safety notice, and which equipment you have.
 
-When the panels are out of sight or too close to read (on the floor, or leaning toward the
-panel over a chair), the counter follows your face: on the floor under it when facing down
-(plank, push-ups), or floating in front of it otherwise (lying on your back, side plank).
+## Good to know
 
-On the Training sets tab, the last row says which equipment you have (**Chair**, **Band**,
-**Dumbbells**). Sets that need something you don't have are hidden. The headset remembers it.
+- **Made for the Meta Quest Browser**, tested on a Quest 3. Other headsets with passthrough AR
+  in the browser may work but haven't been tried.
+- **Counting is tuned on one person.** If your reps aren't counted well, please
+  [open an issue](https://github.com/valentinp72/living-room-gym/issues) with the exercise
+  and the hint the counter showed.
+- **The headset can be fooled**: it only sees your head (and hands for curls). A plank on your
+  knees counts as a plank, and sitting on a chair counts as a wall sit. It's a coach, not a
+  referee.
 
-## Development
+## Contributing
 
-The app is plain static files in `www/`: native ES modules and [A-Frame](https://aframe.io)
-from a CDN, with no build step and no package manager. `tests/` is the only part with a
-`package.json`.
+Bug reports and ideas are welcome in the
+[issues](https://github.com/valentinp72/living-room-gym/issues). To run the app locally, run
+the tests, or add an exercise or a training set, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
-### Running locally
-
-
-WebXR only works in a **secure context**, so the Quest must load the page over HTTPS.
-`server.py` serves `www/` over HTTPS using a self-signed certificate.
-
-```sh
-# 1. (Once) generate a self-signed certificate, if cert.pem / key.pem don't exist yet
-openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-  -keyout key.pem -out cert.pem -subj "/CN=living-room-gym"
-
-# 2. Start the server (serves ./www on port 8443)
-python3 server.py
-```
-
-Then open `https://localhost:8443` on the computer, or `https://<your-computer-LAN-IP>:8443`
-in the Quest Browser (same network), and accept the certificate warning. `server.py` tells
-browsers not to cache, so a normal reload picks up your changes.
-
-> `key.pem` is a private key. Never commit it or publish it.
-
-### Tests
-
-
-`tests/` holds headless browser tests (Node 18+ and a local Chrome or Chromium; the app
-itself still has no build step). They load the real page, simulate head poses and fake a
-WebXR session with controllers or bare hands, then check rep counts, clicks, the avatar's
-poses, AR display, recentering and training sets.
-
-```sh
-cd tests
-npm install              # once: puppeteer-core only (it doesn't download a browser)
-npm test                 # all suites; prints the details of failing ones
-node run.mjs plank curls # some suites only (VERBOSE=1 prints every check)
-```
-
-The browser is found automatically (Chromium from snap or apt, Google Chrome, or the macOS
-apps). Set `CHROME=/path/to/chrome` to pick another one. `run.mjs` serves `www/` itself on
-a free port. To run one suite against a server that is already running, or to get
-screenshots: `node tests/workout.mjs http://127.0.0.1:8000/ /tmp/shot` (several suites take
-a screenshot prefix as second argument). `views.mjs` isn't a test: it screenshots every demo
-pose from several sides.
-
-`LOW_FPS=8 npm test` renders pages at about 8 frames per second, like a slow CI runner:
-suites must pass that way too (GitHub's runners are much slower than a desktop).
-
-`WWW=/path/to/copy npm test` runs the suites against another copy of the app (the deploy
-workflow uses it to test exactly what it publishes).
-
-What they can't check: real tracking and passthrough, and whether the rep thresholds suit
-a real body. Those still need a Quest.
-
-### Deployment
-
-`.github/workflows/pages.yml` publishes the app on GitHub Pages. On every push to `main`, it
-copies `www/` and adds the commit id to every local file link (`app.js?v=1a2b3c4`, see
-`.github/scripts/cache-bust.mjs`), so browsers never mix modules from two versions. It then
-runs the whole test suite against that copy and deploys it only if everything passes. Pull
-requests are built and tested but not deployed.
-
-To set it up on a fork: repository **Settings > Pages > Source: GitHub Actions**, then push to
-`main` (or run the workflow by hand from the **Actions** tab).
-
-### Project structure
-
-
-```
-.
-├── .github/                   # Deploy workflow (tests + GitHub Pages) and its cache-busting script
-├── LICENSE                    # MIT
-├── server.py                  # Minimal HTTPS static server for ./www (port 8443)
-├── cert.pem / key.pem         # Self-signed TLS cert + private key (local dev only, not committed)
-├── tests/                     # Headless browser tests (puppeteer-core), see "Tests"
-└── www/
-    ├── index.html             # A-Frame scene markup (rig, floor, lights, #stage with UI panels)
-    ├── css/app.css            # Page styles
-    └── js/
-        ├── main.js            # Entry point: registers A-Frame components
-        ├── app.js             # gym-app component: menu, exercise screen, per-frame loop
-        ├── workouts.js        # WORKOUTS: the training sets (data only)
-        ├── workout-runner.js  # Runs a training set: steps, targets, rests, events
-        ├── sound.js           # Feedback sounds (Web Audio, no files)
-        ├── avatar.js          # Rounded, jointed demo mannequin + posing helpers
-        ├── tracking.js        # Shared tracking helpers (hand / controller poses, AR / flat page)
-        ├── components/
-        │   ├── xr-environment.js  # AR passthrough (transparent background), refuses VR
-        │   ├── xr-pointer.js      # XR pointing ray + click (controller trigger or pinch)
-        │   ├── capsule.js         # "capsule" geometry for the mannequin's rounded limbs
-        │   └── confetti.js        # Confetti bursts when a step is done
-        └── exercises/
-            ├── index.js       # EXERCISES registry (defines menu order)
-            ├── paced.js       # Helper for untracked exercises: app-paced reps
-            ├── head-dip.js    # Helper for head-dip exercises (squats, lunges, dips)
-            ├── hold.js        # Helper for timed holds (plank, side plank, wall sit)
-            ├── calibration.js # Standing head height, measured once still
-            ├── all-fours.js   # Demo pose on all fours (fire hydrants, bird dogs...)
-            └── <exercise>.js  # One file per exercise (29)
-```
-
-The JavaScript uses native ES modules, so the page has to be served over HTTP(S).
-Opening `index.html` directly from disk won't work.
-
-#### Adding a training set
-
-Add an entry to `WORKOUTS` in `www/js/workouts.js`:
-
-```js
-{
-  id: 'full-body-plus', name: 'Full body plus', level: 'Medium', color: '#00695c',
-  rest: 15,
-  steps: [
-    { exercise: 'squats', reps: 15 },
-    { exercise: 'curls', reps: 12 },
-    { exercise: 'plank', seconds: 40 },
-  ],
-}
-```
-
-`level` is `Easy`, `Medium` or `Hard` (the menu tab it's listed under). Steps use `reps` for
-exercises counted in reps and `seconds` for timed ones. A mistake (unknown exercise, wrong
-unit, target ≤ 0, unknown level) stops the app on load with an error that names the set and
-step. The equipment a set needs is worked out from its exercises.
-
-#### Adding an exercise
-
-Create `www/js/exercises/<name>.js`:
-
-```js
-import { rot, place, turn } from '../avatar.js';
-
-export default {
-  id: 'lunges', name: 'Lunges', muscle: 'Legs', color: '#6a1b9a',
-  instructions: 'Step forward and lower your back knee…',
-  unit: 'reps',                          // or 'seconds' for timed exercises
-  state: () => ({ reps: 0 }),            // fresh state per session
-  update(ctx, st, dtMs) { /* read ctx.scene / camera / hands */ },
-  count: st => st.reps,                  // progress toward a training-set target, in `unit`
-  label: st => 'Reps: ' + st.reps,       // live counter text
-  demo(parts, t) { rot(parts.kneeL, 40); /* see avatar.js for joints */ },
-};
-```
-
-Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` array.
-
-For an exercise that can't be tracked, spread `paced({ secondsPerRep })` from
-`exercises/paced.js` into it instead of writing `unit` / `state` / `update` / `count` /
-`label`. `headDip()` and `hold()` do the same for head-dip reps and timed holds.
-
-Set `equipment: 'chair' | 'band' | 'weights'` if it needs any, or `floor: true` for a floor
-exercise: that's the menu group it goes in. Demos can show the equipment with
-`showChair()`, `showDumbbells()`, `showBand()` and `showWall()` from `avatar.js`.
-
-The mannequin is reset to standing before every `demo` call, so a demo only sets the
-joints that move. `www/js/avatar.js` lists the joints and the rotation directions.
-
-## Known issues
-
-1. **The plank is detected from the headset only.** Your head must be 15 to 60 cm above the
-   floor and facing down (at least 40°) to start. The hold then stops if your head drops 10 cm
-   (lying down) or rises 12 cm (sitting back). When you are low but not in position, the counter
-   says what is off, with the measured height or angle. A knee plank, or kneeling on all
-   fours with your face down, also counts.
-2. **Detection is tuned on one person.** It was tested on a Quest 3 (mostly with bare hands)
-   by one person. Thresholds are relative where possible (to your standing
-   height, or to where a hold started), but other bodies and styles may need tuning: the
-   counter's hints (like `Head lower (85 cm)`) give the numbers to report in an issue.
-3. **Head-only detection has blind spots.** The wall sit also counts sitting on a chair, and
-   the side plank only checks that the head is low and tilted sideways.
-4. **Bare hands must stay in view for curls.** With controllers, curls are also detected from
-   the controller's tilt, so the hands can be out of view.
-5. **Quest Browser only.** Other WebXR headsets with passthrough AR may work but haven't been
-   tried.
-
-## Roadmap
-
-Early prototype: it runs in AR on Quest 3, and in a desktop browser for previewing.
-
-- [x] Split the code into ES modules (exercises, avatar, UI, rep-detection helpers) while
-      keeping the no-build setup
-- [x] AR / passthrough mode on Quest (VR removed: unsafe to exercise without seeing the room)
-- [x] Recenter the panels and avatar in front of the user (B / Y, panel button, on entering
-      AR)
-- [x] Hand tracking: pinch to click, curls counted from bare hands
-- [x] Automatic plank timer (no Start / Stop), with the counter shown on the floor under
-      your face
-- [ ] Room awareness in AR: keep the panels and avatar clear of real walls and furniture
-- [x] A jointed avatar (elbows, knees, ankles, spine) standing on the floor next to the
-      exercise panel, with its pose reset every frame
-- [x] Robust Bicep Curls counting: per-arm counts, movement-based thresholds, ignores
-      untracked controllers
-- [x] Robust squat detection: calibrates standing height once still, recalibrates on
-      entering / leaving AR
-- [x] More exercises: crunches, leg raises, push-ups, knee push-ups, lunges, calf raises,
-      glute bridges, fire hydrants
-- [x] Training sets with rep / time targets, rests, skip and sounds
-- [x] Training sets per body area (legs and glutes, abs, chest and arms, full body)
-- [x] Three difficulty levels (Easy, Medium, Hard), 15 training sets
-- [x] Exercises with basic home equipment (chair, band, dumbbells), shown by the avatar
-- [ ] Session history
-- [x] Automated tests (headless browser, fake WebXR session)
-
-## Tech
-
-- [A-Frame 1.5.0](https://aframe.io/docs/1.5.0/) (loaded from jsDelivr)
-- WebXR Device API (Meta Quest Browser)
-- Python 3 standard library for the dev server
+Screenshots come from the desktop preview (a dark virtual room). In the headset you see your
+own room instead.
 
 ## License
 
