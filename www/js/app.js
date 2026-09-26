@@ -533,12 +533,13 @@ export const gymApp = {
     this.lastMoves = n;
   },
   // The counter grows for a moment, then eases back (this.pop = 0 starts it).
+  // The frame a move counts always shows the full pop, however long it is.
   popCounter: function (delta) {
-    this.pop = Math.min(this.pop + delta / 1000, POP);
     const k = 1 - this.pop / POP;
     const s = 1 + POP_SCALE * k * k;
     this.repText.object3D.scale.setScalar(s);
     this.floorLabelText.object3D.scale.setScalar(s);
+    this.pop = Math.min(this.pop + delta / 1000, POP);
   },
   // A confetti burst in front of the face, wherever it looks (standing,
   // face down in a plank, or up at the ceiling).

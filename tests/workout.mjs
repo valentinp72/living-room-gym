@@ -114,13 +114,17 @@ for (let i = 0; i < 4; i++) { await head(1.25); await head(1.58); }
 check('progress 4 / 10', (await ui()).rep.endsWith('\n4 / 10'), (await ui()).rep);
 if (shot) await page.screenshot({ path: shot + '-step.png' });
 eq('a ding per squat', await sounds(), ['ding', 'ding', 'ding', 'ding']);
-// The counter pops on each rep, then eases back.
-await head(1.25);
-await page.evaluate(() => document.querySelector('#camera').object3D.position.set(0, 1.58, 0));
-await sleep(60);
-const popped = await page.evaluate(() => document.querySelector('#repText').object3D.scale.x);
-await sleep(500);
-const settled = await page.evaluate(() => document.querySelector('#repText').object3D.scale.x);
+// The counter pops on each rep, then eases back. The scale is recorded on
+// every frame: on a slow runner one frame can outlast the whole pop.
+await page.evaluate(() => {
+  const app = document.querySelector('#stage').components['gym-app'];
+  window.popScales = [];
+  const pop = app.popCounter;
+  app.popCounter = function (delta) { pop.call(this, delta); popScales.push(this.repText.object3D.scale.x); };
+});
+await head(1.25); await head(1.58);
+await sleep(500); await frames(page, 3);
+const [popped, settled] = await page.evaluate(() => [Math.max(...popScales), popScales[popScales.length - 1]]);
 check('counter pops on a rep', popped > 1.1 && settled === 1, `popped=${popped} settled=${settled}`);
 await sounds();
 const confetti = () => page.evaluate(() => {
@@ -158,7 +162,7 @@ check('curls demo during the step', Math.max(...elbows) > 60, JSON.stringify(elb
 
 // Step 2: 10 curls with each arm (bare hands).
 await page.evaluate(() => { for (const s of ['left', 'right']) Object.assign(fakeXR.hands[s], { kind: 'hand', lost: false, pos: [0, 0.8, -0.2] }); });
-await sleep(150);
+await sleep(150); await frames(page, 2);   // the detectors see the hands low first
 for (let i = 0; i < 10; i++) { await hands(1.35); await hands(0.8); }
 await sleep(150);
 // Both arms curl together here: one ding per pair (alternating arms get one each).
@@ -208,7 +212,7 @@ await sleep(3500);
 // skipped exercise stayed on screen, still running, during the rest).
 await page.evaluate(() => { document.querySelector('#btnBack').emit('click'); document.querySelector('#workoutButtons > *').emit('click'); });
 await sleep(200); await sounds();
-await click('#btnSkip'); await sleep(200);
+await click('#btnSkip'); await sleep(200); await frames(page, 2);
 u = await ui();
 eq('skip exercise: rest screen', [u.title, u.bg, u.counter], ['REST', '#0b3d5c', '#80deea']);
 eq('skip exercise: rest says what comes next', u.instr, 'Relax. Next: Bicep Curls, 10 reps. It starts after the countdown.');
@@ -237,8 +241,17 @@ await app(async () => {
   const { exerciseById } = await import('/js/workout-runner.js' + new URL(document.querySelector('script[type=module]').src).search);
   document.querySelector('#stage').components['gym-app'].startExercise(exerciseById('paced-test'));
 });
-await sleep(1300);
-eq('paced single exercise: 3 ticks in 1.3 s', await sounds(), ['rep', 'rep', 'rep']);
+// One tick per rep counted (a rep every 0.4 s: at least 3 by now).
+await sleep(1300); await frames(page, 2);
+// Reps and sounds read together, so no frame comes in between.
+const [pacedReps, ticks] = await page.evaluate(NAMES => {
+  const { ex, st } = document.querySelector('#stage').components['gym-app'].current;
+  const out = __tones.filter(t => t.first && NAMES[t.f] !== null).map(t => NAMES[t.f] || t.f);
+  __tones.length = 0;
+  return [ex.count(st), out];
+}, NAMES);
+check('paced single exercise: a tick per rep', pacedReps >= 3 && ticks.length === pacedReps && ticks.every(t => t === 'rep'),
+  `reps=${pacedReps} sounds=${JSON.stringify(ticks)}`);
 await click('#btnBack');
 await app(() => document.querySelector('#stage').components['gym-app'].startWorkout(
   { id: 't', name: 'T', level: 'Test', color: '#888', rest: 0,
