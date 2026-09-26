@@ -3,7 +3,9 @@
 // Usage: node screenshots.mjs <url> <outDir>, with www/ served, e.g.
 //   python3 -m http.server --directory www 8000
 //   node tests/screenshots.mjs http://127.0.0.1:8000/ docs/screenshots
-// Needs ImageMagick (montage, convert) for the contact sheet and the GIF.
+// Needs ImageMagick (montage, convert) for the contact sheet and the GIF, and
+// a graphics card: the software renderer garbles the text (see launch()).
+// NO_GPU=1 forces the software renderer anyway.
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -14,11 +16,17 @@ if (!url || !outDir) { console.error('Usage: node screenshots.mjs <url> <outDir>
 fs.mkdirSync(outDir, { recursive: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const browser = await launch({ safetyAccepted: false });
+const browser = await launch({ safetyAccepted: false, gpu: !process.env.NO_GPU });
 const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 720 });
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+const renderer = await page.evaluate(() => {
+  const gl = document.querySelector('a-scene').renderer.getContext(), d = gl.getExtension('WEBGL_debug_renderer_info');
+  return d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : 'unknown';
+});
+console.log('renderer:', renderer);
+if (/swiftshader/i.test(renderer) && !process.env.NO_GPU) console.warn('warning: software rendering, text will look garbled');
 await page.evaluate(() => {
   document.querySelector('#hint').style.display = 'none';
   document.querySelector('#camera').setAttribute('look-controls', 'enabled: false');

@@ -31,10 +31,15 @@ export const frames = (page, n = 3) => page.evaluate(n => new Promise(resolve =>
 
 // Pages open with the safety notice already accepted, so suites start on
 // the menu; launch({ safetyAccepted: false }) to test the notice itself.
-export async function launch({ safetyAccepted = true } = {}) {
+// gpu: render with the machine's graphics card instead of SwiftShader (the
+// software renderer, used by default so tests run anywhere, CI included).
+// SwiftShader draws A-Frame's text (an MSDF font shader) with boxy outlines
+// around every letter: fine for tests, not for pictures.
+export async function launch({ safetyAccepted = true, gpu = false } = {}) {
   const browser = await puppeteer.launch({
     executablePath: chromePath(), headless: true,
-    args: ['--no-sandbox', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
+    args: gpu ? ['--no-sandbox', '--enable-gpu', '--use-angle=gl', '--ignore-gpu-blocklist']
+      : ['--no-sandbox', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
   });
   // $LOW_FPS=N renders pages at about N frames per second, like a slow CI
   // runner with software WebGL, to check that suites don't depend on the
