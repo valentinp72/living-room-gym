@@ -58,6 +58,7 @@ export const nextStep = run => run.workout.steps[run.index + 1];
 // Advance by dt milliseconds. Returns the events that happened, in order:
 //   'stepDone' target reached   'count' rest countdown (3, 2, 1)
 //   'go' next step starts       'finished' last step done
+//   'skipped' (skip() only) a step was skipped
 export function updateRun(run, ctx, dt) {
   const events = [];
   if (run.phase === 'exercise') {
@@ -79,10 +80,12 @@ export function updateRun(run, ctx, dt) {
   return events;
 }
 
-// Skip the current step (or the rest). Returns events like updateRun.
+// Skip the current step (or the rest). Returns events like updateRun, plus
+// 'skipped' for a skipped step: the screen must change even when the next
+// phase (a rest) has no event of its own.
 export function skip(run) {
   const events = [];
-  if (run.phase === 'exercise') endStep(run, events);
+  if (run.phase === 'exercise') { events.push('skipped'); endStep(run, events); }
   else if (run.phase === 'rest') { beginStep(run, run.index + 1); events.push('go'); }
   return events;
 }

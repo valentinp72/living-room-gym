@@ -127,6 +127,20 @@ eq('complete screen', [u.title, u.rep, u.skip, u.mannequin], ['TRAINING COMPLETE
 await head(1.6);
 await click('#btnBack'); await sleep(100);
 
+// Skipping an exercise goes to the rest screen, silently (regression: the
+// skipped exercise stayed on screen, still running, during the rest).
+await page.evaluate(() => { document.querySelector('#btnBack').emit('click'); document.querySelector('#workoutButtons > *').emit('click'); });
+await sleep(200); await sounds();
+await click('#btnSkip'); await sleep(200);
+u = await ui();
+eq('skip exercise: rest screen', [u.title, u.bg, u.counter], ['REST', '#0b3d5c', '#80deea']);
+eq('skip exercise: rest says what comes next', u.instr, 'Relax. Next: Bicep Curls, 10 reps. It starts after the countdown.');
+check('skip exercise: rest countdown', /^(19|20)s$/.test(u.rep), u.rep);
+eq('skip exercise: no sound', await sounds(), []);
+elbows = [];
+for (let i = 0; i < 6; i++) { elbows.push((await ui()).elbow); await sleep(150); }
+check('skip exercise: mannequin idles', elbows.every(e => e >= 10 && e <= 14), JSON.stringify(elbows));
+
 // Single exercise: no Skip, no target.
 await page.evaluate(() => document.querySelectorAll('#menuButtons > *')[0].emit('click')); await sleep(150);
 u = await ui();
