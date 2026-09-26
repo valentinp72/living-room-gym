@@ -55,7 +55,7 @@ export default {
     // resting on vertical upper arms, the toes just touch the floor.
     const TILT = 83;
     const rad = Math.PI / 180;
-    const shoulderH = BODY.upperArm + BODY.armThick / 2;
+    const shoulderH = BODY.upperArm + BODY.forearmR;
     place(parts.pelvis, 0, shoulderH - BODY.shoulderY * Math.cos(TILT * rad), -0.1);
     rot(parts.pelvis, TILT);
     for (const s of ['L', 'R']) {

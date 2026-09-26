@@ -2,7 +2,7 @@ import { EXERCISES } from './exercises/index.js';
 import { WORKOUTS } from './workouts.js';
 import { validateWorkout, createRun, updateRun, skip, currentStep, nextStep, targetOf,
   describeStep, exerciseById } from './workout-runner.js';
-import { buildMannequin, resetPose, idle } from './avatar.js';
+import { buildMannequin, resetPose, idle, centerDemo } from './avatar.js';
 import { readHands, gazeY } from './tracking.js';
 import { play, unlockAudio } from './sound.js';
 
@@ -104,7 +104,10 @@ export const gymApp = {
     this.exerciseBg = document.querySelector('#exerciseBg');
     this.floorLabel = document.querySelector('#floorLabel');
     this.floorLabelText = document.querySelector('#floorLabelText');
-    this.mannequin = buildMannequin(this.el);
+    // Demo avatars: on the exercise panel, and a small one on the floor
+    // counter (floor exercises). Both show the same pose.
+    this.mannequin = buildMannequin(document.querySelector('#demoAvatar'), 'mannequin');
+    this.floorMannequin = buildMannequin(document.querySelector('#floorAvatar'), 'floorMannequin');
     this.current = null;
     this.run = null;
     this.clock = 0;
@@ -335,9 +338,19 @@ export const gymApp = {
     }
     this.repText.setAttribute('value', text);
     this.updateFloorLabel(text);
-    resetPose(this.mannequin);
-    if (this.current.ex) this.current.ex.demo(this.mannequin, this.clock);
-    else idle(this.mannequin, this.clock);
+    const pose = this.current.ex ? this.current.ex.demo : idle;
+    if (pose !== this.centered) this.centerAvatars(pose);
+    const avatars = this.floorLabel.getAttribute('visible') ? [this.mannequin, this.floorMannequin] : [this.mannequin];
+    for (const parts of avatars) {
+      resetPose(parts);
+      pose(parts, this.clock);
+    }
+  },
+  // Center the demo avatars on a new pose (see centerDemo() in avatar.js).
+  centerAvatars: function (pose) {
+    this.centered = pose;
+    centerDemo(this.mannequin, pose);
+    this.floorMannequin.shiftX = this.mannequin.shiftX;
   },
   // Paced exercises: a tick for every rep the app counts.
   tickPaced: function (ex, st) {

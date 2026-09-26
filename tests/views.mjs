@@ -30,9 +30,11 @@ for (const [i, t, name] of poses) {
       const root = document.querySelector('#mannequin').object3D;
       if (!off) { cam.position.set(0, 1.6, 0); cam.rotation.set(0, 0, 0); return; }
       root.updateMatrixWorld(true);
+      // Offsets are full-size meters around the mannequin; it may be scaled.
       const p = new THREE.Vector3(...off).applyMatrix4(root.matrixWorld);
       cam.position.copy(p);
-      cam.lookAt(new THREE.Vector3(root.position.x, 0.7, root.position.z));
+      const target = new THREE.Vector3(0, 0.7, 0).applyMatrix4(root.matrixWorld);
+      cam.lookAt(target);
       cam.rotateY(Math.PI);
     }, off);
     await sleep(150);

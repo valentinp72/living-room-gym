@@ -1,11 +1,15 @@
-// Demo mannequin: box/sphere body parts hung on joint pivots.
+// Demo mannequin: rounded body parts (capsules, spheres) hung on joint pivots.
+// buildMannequin() puts one inside any holder entity, which places and
+// scales it: the exercise panel has one (#demoAvatar), and so does the floor
+// counter (#floorAvatar). Every demo poses it as if it were full size,
+// standing on the holder's floor (y = 0) and seen from the holder's +Z.
 //
 // Conventions (see CLAUDE.md): meters, +Y up, the mannequin faces its own +Z.
 // A limb hangs along -Y from its pivot, so a NEGATIVE x rotation swings it
 // forward (+Z) and a positive one swings it backward.
 //
 // Joint tree, with the standing pose (pivot positions relative to their parent):
-//   root                 on the floor, between the feet; places + turns the whole body
+//   root                 on the floor, between the feet; turns the whole body
 //   └ pelvis             hip height (PELVIS_Y); move/rotate it to squat or lie down
 //     ├ spine            torso, bends at the pelvis (+x = lean forward)
 //     │ ├ head
@@ -22,15 +26,13 @@ export const BODY = {
   shoulderY: 0.47,  // pelvis -> shoulder line
   upperArm: 0.30,   // shoulder -> elbow
   forearm: 0.27,    // elbow -> wrist
-  armThick: 0.07,
+  forearmR: 0.032,  // forearm radius (a forearm plank rests on it)
+  torsoDepth: 0.18,  // front to back, so lying down the back is torsoDepth / 2 above the floor
 };
 export const PELVIS_Y = BODY.ankle + BODY.shin + BODY.thigh;
 
-// Where the mannequin stands on the stage (right of the exercise panel, see
-// index.html; the user is at the stage origin), and how far it is turned
-// from facing the user by default. 45° gives a three-quarter view.
-const HOME = { x: 1.3, z: -2.6 };
-const DEFAULT_TURN = 45;
+// How far it is turned from facing the viewer by default: a three-quarter view.
+const DEFAULT_TURN = 30;
 
 // Rotate an entity's pivot, in degrees. Uses object3D directly: it runs
 // every frame for every joint, and nothing reads these back as attributes.
@@ -41,11 +43,10 @@ export function place(el, x = 0, y = 0, z = 0) {
   el.object3D.position.set(x, y, z);
 }
 
-// Turn the whole body `deg` degrees away from facing the user (the user is
-// at the stage origin). 0 = facing the user, 90 = right side towards the user.
+// Turn the whole body `deg` degrees away from facing the viewer (who looks
+// at the holder from its +Z side). 0 = facing the viewer, 90 = side view.
 export function turn(parts, deg) {
-  const toUser = Math.atan2(-HOME.x, -HOME.z) / DEG;
-  rot(parts.root, 0, toUser + deg, 0);
+  rot(parts.root, 0, deg, 0);
 }
 
 // Side-view posing (inverse kinematics) in the mannequin's own y/z plane:
@@ -91,7 +92,7 @@ export function legTo(parts, s, hip, pelvisDeg, ankle, footDeg = 0) {
 // `shoulder` on a torso tilted `torsoDeg` (pelvis + spine). bend: as in
 // middleJoint(); -1 for push-ups (elbows toward the feet).
 export const HAND = BODY.forearm + 0.03;   // elbow -> center of the hand
-export const HAND_R = 0.045;               // hand radius
+export const HAND_R = 0.042;               // hand radius
 export function armTo(parts, s, shoulder, torsoDeg, hand, bend) {
   const elbow = middleJoint(shoulder, hand, BODY.upperArm, HAND, bend);
   const upper = limbAngle(shoulder, elbow), fore = limbAngle(elbow, hand);
@@ -101,7 +102,7 @@ export function armTo(parts, s, shoulder, torsoDeg, hand, bend) {
 
 // Lying on the back (pelvis tilted -90, head toward -z): the torso's back
 // rests on the floor, and the head is raised a little so it doesn't sink.
-export const LYING_Y = 0.09;   // half the torso depth
+export const LYING_Y = BODY.torsoDepth / 2;
 export function lieOnBack(parts, pelvis = { y: LYING_Y, z: 0 }) {
   place(parts.pelvis, 0, pelvis.y, pelvis.z);
   rot(parts.pelvis, -90);
@@ -116,11 +117,31 @@ export const onToesY = deg =>
 
 // Back to standing straight, arms down. Called before every demo frame, so a
 // demo only sets the joints it moves and no pose leaks between exercises.
+// The root is shifted sideways by parts.shiftX (see centerDemo()).
 export function resetPose(parts) {
-  place(parts.root, HOME.x, 0, HOME.z);
+  place(parts.root, parts.shiftX || 0);
   turn(parts, DEFAULT_TURN);
   place(parts.pelvis, 0, PELVIS_Y, 0);
   for (const name of JOINTS) rot(parts[name]);
+}
+
+// Center a demo sideways in its holder: poses lying down stick out further
+// on one side (the legs are longer than the torso and head). Samples
+// `pose(parts, t)` over a few seconds and sets parts.shiftX so the middle of
+// everything it covers is at the holder's x = 0.
+export function centerDemo(parts, pose, seconds = 6) {
+  parts.shiftX = 0;
+  const holder = parts.root.parentNode.object3D;
+  holder.updateMatrixWorld(true);
+  const toHolder = new THREE.Matrix4().copy(holder.matrixWorld).invert();
+  const all = new THREE.Box3(), box = new THREE.Box3();
+  for (let t = 0; t <= seconds; t += 0.5) {
+    resetPose(parts);
+    pose(parts, t);
+    parts.root.object3D.updateMatrixWorld(true);
+    all.union(box.setFromObject(parts.root.object3D).applyMatrix4(toHolder));
+  }
+  parts.shiftX = -(all.min.x + all.max.x) / 2;
 }
 
 // Resting between exercises: standing relaxed, breathing slowly. Clearly
@@ -139,54 +160,70 @@ export function idle(parts, t) {
 const JOINTS = ['pelvis', 'spine', 'head', 'shoulderL', 'shoulderR', 'elbowL', 'elbowR',
   'hipL', 'hipR', 'kneeL', 'kneeR', 'ankleL', 'ankleR'];
 
-const SKIN = '#e0e0e0', ARM = '#c0c0c0', LEG = '#9e9e9e';
+// Soft, friendly colors: light "skin", a teal shirt, dark shorts and shoes.
+const SKIN = '#e8ecf2', SHIRT = '#4db6ac', SHORTS = '#455a64', SHOES = '#37474f', EYES = '#37474f';
 
-export function buildMannequin(parentEl) {
-  function node(parent, pos, id) {
+// Builds a mannequin inside `parentEl`, with its root entity's id `id`.
+// Every body part has class "part" (tests measure them).
+export function buildMannequin(parentEl, id) {
+  function node(parent, pos, nodeId) {
     const e = document.createElement('a-entity');
-    if (id) e.setAttribute('id', id);
+    if (nodeId) e.setAttribute('id', nodeId);
     e.setAttribute('position', pos);
     parent.appendChild(e);
     return e;
   }
-  function box(parent, color, w, h, d, pos) {
-    const e = document.createElement('a-box');
-    Object.entries({ color, width: w, height: h, depth: d, position: pos })
-      .forEach(([k, v]) => e.setAttribute(k, v));
+  function part(parent, color, geometry, pos, extra = {}) {
+    const e = document.createElement('a-entity');
+    e.classList.add('part');
+    e.setAttribute('geometry', geometry);
+    e.setAttribute('material', { color, roughness: 0.85 });
+    e.setAttribute('position', pos);
+    for (const [k, v] of Object.entries(extra)) e.setAttribute(k, v);
     parent.appendChild(e);
   }
-  function sphere(parent, color, radius, pos) {
-    const e = document.createElement('a-sphere');
-    Object.entries({ color, radius, position: pos }).forEach(([k, v]) => e.setAttribute(k, v));
-    parent.appendChild(e);
-  }
+  // A limb from its joint down to `length` below, capped at both ends so the
+  // joints look round.
+  const limb = (parent, color, radius, length) =>
+    part(parent, color, { primitive: 'capsule', radius, length }, `0 ${-length / 2} 0`);
+  const ball = (parent, color, radius, pos) => part(parent, color, { primitive: 'sphere', radius }, pos);
 
   const B = BODY;
-  const root = node(parentEl, `${HOME.x} 0 ${HOME.z}`, 'mannequin');
-  root.setAttribute('visible', false);
+  const root = node(parentEl, '0 0 0', id);
   const pelvis = node(root, `0 ${PELVIS_Y} 0`);
+  // Hips: a short capsule across the body, joining the thighs.
+  part(pelvis, SHORTS, { primitive: 'capsule', radius: 0.08, length: 0.12 }, '0 0.01 0',
+    { rotation: '0 0 90', scale: `1 1 ${B.torsoDepth / 2 / 0.08}` });
 
   const spine = node(pelvis, '0 0 0');
-  box(spine, SKIN, 0.32, 0.55, 0.18, '0 0.225 0');
+  // Torso: a capsule, flattened front to back.
+  part(spine, SHIRT, { primitive: 'capsule', radius: 0.125, length: 0.27 }, '0 0.25 0',
+    { scale: `1.1 1 ${B.torsoDepth / 2 / 0.125}` });
+  part(spine, SKIN, { primitive: 'cylinder', radius: 0.04, height: 0.1 }, `0 ${B.shoulderY + 0.04} 0`);   // neck
   const head = node(spine, `0 ${B.shoulderY + 0.08} 0`);
-  sphere(head, SKIN, 0.11, '0 0.11 0');
-  box(head, '#9e9e9e', 0.08, 0.03, 0.03, '0 0.12 0.105');   // "eyes": shows which way it faces
+  ball(head, SKIN, 0.1, '0 0.1 0');
+  // Small eyes: show which way it faces.
+  for (const x of [-0.035, 0.035]) ball(head, EYES, 0.013, `${x} 0.115 0.092`);
 
   const arm = side => {
-    const shoulder = node(spine, `${side * 0.2} ${B.shoulderY} 0`);
-    box(shoulder, ARM, B.armThick, B.upperArm, B.armThick, `0 ${-B.upperArm / 2} 0`);
+    const shoulder = node(spine, `${side * 0.19} ${B.shoulderY} 0`);
+    ball(shoulder, SHIRT, 0.05, '0 0 0');
+    limb(shoulder, SKIN, 0.037, B.upperArm);
     const elbow = node(shoulder, `0 ${-B.upperArm} 0`);
-    box(elbow, ARM, B.armThick, B.forearm, B.armThick, `0 ${-B.forearm / 2} 0`);
-    sphere(elbow, SKIN, 0.045, `0 ${-B.forearm - 0.03} 0`);
+    limb(elbow, SKIN, B.forearmR, B.forearm);
+    ball(elbow, SKIN, HAND_R, `0 ${-HAND} 0`);
     return [shoulder, elbow];
   };
   const leg = side => {
     const hip = node(pelvis, `${side * 0.09} 0 0`);
-    box(hip, LEG, 0.12, B.thigh, 0.12, `0 ${-B.thigh / 2} 0`);
+    limb(hip, SHORTS, 0.06, B.thigh);
     const knee = node(hip, `0 ${-B.thigh} 0`);
-    box(knee, LEG, 0.1, B.shin, 0.1, `0 ${-B.shin / 2} 0`);
+    limb(knee, SKIN, 0.047, B.shin);
     const ankle = node(knee, `0 ${-B.shin} 0`);
-    box(ankle, LEG, 0.1, B.ankle, 0.22, `0 ${-B.ankle / 2} 0.05`);
+    // Foot: a capsule lying along +Z, its sole B.ankle below the ankle
+    // joint and its toes 0.16 ahead of it (see onToesY()).
+    const r = B.ankle / 2;
+    part(ankle, SHOES, { primitive: 'capsule', radius: r, length: 0.22 - 2 * r }, `0 ${-r} 0.05`, { rotation: '90 0 0' });
     return [hip, knee, ankle];
   };
   const [shoulderL, elbowL] = arm(-1);

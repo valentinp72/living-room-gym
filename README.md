@@ -2,7 +2,8 @@
 
 A WebXR bodybuilding trainer for **Meta Quest**, built with [A-Frame](https://aframe.io).
 Pick a **training set** (a fixed sequence of exercises with rep or time targets and rests
-in between), or a single exercise. A demo avatar shows each movement, and the app counts
+in between), or a single exercise. A friendly demo avatar, framed on the exercise panel,
+shows each movement (and a small one on the floor counter during floor exercises), and the app counts
 your reps (or times your holds) using headset tracking and either Touch controllers or
 bare-hand tracking. Sounds confirm each finished exercise.
 
@@ -91,7 +92,7 @@ Then:
   with the mouse, and click the panels.
 - **Meta Quest:** make sure the headset is on the same network, open the Quest Browser at
   `https://<your-computer-LAN-IP>:8443`, accept the certificate warning, then tap the **AR**
-  button (bottom right) to train in your room. The panels and avatar appear 2 to 3 m in front of you. Whenever you move
+  button (bottom right) to train in your room. The panels appear about 2 m in front of you. Whenever you move
   (for example to a free patch of floor), press **B / Y** or **Recenter** to bring them in
   front of you again.
 - **Controllers or bare hands:** point with the controller laser and pull the trigger, or,
@@ -141,11 +142,12 @@ a real body. Those still need a Quest.
         ├── workouts.js        # WORKOUTS: the training sets (data only)
         ├── workout-runner.js  # Runs a training set: steps, targets, rests, events
         ├── sound.js           # Feedback sounds (Web Audio, no files)
-        ├── avatar.js          # Jointed demo mannequin + posing helpers
+        ├── avatar.js          # Rounded, jointed demo mannequin + posing helpers
         ├── tracking.js        # Shared tracking helpers (hand / controller poses, AR / flat page)
         ├── components/
         │   ├── xr-environment.js  # AR passthrough (transparent background), refuses VR
-        │   └── xr-pointer.js      # XR pointing ray + click (controller trigger or pinch)
+        │   ├── xr-pointer.js      # XR pointing ray + click (controller trigger or pinch)
+        │   └── capsule.js         # "capsule" geometry for the mannequin's rounded limbs
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
             ├── paced.js       # Helper for untracked exercises: app-paced reps

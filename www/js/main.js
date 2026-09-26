@@ -4,7 +4,9 @@
 import { gymApp } from './app.js';
 import { xrEnvironment } from './components/xr-environment.js';
 import { xrPointer } from './components/xr-pointer.js';
+import { capsuleGeometry } from './components/capsule.js';
 
+AFRAME.registerGeometry('capsule', capsuleGeometry);
 AFRAME.registerComponent('gym-app', gymApp);
 AFRAME.registerComponent('xr-environment', xrEnvironment);
 AFRAME.registerComponent('xr-pointer', xrPointer);

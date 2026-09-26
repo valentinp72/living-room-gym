@@ -26,15 +26,19 @@ const measure = t => page.evaluate(async t => {
   resetPose(p);
   app.current.ex.demo(p, t);
   p.root.object3D.updateMatrixWorld(true);
+  // Everything in the holder's frame, unscaled: meters of a full-size
+  // mannequin standing on y = 0 (the holder shrinks it on the panel).
+  const toHolder = new THREE.Matrix4().copy(p.root.parentNode.object3D.matrixWorld).invert();
   const box = el => {
     const b = new THREE.Box3();
     // precise: from the vertices (a rotated sphere's box would stick out).
-    for (const c of el.children) if (c.tagName !== 'A-ENTITY') b.expandByObject(c.getObject3D('mesh'), true);
+    for (const c of el.children) if (c.classList.contains('part')) b.expandByObject(c.getObject3D('mesh'), true);
+    b.applyMatrix4(toHolder);
     return { minY: b.min.y, maxY: b.max.y, cx: (b.min.x + b.max.x) / 2, cz: (b.min.z + b.max.z) / 2 };
   };
-  const all = new THREE.Box3().expandByObject(p.root.object3D, true);
+  const all = new THREE.Box3().expandByObject(p.root.object3D, true).applyMatrix4(toHolder);
   // Hand centers (the spheres on the elbows).
-  const hand = el => { const v = new THREE.Vector3(); el.querySelector('a-sphere').object3D.getWorldPosition(v); return { y: r(v.y), z: r(v.z), x: r(v.x) }; };
+  const hand = el => { const v = new THREE.Vector3(); el.querySelector(':scope > .part:last-child').object3D.getWorldPosition(v); v.applyMatrix4(toHolder); return { y: r(v.y), z: r(v.z), x: r(v.x) }; };
   const r = n => Math.round(n * 1000) / 1000;
   const parts = {};
   for (const k of ['spine', 'head', 'elbowL', 'elbowR', 'kneeL', 'kneeR', 'ankleL', 'ankleR']) {
@@ -140,6 +144,65 @@ check('fire hydrants: hands on floor', onFloor(fh, ['elbowL', 'elbowR']), lows(f
 check('fire hydrants: a knee always down', fh.every(p => near(p.parts.kneeL.minY, 0) || near(p.parts.kneeR.minY, 0)));
 check('fire hydrants: each knee lifts', fh.some(p => p.parts.kneeL.minY > 0.15) && fh.some(p => p.parts.kneeR.minY > 0.15),
   lows(fh, 'kneeL') + ' | ' + lows(fh, 'kneeR'));
+
+// On the panel: every demo (and the resting idle pose) stays inside the
+// avatar's frame as the user sees it (projected onto the panel from eye
+// height, 1.6 m, at the stage origin), and in front of the panel so nothing
+// cuts through it.
+const inFrame = (i, t) => page.evaluate(async (i, t) => {
+  const app = document.querySelector('#stage').components['gym-app'];
+  const { resetPose, idle } = await import('/js/avatar.js');
+  const p = app.mannequin, pose = i === null ? idle : app.pages.single.items[i].demo;
+  if (app.centered !== pose) app.centerAvatars(pose);
+  resetPose(p);
+  pose(p, t);
+  const panel = document.querySelector('#exercisePanel').object3D, frame = document.querySelector('#demoFrame');
+  panel.updateMatrixWorld(true);
+  const toPanel = new THREE.Matrix4().copy(panel.matrixWorld).invert();
+  const b = new THREE.Box3().expandByObject(p.root.object3D, true).applyMatrix4(toPanel);
+  // Project the box's corners onto the panel plane (z = 0) from the eye.
+  const eye = new THREE.Vector3(0, 1.6, 0).applyMatrix4(toPanel);
+  const seen = new THREE.Box3();
+  for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
+    const k = eye.z / (eye.z - z);
+    seen.expandByPoint(new THREE.Vector3(eye.x + (x - eye.x) * k, eye.y + (y - eye.y) * k, 0));
+  }
+  const fx = frame.object3D.position.x, fy = frame.object3D.position.y;
+  const w = frame.getAttribute('width') / 2, h = frame.getAttribute('height') / 2;
+  const ok = seen.min.x > fx - w && seen.max.x < fx + w && seen.min.y > fy - h && seen.max.y < fy + h && b.min.z > 0.005;
+  return { ok, box: [seen.min.x, seen.max.x, seen.min.y, seen.max.y, b.min.z].map(v => +v.toFixed(2)) };
+}, i, t);
+const count = await page.evaluate(() => document.querySelectorAll('#menuButtons > *').length);
+await open(0);
+for (const i of [...Array(count).keys(), null]) {
+  const bad = [];
+  for (let k = 0; k < 16; k++) {
+    const r = await inFrame(i, k * 0.4);
+    if (!r.ok) bad.push(`t=${(k * 0.4).toFixed(1)} ${JSON.stringify(r.box)}`);
+  }
+  const name = i === null ? 'idle' : await page.evaluate(i => document.querySelector('#stage').components['gym-app'].pages.single.items[i].name, i);
+  check(`in the frame: ${name}`, !bad.length, bad.slice(0, 2).join(' | '));
+}
+
+// The small avatar on the floor counter: only while the head is low, and in
+// the same pose as the panel's.
+const floorAvatar = () => page.evaluate(() => {
+  const app = document.querySelector('#stage').components['gym-app'];
+  return { shown: document.querySelector('#floorLabel').object3D.visible,
+    same: app.floorMannequin.pelvis.object3D.rotation.x === app.mannequin.pelvis.object3D.rotation.x &&
+      app.floorMannequin.pelvis.object3D.position.y === app.mannequin.pelvis.object3D.position.y };
+});
+await page.evaluate(() => document.querySelector('#camera').setAttribute('look-controls', 'enabled: false'));
+await open(2);
+await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.position.set(0, 1.6, 0); o.rotation.set(0, 0, 0); });
+await sleep(150);
+check('floor avatar: hidden while standing', !(await floorAvatar()).shown);
+await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.position.set(0, 0.45, 0); o.rotation.set(-1.4, 0, 0, 'YXZ'); });
+await sleep(150);
+const fa = await floorAvatar();
+check('floor avatar: shown in a plank, same pose', fa.shown && fa.same, JSON.stringify(fa));
+await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.position.set(0, 1.6, 0); o.rotation.set(0, 0, 0); });
+await sleep(100);
 
 // No pose carry-over: squats right after the plank starts standing upright.
 await open(2); await measure(0);

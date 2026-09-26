@@ -35,13 +35,42 @@ for (let i = 0; i < n; i++) {
   }, i);
   await sleep(200); out.push(...await measure());
 }
+// Where each text may go on the exercise panel (2.9 m wide): the title across
+// the top, the instructions and counter in the left column, which ends 5 cm
+// before the demo avatar's frame.
+const frameLeft = await page.evaluate(() => {
+  const f = document.querySelector('#demoFrame');
+  return f.object3D.position.x - f.getAttribute('width') / 2;
+});
+const outside = o => o.id === 'exerciseTitle' ? o.left < -1.4 || o.right > 1.4 : o.left < -1.4 || o.right > frameLeft - 0.05;
 // Instructions must stay above the counter.
 const overlaps = [];
 for (let i = 0; i < out.length; i++) {
   const o = out[i], rep = out.slice(i).find(r => r.id === 'repText');
   if (o.id === 'instrText' && rep && o.bottom < rep.top + 0.03) overlaps.push(o);
-  if (o.id === 'repText' && o.bottom < -0.62) overlaps.push({ ...o, text: 'counter runs into the buttons: ' + o.text });
+  if (o.id === 'repText' && o.bottom < -0.72) overlaps.push({ ...o, text: 'counter runs into the buttons: ' + o.text });
 }
+// Floor counter: every exercise's counter text (as in a training set, with
+// the progress line) fits left of the small avatar and inside the plate.
+const floorTexts = await page.evaluate(async () => {
+  const app = document.querySelector('#stage').components['gym-app'];
+  const t = document.querySelector('#floorLabelText'), label = document.querySelector('#floorLabel');
+  const avatarLeft = document.querySelector('#floorAvatar').object3D.position.x - 0.2;   // lying: ~0.2 m each side
+  const plate = label.querySelector('a-plane');
+  const w = plate.getAttribute('width') / 2, h = plate.getAttribute('height') / 2;
+  const out = [];
+  for (const ex of app.pages.single.items) {
+    t.setAttribute('value', ex.label(ex.state()) + '\n10 / 10' + (ex.unit === 'seconds' ? ' s' : ''));
+    await new Promise(r => setTimeout(r, 50));
+    label.object3D.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(t.getObject3D('text'))
+      .applyMatrix4(new THREE.Matrix4().copy(label.object3D.matrixWorld).invert());
+    out.push({ name: ex.name, ok: b.min.x > -w && b.max.x < avatarLeft && b.min.y > -h && b.max.y < h,
+      box: [b.min.x, b.max.x, b.min.y, b.max.y].map(v => +v.toFixed(2)) });
+  }
+  return out;
+});
+for (const f of floorTexts) console.log(`${f.ok ? 'inside  ' : 'OUTSIDE '} floor counter ${JSON.stringify(f.box)} ${f.name}`);
 // Menu labels inside their buttons.
 await page.evaluate(() => document.querySelector('#btnBack').emit('click')); await sleep(200);
 const labels = await page.evaluate(() => [...document.querySelectorAll('#menuPanel .button')].map(btn => {
@@ -59,6 +88,6 @@ const menuOk = menuSpan.bottom > 0.2 && menuSpan.top < 2.7;
 console.log(`${menuOk ? 'inside  ' : 'OUTSIDE '} menu panel from ${menuSpan.bottom} to ${menuSpan.top} m above the floor`);
 for (const l of labels) console.log(`${l.ok ? 'inside  ' : 'OUTSIDE '} [${l.left}, ${l.right}] in ±${l.half} button: ${l.text}`);
 for (const o of overlaps) console.log(`OVERLAP instructions (bottom ${o.bottom}) run into the counter: ${o.text}`);
-for (const o of out) console.log(`${o.left < -1.2 || o.right > 1.2 ? "OUTSIDE " : "inside  "} [${o.left}, ${o.right}] ${String(o.width).padEnd(5)} ${o.id.padEnd(14)} ${o.text}`);
+for (const o of out) console.log(`${outside(o) ? "OUTSIDE " : "inside  "} [${o.left}, ${o.right}] ${String(o.width).padEnd(5)} ${o.id.padEnd(14)} ${o.text}`);
 await browser.close();
-process.exit(out.some(o => o.left < -1.2 || o.right > 1.2) || overlaps.length || labels.some(l => !l.ok) || !menuOk ? 1 : 0);
+process.exit(out.some(outside) || overlaps.length || labels.some(l => !l.ok) || !menuOk || floorTexts.some(f => !f.ok) ? 1 : 0);
