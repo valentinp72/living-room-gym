@@ -32,7 +32,7 @@ export async function installFakeXR(page) {
       }
       return { emulatedPosition: !!h.emulated, transform: { position: { x: h.pos[0], y: h.pos[1], z: h.pos[2] } } };
     };
-    // fillPoses / fillJointRadii: used by hand-tracking-controls (models); report no joint data.
+    // fillPoses / fillJointRadii: used by A-Frame's hand models if any; report no joint data.
     const frame = { getPose: pose, getJointPose: pose, fillPoses: () => false, fillJointRadii: () => false };
     const scene = document.querySelector('a-scene');
     Object.defineProperty(scene, 'xrSession', { get: () => session, set() {}, configurable: true });

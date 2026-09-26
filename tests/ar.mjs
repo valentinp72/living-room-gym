@@ -1,4 +1,5 @@
-// Scene appearance per display mode (AR / VR sessions are simulated with the
+// Scene appearance per display mode, and VR being refused (AR / VR sessions
+// are simulated with the
 // same state + event sequence A-Frame uses).
 import { launch } from './lib.mjs';
 const [url, shot] = process.argv.slice(2);
@@ -18,7 +19,9 @@ const look = () => page.evaluate(() => {
   const bg = s.object3D.background;
   return {
     background: bg ? '#' + bg.getHexString() : 'transparent',
-    floor: document.querySelector('.vr-only').object3D.visible,
+    floor: document.querySelector('.flat-only').object3D.visible,
+    // Which buttons exist (headless Chrome can't do AR, so A-Frame hides
+    // the AR one here; on a Quest it shows).
     arButton: !!document.querySelector('.a-enter-ar'),
     vrButton: !!document.querySelector('.a-enter-vr'),
   };
@@ -29,7 +32,7 @@ const exit = () => page.evaluate(() => { const s = document.querySelector('a-sce
 const results = [];
 const expect = (name, got, want) => results.push({ name, ok: JSON.stringify(got) === JSON.stringify(want), got, want });
 
-expect('flat page', await look(), { background: '#0d1117', floor: true, arButton: true, vrButton: true });
+expect('flat page: AR button only', await look(), { background: '#0d1117', floor: true, arButton: true, vrButton: false });
 if (shot) await page.screenshot({ path: shot + '-flat.png' });
 await enter('ar'); await sleep(100);
 const ar = await look();
@@ -41,9 +44,13 @@ if (shot) await page.screenshot({ path: shot + '-ar.png', omitBackground: true }
 await exit(); await sleep(100);
 const back = await look();
 expect('back to flat', { background: back.background, floor: back.floor }, { background: '#0d1117', floor: true });
+// A VR session (e.g. started by the browser) is ended right away.
+await page.evaluate(() => { const s = document.querySelector('a-scene'); window.exits = 0; s.exitVR = () => { window.exits++; return Promise.resolve(); }; });
 await enter('vr'); await sleep(100);
-const vr = await look();
-expect('VR: virtual gym', { background: vr.background, floor: vr.floor }, { background: '#0d1117', floor: true });
+expect('VR: session ended at once', await page.evaluate(() => window.exits), 1);
+await exit();
+await enter('ar'); await sleep(100);
+expect('AR: not ended', await page.evaluate(() => window.exits), 1);
 await exit();
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : `  got=${JSON.stringify(r.got)} want=${JSON.stringify(r.want)}`));

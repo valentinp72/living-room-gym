@@ -47,7 +47,8 @@ function emptyHand() {
 }
 const tmpQuat = new THREE.Quaternion();
 
-// Which immersive mode the scene is in: 'vr', 'ar' or null (flat page).
+// Which immersive mode the scene is in: 'ar', null (flat page), or 'vr'
+// for the moment before xr-environment ends a VR session.
 // Head positions from different modes aren't comparable (on the flat page
 // the camera sits at a fixed 1.6 m), so calibrations should be redone when
 // this changes.

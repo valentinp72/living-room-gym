@@ -10,9 +10,11 @@
 <script type="module" src="js/main.js"></script>
 </head>
 <body>
-<!-- AR (passthrough) is the main mode; VR is kept as a fallback. -->
-<a-scene xr-environment="color:#0d1117" xr-mode-ui="XRMode: xr"
-  webxr="optionalFeatures: bounded-floor, hand-tracking"
+<!-- AR (passthrough) only: training blind in VR, without seeing the real
+     room, could hurt. VR sessions are refused (see xr-environment.js).
+     The flat page stays, for debugging on a desktop. -->
+<a-scene xr-environment="color:#0d1117" xr-mode-ui="XRMode: ar"
+  webxr="optionalFeatures: hand-tracking"
   cursor="rayOrigin: mouse" raycaster="objects: .clickable">
   <a-assets></a-assets>
 
@@ -22,13 +24,10 @@
     <!-- Pointing + clicking in XR, controllers (trigger) and bare hands (pinch). -->
     <a-entity id="rightPointer" xr-pointer="hand: right"></a-entity>
     <a-entity id="leftPointer" xr-pointer="hand: left"></a-entity>
-    <!-- Controller models (VR only: in AR the real ones show through
-         passthrough) and A/B/X/Y button events. No laser cursors. -->
-    <a-entity id="rightHand" class="vr-only" oculus-touch-controls="hand: right"></a-entity>
-    <a-entity id="leftHand" class="vr-only" oculus-touch-controls="hand: left"></a-entity>
-    <!-- Bare-hand models, VR only. -->
-    <a-entity class="vr-only" hand-tracking-controls="hand: right"></a-entity>
-    <a-entity class="vr-only" hand-tracking-controls="hand: left"></a-entity>
+    <!-- A/B/X/Y button events. Their controller models stay hidden: in AR
+         the real controllers show through passthrough. No laser cursors. -->
+    <a-entity id="rightHand" class="flat-only" oculus-touch-controls="hand: right"></a-entity>
+    <a-entity id="leftHand" class="flat-only" oculus-touch-controls="hand: left"></a-entity>
     <!-- Counter shown on the floor in front of the face during floor
          exercises (plank), where the panels are out of sight. -->
     <a-entity id="floorLabel" visible="false">
@@ -37,7 +36,8 @@
     </a-entity>
   </a-entity>
 
-  <a-plane class="vr-only" rotation="-90 0 0" width="20" height="20" color="#1b1f24"></a-plane>
+  <!-- Virtual floor for the desktop page; in AR the real floor shows. -->
+  <a-plane class="flat-only" rotation="-90 0 0" width="20" height="20" color="#1b1f24"></a-plane>
   <a-entity light="type:ambient; intensity:0.7; color:#fff"></a-entity>
   <a-entity light="type:directional; intensity:0.6" position="1 3 1"></a-entity>
 
@@ -77,6 +77,6 @@
     </a-entity>
   </a-entity>
 </a-scene>
-<div id="hint">On Meta Quest, open this page in the Browser and tap "AR" to train in your room (passthrough), or "VR" for a virtual gym. On desktop, look with the mouse and click the panels to test.</div>
+<div id="hint">On Meta Quest, open this page in the Browser and tap "AR" to train in your room (passthrough). There is no VR mode: you need to see your surroundings while you train. On desktop, look with the mouse and click the panels to test.</div>
 </body>
 </html>

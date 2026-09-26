@@ -2,7 +2,7 @@ import { xrMode } from '../tracking.js';
 
 // Building block for standing exercises where the head goes down and back
 // up (squats, lunges). It calibrates the standing head height once the head
-// stays still, and recalibrates when entering / leaving AR or VR (the head
+// stays still, and recalibrates when entering / leaving AR (the head
 // height changes). A rep = head `down` meters below standing, then back
 // within `up` of it.
 //   export default { ...headDip({ down: 0.25 }), id, name, muscle, color,
@@ -20,7 +20,7 @@ export function headDip({ down, up = 0.08 }) {
       if (!ctx.camera.object3D) return;
       const y = ctx.camera.object3D.position.y;
 
-      // Entering or leaving VR/AR moves the head to a different height: recalibrate.
+      // Entering or leaving AR moves the head to a different height: recalibrate.
       const mode = xrMode(ctx.scene);
       if (mode !== st.mode) {
         st.mode = mode; st.calib = newCalibration(); st.baselineY = null; st.down = false;

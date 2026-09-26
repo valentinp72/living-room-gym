@@ -36,18 +36,18 @@ await open();
 for (let i = 0; i < 10; i++) await head(i % 2 ? 1.6 : 1.5, 150);
 expect('moving head blocks calibration', await rep(), 'Stand still...');
 
-// 3. Entering VR while on the squats screen (the original bug): the flat-page
+// 3. Entering AR while on the squats screen (the original bug): the flat-page
 //    baseline (1.6) must be dropped and the real height (1.8) used instead.
 await head(1.6, 1300);
-expect('calibrated before VR', await rep(), 'Reps: 0');
-await state('vr-mode', true);
+expect('calibrated before AR', await rep(), 'Reps: 0');
+await state('ar-mode', true);
 await head(1.8, 100);
-expect('entering VR recalibrates', await rep(), 'Stand still...');
+expect('entering AR recalibrates', await rep(), 'Stand still...');
 await sleep(1300);
 await squat(1.62, 1.78);
 expect('shallow dip vs real height ignored', await rep(), 'Reps: 0');
 await squat(1.5, 1.78);
-expect('real squat in VR counts', await rep(), 'Reps: 1');
+expect('real squat in AR counts', await rep(), 'Reps: 1');
 
 // 4. Calibrated slightly crouched, then standing tall raises the baseline.
 await open();
@@ -58,17 +58,10 @@ expect('baseline follows standing up taller', await rep(), 'Reps: 1');
 await squat(1.62, 1.79);
 expect('half squat ignored', await rep(), 'Reps: 1');
 
-// 5. Leaving VR recalibrates again.
-await state('vr-mode', false);
-await head(1.6, 100);
-expect('exiting VR recalibrates', await rep(), 'Stand still...');
-
-// 6. AR mode counts as immersive too.
-await sleep(1300);
-await state('ar-mode', true);
-await head(1.7, 100);
-expect('entering AR recalibrates', await rep(), 'Stand still...');
+// 5. Leaving AR recalibrates again.
 await state('ar-mode', false);
+await head(1.6, 100);
+expect('exiting AR recalibrates', await rep(), 'Stand still...');
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : `  got=${JSON.stringify(r.got)} want=${JSON.stringify(r.want)}`));
 console.log('page errors:', errors.length ? errors : 'none');

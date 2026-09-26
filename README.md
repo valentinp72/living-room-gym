@@ -7,14 +7,15 @@ your reps (or times your holds) using headset tracking and either Touch controll
 bare-hand tracking. Sounds confirm each finished exercise.
 
 It is made for **AR (mixed reality)**: you train in your own room with Quest passthrough,
-and the UI panels and demo avatar appear in it. A VR mode (virtual gym) is kept as a fallback.
+and the UI panels and demo avatar appear in it. There is deliberately **no VR mode**:
+exercising without seeing your surroundings could hurt you, so VR sessions are refused.
 
 It is a plain static web app. There is no build step and nothing to install beyond Python 3,
 so it runs directly in the Quest Browser.
 
 ## Status
 
-Early prototype. It runs in AR and VR on Quest and in a desktop browser (mouse look + click)
+Early prototype. It runs in AR on Quest, and in a desktop browser (mouse look + click)
 for testing. See [Known issues](#known-issues).
 
 ## Training sets
@@ -90,8 +91,7 @@ Then:
   with the mouse, and click the panels.
 - **Meta Quest:** make sure the headset is on the same network, open the Quest Browser at
   `https://<your-computer-LAN-IP>:8443`, accept the certificate warning, then tap the **AR**
-  button (bottom right) to train in your room. The **VR** button next to it opens the virtual
-  gym instead. The panels and avatar appear 2 to 3 m in front of you. Whenever you move
+  button (bottom right) to train in your room. The panels and avatar appear 2 to 3 m in front of you. Whenever you move
   (for example to a free patch of floor), press **B / Y** or **Recenter** to bring them in
   front of you again.
 - **Controllers or bare hands:** point with the controller laser and pull the trigger, or,
@@ -142,9 +142,9 @@ a real body. Those still need a Quest.
         ├── workout-runner.js  # Runs a training set: steps, targets, rests, events
         ├── sound.js           # Feedback sounds (Web Audio, no files)
         ├── avatar.js          # Jointed demo mannequin + posing helpers
-        ├── tracking.js        # Shared tracking helpers (hand / controller poses, AR/VR/flat)
+        ├── tracking.js        # Shared tracking helpers (hand / controller poses, AR / flat page)
         ├── components/
-        │   ├── xr-environment.js  # AR passthrough: transparent background, hides VR-only scenery
+        │   ├── xr-environment.js  # AR passthrough (transparent background), refuses VR
         │   └── xr-pointer.js      # XR pointing ray + click (controller trigger or pinch)
         └── exercises/
             ├── index.js       # EXERCISES registry (defines menu order)
@@ -225,9 +225,9 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 
 - [x] Split the code into ES modules (exercises, avatar, UI, rep-detection helpers) while
       keeping the no-build setup
-- [x] AR / passthrough mode on Quest (with VR as a fallback)
+- [x] AR / passthrough mode on Quest (VR removed: unsafe to exercise without seeing the room)
 - [x] Recenter the panels and avatar in front of the user (B / Y, panel button, on entering
-      AR / VR)
+      AR)
 - [x] Hand tracking: pinch to click, curls counted from bare hands
 - [x] Automatic plank timer (no Start / Stop), with the counter shown on the floor under
       your face
@@ -237,7 +237,7 @@ joints that move. `www/js/avatar.js` lists the joints and the rotation direction
 - [x] Robust Bicep Curls counting: per-arm counts, movement-based thresholds, ignores
       untracked controllers
 - [x] Robust squat detection: calibrates standing height once still, recalibrates on
-      entering / leaving VR or AR
+      entering / leaving AR
 - [x] More exercises: crunches, leg raises, push-ups, knee push-ups, lunges, calf raises,
       glute bridges, fire hydrants
 - [x] Training sets with rep / time targets, rests, skip and sounds

@@ -52,7 +52,7 @@ const MENU_CENTER_Y = 1.45;
 // Menu tab colors: selected / not selected.
 const TAB = { on: '#0277bd', off: '#37474f' };
 
-// Seconds to wait after entering AR/VR before recentering, so the headset
+// Seconds to wait after entering AR before recentering, so the headset
 // pose has settled.
 const RECENTER_DELAY = 0.5;
 
@@ -114,7 +114,7 @@ export const gymApp = {
     this.buildMenu();
     onClick(document.querySelector('#btnBack'), () => this.showMenu());
     onClick(this.skipBtn, () => this.handleEvents(skip(this.run)));
-    // Recenter: panel buttons, B (right) / Y (left), and on entering AR/VR.
+    // Recenter: panel buttons, B (right) / Y (left), and on entering AR.
     document.querySelectorAll('.recenter').forEach(b => onClick(b, () => this.recenter()));
     this.rHand.addEventListener('bbuttondown', () => this.recenter());
     this.lHand.addEventListener('ybuttondown', () => this.recenter());
