@@ -1,5 +1,5 @@
 // Recenter: the stage (panels + mannequin) moves in front of the user's head.
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 import { installFakeXR } from './fakexr.mjs';
 const [url, shot] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -76,9 +76,9 @@ await head(4, 1.65, 1, 0); await sleep(2000);
 expect('menu follow: never during an exercise', await stage(), [4, 1, 2.88]);
 // 7. The Quest's own recenter (reference space 'reset') recenters the stage.
 await installFakeXR(page);
-await sleep(100);
+await frames(page, 3);   // the app hooks the reference space on a tick
 await page.evaluate(() => fakeXR.ref.dispatchEvent(new Event('reset')));
-await sleep(400);
+await sleep(400); await frames(page, 3);
 expect('system recenter', await stage(), [4, 1, 0]);
 await page.evaluate(() => { const s = document.querySelector('a-scene'); s.removeState('ar-mode'); s.emit('exit-vr', { target: s }); });
 expect('reset on exit', await stage(), [0, 0, 0]);

@@ -1,5 +1,5 @@
 // Scenario tests for Squats rep counting (XR mode is simulated via scene states).
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 
 const [url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -11,7 +11,7 @@ await page.goto(url, { waitUntil: 'load' });
 await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
 
 const rep = () => page.evaluate(() => document.querySelector('#repText').getAttribute('value'));
-const head = async (y, ms = 150) => { await page.evaluate(y => { document.querySelector('#camera').object3D.position.y = y; }, y); await sleep(ms); };
+const head = async (y, ms = 150) => { await page.evaluate(y => { document.querySelector('#camera').object3D.position.y = y; }, y); await sleep(ms); await frames(page, 2); };
 const state = (name, on) => page.evaluate((n, on) => { const s = document.querySelector('a-scene'); on ? s.addState(n) : s.removeState(n); }, name, on);
 const open = async () => {
   await page.evaluate(() => document.querySelector('#btnBack').emit('click'));

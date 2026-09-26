@@ -1,7 +1,7 @@
 // Rep detection for the headset-tracked floor and standing exercises
 // (crunches, push-ups, knee push-ups, lunges), paced exercises, and the
 // counter shown above the face when lying on the back.
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 const [url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const browser = await launch();
@@ -20,6 +20,7 @@ const head = async (y, pitch = 0, ms = 120, roll = 0) => {
     o.position.set(0, y, 0); o.rotation.set(pitch * Math.PI / 180, 0, roll * Math.PI / 180, 'YXZ');
   }, y, pitch, roll);
   await sleep(ms);
+  await frames(page, 2);
 };
 const secs = (text, key) => { const m = text.match(new RegExp(key + ': ([\\d.]+)s')); return m ? parseFloat(m[1]) : null; };
 const label = () => page.evaluate(() => document.querySelector('#repText').getAttribute('value'));
@@ -75,7 +76,10 @@ await head(1.6); await open('push-ups');
 for (let i = 0; i < 3; i++) { await head(1.6, -80); await head(1.2, -80); }
 expect('push-ups: standing, looking down: nothing', await label(), 'Get into push-up position');
 // Looking up for a moment (under 0.5 s) at the bottom keeps the rep.
-await head(0.6, -75); await head(0.35, -80); await head(0.35, 0, 200); await head(0.35, -80); await head(0.6, -75);
+await head(0.6, -75); await head(0.35, -80);
+// The glance itself: 200 ms, without waiting for frames (it must stay under 0.5 s).
+await page.evaluate(() => document.querySelector('#camera').object3D.rotation.set(0, 0, 0, 'YXZ')); await sleep(200);
+await head(0.35, -80); await head(0.6, -75);
 expect('push-ups: short glance keeps the rep', await label(), 'Reps: 1');
 
 // Lunges: same head-dip detection as squats.

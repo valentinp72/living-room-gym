@@ -1,5 +1,5 @@
 // Desktop: real mouse clicks on the panels (cursor rayOrigin: mouse).
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 const [url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const browser = await launch({ safetyAccepted: false });
@@ -18,7 +18,9 @@ const screenOf = sel => page.evaluate(sel => {
   const r = scene.canvas.getBoundingClientRect();
   return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height];
 }, sel);
-const click = async sel => { const [x, y] = await screenOf(sel); await page.mouse.move(x, y); await sleep(100); await page.mouse.down(); await page.mouse.up(); await sleep(250); };
+// Frames between steps: the mouse cursor re-aims its ray on scene ticks, and
+// a click can change the layout (group chips).
+const click = async sel => { await frames(page, 2); const [x, y] = await screenOf(sel); await page.mouse.move(x, y); await sleep(100); await frames(page, 3); await page.mouse.down(); await page.mouse.up(); await sleep(250); await frames(page, 2); };
 // Exercises are grouped (Standing, Floor, Chair...): pick the button's group first.
 const groupOf = i => page.evaluate(i => document.querySelector('#stage').components['gym-app'].pages.single.buttons[i].group, i);
 const clickItem = async i => { await click('#group-' + await groupOf(i)); await click(['#menuButtons > *', i]); };

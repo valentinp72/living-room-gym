@@ -1,5 +1,5 @@
 // Training sets end to end: steps, targets, rests, skip, sounds, paced exercises, validation.
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 import { installFakeXR } from './fakexr.mjs';
 const [url, shot] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -47,8 +47,8 @@ const ui = () => page.evaluate(() => ({
   elbow: Math.round(-THREE.MathUtils.radToDeg(
     document.querySelector('#stage').components['gym-app'].mannequin.elbowR.object3D.rotation.x)),
 }));
-const head = async (y, pitch = 0, ms = 120) => { await page.evaluate((y, p) => { const o = document.querySelector('#camera').object3D; o.position.set(0, y, 0); o.rotation.set(p * Math.PI / 180, 0, 0, 'YXZ'); }, y, pitch); await sleep(ms); };
-const hands = async y => { await page.evaluate(y => { fakeXR.hands.left.pos[1] = fakeXR.hands.right.pos[1] = y; }, y); await sleep(120); };
+const head = async (y, pitch = 0, ms = 120) => { await page.evaluate((y, p) => { const o = document.querySelector('#camera').object3D; o.position.set(0, y, 0); o.rotation.set(p * Math.PI / 180, 0, 0, 'YXZ'); }, y, pitch); await sleep(ms); await frames(page, 2); };
+const hands = async y => { await page.evaluate(y => { fakeXR.hands.left.pos[1] = fakeXR.hands.right.pos[1] = y; }, y); await sleep(120); await frames(page, 2); };
 const click = sel => page.evaluate(s => document.querySelector(s).emit('click'), sel);
 
 const results = [];

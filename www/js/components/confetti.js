@@ -48,12 +48,15 @@ export const confetti = {
   },
   tick: function (t, delta) {
     if (this.active <= 0) return;
-    const dt = Math.min(delta / 1000, 0.05);
-    this.active -= dt;
+    // Lifetimes follow the clock; only the motion is stepped at most 50 ms
+    // at a time, so a slow frame doesn't throw pieces through the floor.
+    const real = delta / 1000;
+    const dt = Math.min(real, 0.05);
+    this.active -= real;
     for (let i = 0; i < MAX; i++) {
       const p = this.pieces[i];
       if (p.age >= LIFE) { this.mesh.setMatrixAt(i, HIDDEN); continue; }
-      p.age += dt;
+      p.age += real;
       if (!p.landed) {
         p.vel.y -= GRAVITY * dt;
         p.vel.multiplyScalar(Math.exp(-DRAG * dt));

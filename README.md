@@ -201,6 +201,9 @@ screenshots: `node tests/workout.mjs http://127.0.0.1:8000/ /tmp/shot` (several 
 a screenshot prefix as second argument). `views.mjs` isn't a test: it screenshots every demo
 pose from several sides.
 
+`LOW_FPS=8 npm test` renders pages at about 8 frames per second, like a slow CI runner:
+suites must pass that way too (GitHub's runners are much slower than a desktop).
+
 `WWW=/path/to/copy npm test` runs the suites against another copy of the app (the deploy
 workflow uses it to test exactly what it publishes).
 

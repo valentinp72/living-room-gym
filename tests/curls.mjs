@@ -1,5 +1,5 @@
 // Scenario tests for Bicep Curls rep counting (controller tracking is stubbed).
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 import { installFakeXR } from './fakexr.mjs';
 
 const [url, shot] = process.argv.slice(2);
@@ -19,7 +19,7 @@ const sideOf = sel => sel === '#rightHand' ? 'right' : 'left';
 const track = (sel, on, kind) => page.evaluate((s, on, kind) => {
   const h = fakeXR.hands[s]; h.lost = !on; if (kind) h.kind = kind;
 }, sideOf(sel), on, kind);
-const hand = async (sel, y) => { await page.evaluate((s, y) => { fakeXR.hands[s].pos[1] = y; }, sideOf(sel), y); await sleep(120); };
+const hand = async (sel, y) => { await page.evaluate((s, y) => { fakeXR.hands[s].pos[1] = y; }, sideOf(sel), y); await sleep(120); await frames(page, 3); };
 const open = async () => {
   await page.evaluate(() => document.querySelector('#btnBack').emit('click'));
   await page.evaluate(() => document.querySelectorAll('#menuButtons > *')[1].emit('click'));
@@ -67,7 +67,10 @@ await open();
 await curl('#rightHand');
 await hand('#rightHand', 1.35);
 await track('#rightHand', false);
-await hand('#rightHand', 0.8); await hand('#rightHand', 1.35); await hand('#rightHand', 0.8);
+// While lost, the position is ignored: move it without waiting for frames,
+// so the whole loss stays under 1 s even on a slow machine.
+const moveLost = async y => { await page.evaluate(y => { fakeXR.hands.right.pos[1] = y; }, y); await sleep(80); };
+await moveLost(0.8); await moveLost(1.35); await moveLost(0.8);
 expect('lost tracking keeps count, adds none', await rep(), 'Left: 0    Right: 1\nRight hand not seen');
 // Back within a second, lower: the curl that was in progress finishes.
 await track('#rightHand', true);
@@ -99,14 +102,15 @@ expect('hand (grip space) + controller', await rep(), 'Left: 1    Right: 2');
 
 // Controller tilt: the laser's angle above the horizontal, toward where the
 // head faces (-Z here); 90 = straight up, 180 = behind. The position stays put.
-const tilt = async (side, deg, ms = 60) => {
+// Each pose is held for `n` rendered frames.
+const tilt = async (side, deg, n = 4) => {
   await page.evaluate((side, deg) => {
     const h = fakeXR.hands[side], a = deg * Math.PI / 180;
     h.ray = { from: [...h.pos], to: [h.pos[0], h.pos[1] + Math.sin(a), h.pos[2] - Math.cos(a)] };
   }, side, deg);
-  await sleep(ms);
+  await frames(page, n);
 };
-const tiltCurl = async (side, top = 110, bottom = -70, ms) => { await tilt(side, top, ms); await tilt(side, bottom, ms); };
+const tiltCurl = async (side, top = 110, bottom = -70, n) => { await tilt(side, top, n); await tilt(side, bottom, n); };
 const controllers = () => page.evaluate(() => {
   for (const h of Object.values(fakeXR.hands)) Object.assign(h, { kind: 'controller', grip: false, lost: false, emulated: false, pos: [h.pos[0], 0.8, -0.2] });
 });
@@ -119,9 +123,9 @@ await tilt('right', -70); await tilt('left', -70); await open();
 await tiltCurl('right'); await tiltCurl('right'); await tiltCurl('left');
 expect('out of view: counted from tilt', await rep(), 'Left: 1    Right: 2');
 
-// 10. Fast curls (about 2 frames per half rep) still count.
+// 10. Fast curls (2 frames per half rep) still count.
 await open();
-for (let i = 0; i < 4; i++) await tiltCurl('right', 110, -70, 35);
+for (let i = 0; i < 4; i++) await tiltCurl('right', 110, -70, 2);
 expect('fast curls', await rep(), 'Left: 0    Right: 4');
 
 // 11. An estimated position that jumps around counts nothing by itself.

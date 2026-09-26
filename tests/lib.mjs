@@ -20,6 +20,15 @@ export function chromePath() {
   return path;
 }
 
+// Wait until the scene has rendered `n` more frames. Use it after setting a
+// pose, instead of (or on top of) a fixed sleep: on a slow machine (a CI
+// runner renders only a few frames per second) a pose held for a fixed time
+// can fall between two frames and never be seen by the app.
+export const frames = (page, n = 3) => page.evaluate(n => new Promise(resolve => {
+  const step = () => (--n <= 0 ? resolve() : requestAnimationFrame(step));
+  requestAnimationFrame(step);
+}), n);
+
 // Pages open with the safety notice already accepted, so suites start on
 // the menu; launch({ safetyAccepted: false }) to test the notice itself.
 export async function launch({ safetyAccepted = true } = {}) {
@@ -27,13 +36,25 @@ export async function launch({ safetyAccepted = true } = {}) {
     executablePath: chromePath(), headless: true,
     args: ['--no-sandbox', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
   });
-  if (safetyAccepted) {
-    const newPage = browser.newPage.bind(browser);
-    browser.newPage = async () => {
-      const page = await newPage();
+  // $LOW_FPS=N renders pages at about N frames per second, like a slow CI
+  // runner with software WebGL, to check that suites don't depend on the
+  // frame rate. $CPU_THROTTLE=N also slows scripts down N times.
+  const lowFps = Number(process.env.LOW_FPS) || 0;
+  const throttle = Number(process.env.CPU_THROTTLE) || 0;
+  const newPage = browser.newPage.bind(browser);
+  browser.newPage = async () => {
+    const page = await newPage();
+    if (safetyAccepted) {
       await page.evaluateOnNewDocument(() => { try { localStorage.setItem('living-room-gym-safety-accepted', '1'); } catch (e) {} });
-      return page;
-    };
-  }
+    }
+    if (lowFps > 0) {
+      await page.evaluateOnNewDocument(fps => {
+        let last = 0;
+        window.requestAnimationFrame = cb => setTimeout(() => { last = performance.now(); cb(last); }, 1000 / fps);
+      }, lowFps);
+    }
+    if (throttle > 1) await (await page.createCDPSession()).send('Emulation.setCPUThrottlingRate', { rate: throttle });
+    return page;
+  };
   return browser;
 }
