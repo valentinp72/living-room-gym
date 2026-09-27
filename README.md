@@ -63,12 +63,13 @@ Pick a training set and follow it: each step has a target, with a rest in betwee
 ![The menu: training sets by level, and the equipment you have](docs/screenshots/menu-sets.jpg)
 
 Rest looks clearly different from exercise, so you never start too early: a blue screen, a
-countdown, and "GET READY" with three beeps before the next step. Finish a step and you get
+countdown, and "GET READY" with three beeps before the next step. While the coach rests, a
+smaller one shows what's up next, so you can get ready for it. Finish a step and you get
 confetti; finish the whole set and you get a lot more.
 
 | Resting | Step done |
 |---|---|
-| ![The rest screen with its countdown](docs/screenshots/rest.jpg) | ![Confetti after a step](docs/screenshots/confetti.jpg) |
+| ![The rest screen: countdown, the resting coach, and the next exercise](docs/screenshots/rest.jpg) | ![Confetti after a step](docs/screenshots/confetti.jpg) |
 
 ### 29 exercises, at home
 

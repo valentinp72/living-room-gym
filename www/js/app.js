@@ -73,6 +73,12 @@ const NEAR_PANEL = 0.9;
 const FLOOR_AHEAD = 0.2;
 const FACE_DOWN = -0.5;
 const FACE_AHEAD = 0.7;
+// It is scaled to its distance from the eyes so it always spans about
+// FACE_LABEL_WIDTH meters per meter away (~50 deg, at most full size): on
+// the floor under a plank it's only 30-40 cm away, and at full size (1 m
+// wide) it didn't fit in view.
+const FACE_LABEL_WIDTH = 0.93;
+const FACE_LABEL_FULL = 1.0;   // #floorLabel's width at scale 1
 
 // Menu follow (XR only): when the menu is on screen and the user has turned
 // more than FOLLOW_ANGLE degrees away from it, or walked more than
@@ -112,9 +118,11 @@ const PANEL_HEAD = new THREE.Vector3();
 // Exercise vs rest look: rest gets a blue panel and a cyan countdown so it
 // can't be mistaken for an exercise. Panels are nearly opaque: over
 // passthrough, a see-through panel is hard to read.
+// During a rest the countdown moves up (counterY), making room for the
+// "UP NEXT" card under it (#nextCard, see showNext()).
 const LOOK = {
-  exercise: { bg: '#000000', opacity: 0.88, counter: '#ffeb3b' },
-  rest: { bg: '#0b3d5c', opacity: 0.92, counter: '#80deea' },
+  exercise: { bg: '#000000', opacity: 0.88, counter: '#ffeb3b', counterY: 0.05 },
+  rest: { bg: '#0b3d5c', opacity: 0.92, counter: '#80deea', counterY: 0.47 },
 };
 // Seconds before the end of a rest when the title turns to "GET READY"
 // (together with the countdown beeps).
@@ -158,9 +166,13 @@ export const gymApp = {
     this.floorLabel = document.querySelector('#floorLabel');
     this.floorLabelText = document.querySelector('#floorLabelText');
     // Demo avatars: on the exercise panel, and a small one on the floor
-    // counter (floor exercises). Both show the same pose.
+    // counter (floor exercises). Both show the same pose. A third one, in
+    // the "UP NEXT" card, previews the next exercise during a rest.
     this.mannequin = buildMannequin(document.querySelector('#demoAvatar'), 'mannequin');
     this.floorMannequin = buildMannequin(document.querySelector('#floorAvatar'), 'floorMannequin');
+    this.nextCard = document.querySelector('#nextCard');
+    this.nextMannequin = buildMannequin(document.querySelector('#nextAvatar'), 'nextMannequin');
+    this.next = null;
     this.current = null;
     this.run = null;
     this.clock = 0;
@@ -341,12 +353,14 @@ export const gymApp = {
     if (!low || gazeY(head) > FACE_DOWN) {
       o.position.set(0, 0, -FACE_AHEAD).applyQuaternion(head.quaternion).add(head.position);
       o.quaternion.copy(head.quaternion);
-      return;
+    } else {
+      const dir = this.headingOnFloor(head);
+      o.position.set(head.position.x + dir.x * FLOOR_AHEAD, 0.01, head.position.z + dir.z * FLOOR_AHEAD);
+      // Lie flat, with the top of the text pointing away from the user.
+      o.rotation.set(-Math.PI / 2, Math.atan2(-dir.x, -dir.z), 0, 'YXZ');
     }
-    const dir = this.headingOnFloor(head);
-    o.position.set(head.position.x + dir.x * FLOOR_AHEAD, 0.01, head.position.z + dir.z * FLOOR_AHEAD);
-    // Lie flat, with the top of the text pointing away from the user.
-    o.rotation.set(-Math.PI / 2, Math.atan2(-dir.x, -dir.z), 0, 'YXZ');
+    const width = FACE_LABEL_WIDTH * o.position.distanceTo(head.position);
+    o.scale.setScalar(Math.min(1, width / FACE_LABEL_FULL));
   },
   // Is the head too close to the exercise panel to read it (or behind it)?
   nearPanel: function (head) {
@@ -395,16 +409,20 @@ export const gymApp = {
     setShown(this.exercisePanel, false);
     this.mannequin.root.setAttribute('visible', false);
     this.floorLabel.setAttribute('visible', false);
+    this.showNext(null);
   },
   setLook: function (name) {
     const look = LOOK[name];
     this.exerciseBg.setAttribute('material', { color: look.bg, opacity: look.opacity });
+    const pos = this.repText.getAttribute('position');
+    this.repText.setAttribute('position', { x: pos.x, y: look.counterY, z: pos.z });
     this.repText.setAttribute('color', look.counter);
     this.floorLabelText.setAttribute('color', look.counter);
   },
   // Exercise screen, shared by single exercises and training sets.
   showExerciseScreen: function (skippable) {
     this.setLook('exercise');
+    this.showNext(null);
     this.clock = 0;
     this.lastMoves = 0;
     setShown(this.menuPanel, false);
@@ -432,13 +450,15 @@ export const gymApp = {
     this.clock = 0;
     this.lastMoves = 0;
     this.setLook(run.phase === 'rest' ? 'rest' : 'exercise');
+    this.showNext(run.phase === 'rest' ? exerciseById(nextStep(run).exercise) : null);
     if (run.phase === 'exercise') {
       this.current = { ex: run.ex, st: run.st };
       this.titleText.setAttribute('value', `${run.index + 1}/${steps.length}  ${run.ex.name.toUpperCase()}`);
       this.instrText.setAttribute('value', `${describeStep(currentStep(run))}. ${run.ex.instructions}`);
       this.skipBtn.querySelector('a-text').setAttribute('value', 'Skip');
     } else if (run.phase === 'rest') {
-      // No exercise demo during rest: the mannequin idles (see tick).
+      // No exercise demo on the big mannequin during rest: it idles (see
+      // tick), and the next exercise shows in the smaller "UP NEXT" card.
       const next = exerciseById(nextStep(run).exercise);
       this.current = { ex: null, st: null };
       this.titleText.setAttribute('value', 'REST');
@@ -513,6 +533,17 @@ export const gymApp = {
       resetPose(parts);
       pose(parts, this.clock);
     }
+    if (this.next) {
+      resetPose(this.nextMannequin);
+      this.next.demo(this.nextMannequin, this.clock);
+    }
+  },
+  // The "UP NEXT" card during a rest: the next exercise's demo, or null to
+  // hide it.
+  showNext: function (ex) {
+    this.next = ex;
+    this.nextCard.setAttribute('visible', !!ex);
+    if (ex) centerDemo(this.nextMannequin, ex.demo);
   },
   // Center the demo avatars on a new pose (see centerDemo() in avatar.js).
   centerAvatars: function (pose) {

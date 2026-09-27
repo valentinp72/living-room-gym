@@ -35,6 +35,27 @@ for (let i = 0; i < n; i++) {
   }, i);
   await sleep(200); out.push(...await measure());
 }
+// The rest before every exercise ("Next: <name>, 100 reps"): instructions,
+// then the countdown, then the "UP NEXT" card, without overlaps.
+const restClashes = [];
+for (let i = 0; i < n; i++) {
+  await page.evaluate(i => {
+    document.querySelector('#btnBack').emit('click');
+    const app = document.querySelector('#stage').components['gym-app'];
+    const { id, unit } = app.pages.single.items[i];
+    app.startWorkout({ id: 'x', name: 'X', level: 'L', rest: 20, steps: [{ exercise: 'squats', reps: 1 }, { exercise: id, [unit === 'reps' ? 'reps' : 'seconds']: 100 }] });
+    document.querySelector('#btnSkip').emit('click');
+  }, i);
+  await sleep(200);
+  const texts = await measure();
+  out.push(...texts);
+  const rep = texts.find(t => t.id === 'repText');
+  const cardTop = await page.evaluate(() => {
+    const f = document.querySelector('#nextFrame');
+    return f.parentNode.object3D.position.y + f.getAttribute('height') / 2;
+  });
+  if (rep.bottom < cardTop + 0.02) restClashes.push(`${rep.text}: countdown bottom ${rep.bottom}, card top ${cardTop.toFixed(2)}`);
+}
 // Where each text may go on the exercise panel (2.9 m wide): the title across
 // the top, the instructions and counter in the left column, which ends 5 cm
 // before the demo avatar's frame.
@@ -103,7 +124,8 @@ const safety = await page.evaluate(() => {
 console.log(`${safety.ok ? 'inside  ' : 'OUTSIDE '} safety notice text ${JSON.stringify(safety.box)}`);
 console.log(`${menuOk ? 'inside  ' : 'OUTSIDE '} menu panel from ${menuSpan.bottom} to ${menuSpan.top} m above the floor`);
 for (const l of labels) console.log(`${l.ok ? 'inside  ' : 'OUTSIDE '} [${l.left}, ${l.right}] in ±${l.half} button: ${l.text}`);
+for (const c of restClashes) console.log(`OVERLAP rest countdown runs into the "up next" card: ${c}`);
 for (const o of overlaps) console.log(`OVERLAP instructions (bottom ${o.bottom}) run into the counter: ${o.text}`);
 for (const o of out) console.log(`${outside(o) ? "OUTSIDE " : "inside  "} [${o.left}, ${o.right}] ${String(o.width).padEnd(5)} ${o.id.padEnd(14)} ${o.text}`);
 await browser.close();
-process.exit(out.some(outside) || overlaps.length || labels.some(l => !l.ok) || !menuOk || !safety.ok || floorTexts.some(f => !f.ok) ? 1 : 0);
+process.exit(out.some(outside) || overlaps.length || restClashes.length || labels.some(l => !l.ok) || !menuOk || !safety.ok || floorTexts.some(f => !f.ok) ? 1 : 0);

@@ -46,6 +46,10 @@ const ui = () => page.evaluate(() => ({
   // Right elbow bend (degrees): the curls demo bends it up to 140, idle keeps it at 12.
   elbow: Math.round(-THREE.MathUtils.radToDeg(
     document.querySelector('#stage').components['gym-app'].mannequin.elbowR.object3D.rotation.x)),
+  // The "UP NEXT" card (rest only) and its mannequin's right elbow.
+  next: document.querySelector('#nextCard').object3D.visible,
+  nextElbow: Math.round(-THREE.MathUtils.radToDeg(
+    document.querySelector('#stage').components['gym-app'].nextMannequin.elbowR.object3D.rotation.x)),
 }));
 const head = async (y, pitch = 0, ms = 120) => { await page.evaluate((y, p) => { const o = document.querySelector('#camera').object3D; o.position.set(0, y, 0); o.rotation.set(p * Math.PI / 180, 0, 0, 'YXZ'); }, y, pitch); await sleep(ms); await frames(page, 2); };
 const hands = async y => { await page.evaluate(y => { fakeXR.hands.left.pos[1] = fakeXR.hands.right.pos[1] = y; }, y); await sleep(120); await frames(page, 2); };
@@ -145,9 +149,11 @@ eq('then rest', u.title, 'REST');
 eq('rest explains what comes next', u.instr, 'Relax. Next: Bicep Curls, 10 reps. It starts after the countdown.');
 check('rest countdown shown', /^(19|20)s$/.test(u.rep), u.rep);
 eq('rest look: blue panel, cyan counter', [u.bg, u.counter], ['#0b3d5c', '#80deea']);
-let elbows = [];
-for (let i = 0; i < 8; i++) { elbows.push((await ui()).elbow); await sleep(150); }
+let elbows = [], nextElbows = [];
+for (let i = 0; i < 8; i++) { const v = await ui(); elbows.push(v.elbow); nextElbows.push(v.nextElbow); await sleep(150); }
 check('rest: mannequin idles, no curls demo', u.mannequin === true && elbows.every(e => e >= 10 && e <= 14), JSON.stringify(elbows));
+check('rest: "up next" card shown', u.next, u.next);
+check('rest: the card previews curls', Math.max(...nextElbows) > 60, JSON.stringify(nextElbows));
 if (shot) await page.screenshot({ path: shot + '-rest1.png' });
 
 // Skip the rest.
@@ -156,6 +162,7 @@ eq('skip rest: go sound', await sounds(), ['go']);
 u = await ui();
 eq('step 2 title', u.title, '2/3  BICEP CURLS');
 eq('exercise look back', [u.bg, u.counter], ['#000000', '#ffeb3b']);
+eq('no "up next" card during an exercise', u.next, false);
 elbows = [];
 for (let i = 0; i < 8; i++) { elbows.push((await ui()).elbow); await sleep(150); }
 check('curls demo during the step', Math.max(...elbows) > 60, JSON.stringify(elbows));
@@ -190,7 +197,7 @@ u = await ui();
 eq('plank: a ding at 10 s, fanfare at the end', await sounds(), ['ding', 'finish']);
 c = await confetti();
 check('finish: big confetti burst, above the floor', c.live === 260 && c.minY >= 0.003, JSON.stringify(c));
-eq('complete screen', [u.title, u.rep, u.skip, u.mannequin], ['TRAINING COMPLETE', 'Well done!', false, false]);
+eq('complete screen', [u.title, u.rep, u.skip, u.mannequin, u.next], ['TRAINING COMPLETE', 'Well done!', false, false, false]);
 await head(1.6);
 await click('#btnBack'); await sleep(100);
 
@@ -225,7 +232,7 @@ check('skip exercise: mannequin idles', elbows.every(e => e >= 10 && e <= 14), J
 // Single exercise: no Skip, no target.
 await page.evaluate(() => document.querySelectorAll('#menuButtons > *')[0].emit('click')); await sleep(150);
 u = await ui();
-check('single exercise: no skip', !u.skip && u.title === 'SQUATS - Legs', JSON.stringify(u));
+check('single exercise: no skip, no "up next" card', !u.skip && !u.next && u.title === 'SQUATS - Legs', JSON.stringify(u));
 await click('#btnBack');
 
 // Paced exercises: a tick per rep, single and in a training set (rest 0: done + go).

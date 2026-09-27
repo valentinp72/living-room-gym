@@ -249,15 +249,18 @@ check('split squats: goes down > 25 cm', ss[0].parts.head.maxY - ss[6].parts.hea
 // On the panel: every demo (and the resting idle pose) stays inside the
 // avatar's frame as the user sees it (projected onto the panel from eye
 // height, 1.6 m, at the stage origin), and in front of the panel so nothing
-// cuts through it.
-const inFrame = (i, t) => page.evaluate(async (i, t) => {
+// cuts through it. The same for the smaller "UP NEXT" card shown during a
+// rest (next = true), which must also stay clear of the card's title.
+const inFrame = (i, t, next = false) => page.evaluate(async (i, t, next) => {
   const app = document.querySelector('#stage').components['gym-app'];
-  const { resetPose, idle } = await import('/js/avatar.js' + new URL(document.querySelector('script[type=module]').src).search);
-  const p = app.mannequin, pose = i === null ? idle : app.pages.single.items[i].demo;
-  if (app.centered !== pose) app.centerAvatars(pose);
+  const { resetPose, idle, centerDemo } = await import('/js/avatar.js' + new URL(document.querySelector('script[type=module]').src).search);
+  const pose = i === null ? idle : app.pages.single.items[i].demo;
+  const p = next ? app.nextMannequin : app.mannequin;
+  if (next) { if (app.nextCentered !== pose) { centerDemo(p, pose); app.nextCentered = pose; } }
+  else if (app.centered !== pose) app.centerAvatars(pose);
   resetPose(p);
   pose(p, t);
-  const panel = document.querySelector('#exercisePanel').object3D, frame = document.querySelector('#demoFrame');
+  const panel = document.querySelector('#exercisePanel').object3D, frame = document.querySelector(next ? '#nextFrame' : '#demoFrame');
   panel.updateMatrixWorld(true);
   const toPanel = new THREE.Matrix4().copy(panel.matrixWorld).invert();
   const b = new THREE.Box3().expandByObject(p.root.object3D, true).applyMatrix4(toPanel);
@@ -268,11 +271,12 @@ const inFrame = (i, t) => page.evaluate(async (i, t) => {
     const k = eye.z / (eye.z - z);
     seen.expandByPoint(new THREE.Vector3(eye.x + (x - eye.x) * k, eye.y + (y - eye.y) * k, 0));
   }
-  const fx = frame.object3D.position.x, fy = frame.object3D.position.y;
+  const f = frame.object3D.getWorldPosition(new THREE.Vector3()).applyMatrix4(toPanel);
   const w = frame.getAttribute('width') / 2, h = frame.getAttribute('height') / 2;
-  const ok = seen.min.x > fx - w && seen.max.x < fx + w && seen.min.y > fy - h && seen.max.y < fy + h && b.min.z > 0.005;
+  const top = f.y + h - (next ? 0.12 : 0);   // under the "UP NEXT" title
+  const ok = seen.min.x > f.x - w && seen.max.x < f.x + w && seen.min.y > f.y - h && seen.max.y < top && b.min.z > 0.005;
   return { ok, box: [seen.min.x, seen.max.x, seen.min.y, seen.max.y, b.min.z].map(v => +v.toFixed(2)) };
-}, i, t);
+}, i, t, next);
 const count = await page.evaluate(() => document.querySelectorAll('#menuButtons > *').length);
 await open(0);
 for (const i of [...Array(count).keys(), null]) {
@@ -283,6 +287,15 @@ for (const i of [...Array(count).keys(), null]) {
   }
   const name = i === null ? 'idle' : await page.evaluate(i => document.querySelector('#stage').components['gym-app'].pages.single.items[i].name, i);
   check(`in the frame: ${name}`, !bad.length, bad.slice(0, 2).join(' | '));
+}
+for (let i = 0; i < count; i++) {
+  const bad = [];
+  for (let k = 0; k < 16; k++) {
+    const r = await inFrame(i, k * 0.4, true);
+    if (!r.ok) bad.push(`t=${(k * 0.4).toFixed(1)} ${JSON.stringify(r.box)}`);
+  }
+  const name = await page.evaluate(i => document.querySelector('#stage').components['gym-app'].pages.single.items[i].name, i);
+  check(`in the "up next" card: ${name}`, !bad.length, bad.slice(0, 2).join(' | '));
 }
 
 // The small avatar on the floor counter: only while the head is low, and in

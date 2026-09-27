@@ -1,5 +1,5 @@
 // Automatic plank timing from the head pose, plus the floor counter.
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 const [url, shot] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const browser = await launch();
@@ -59,6 +59,23 @@ const done = await label();
 const last = secs(done, 'Last'), best = secs(done, 'Best');
 check('stand up: last = best ≈ hold time', last !== null && last === best && last >= 3.0 && last <= 4.3, done);
 check('floor counter hidden again', (await floor()).visible === false, '');
+
+// It fits in view (regression: 1 m wide, 40 cm from the eyes, it didn't):
+// the angle between its left and right edges, seen from the eyes.
+const span = () => page.evaluate(() => {
+  const o = document.querySelector('#floorLabel').object3D, h = document.querySelector('#camera').object3D;
+  o.updateMatrixWorld(true); h.updateMatrixWorld(true);
+  const eye = h.getWorldPosition(new THREE.Vector3());
+  const w = document.querySelector('#floorLabel a-plane').getAttribute('width') / 2;
+  const [l, r] = [-w, w].map(x => o.localToWorld(new THREE.Vector3(x, 0, 0)).sub(eye));
+  return Math.round(l.angleTo(r) * 180 / Math.PI);
+});
+await plank(); await sleep(1200); await frames(page, 2);
+let deg = await span();
+check('floor counter fits in view (about 50 deg wide)', deg >= 45 && deg <= 55, deg + ' deg');
+await head(0.25, -85); await frames(page, 2); deg = await span();
+check('floor counter fits in view, head lower', deg >= 45 && deg <= 55, deg + ' deg');
+await stand(); await frames(page, 2);
 
 // Poses that are not a plank.
 for (const [name, y, pitch] of [['kneeling upright', 0.75, 0], ['standing, looking down', 1.6, -85],
