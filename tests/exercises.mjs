@@ -31,7 +31,7 @@ const open = async id => {
     const i = app.pages.single.items.findIndex(ex => ex.id === id);
     document.querySelectorAll('#menuButtons > *')[i].emit('click');
   }, id);
-  await sleep(100);
+  await sleep(100); await frames(page, 2);
 };
 
 const results = [];
@@ -140,7 +140,8 @@ await head(1.6); await open('side-plank-left');
 expect('side plank: prompt', await label(), 'Get into a side plank');
 await head(0.5, 0, 1600, 70);
 check('side plank: holding', secs(await label(), 'Hold') >= 0.5, await label());
-await head(0.3, 0, 1400, 70);
+// (Below 25 cm, so no new hold starts: on a slow runner one could by the check.)
+await head(0.2, 0, 1400, 70);
 check('side plank: dropping the hips ends it', !/^Hold/.test(await label()), await label());
 await head(1.6, 0, 300);
 await head(0.4, -80, 1600);
@@ -174,7 +175,7 @@ expect('side plank: counter in front of the face', JSON.stringify(await faceLabe
 await head(1.6, 0, 300); await open('incline-push-ups');
 expect('near panel: no face counter from the usual spot', (await faceLabel()).visible, false);
 await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.position.set(0, 1.1, -1.5); o.rotation.set(-0.8, 0, 0, 'YXZ'); });
-await sleep(150);
+await sleep(150); await frames(page, 3);
 expect('near panel: counter by the face', JSON.stringify(await faceLabel()), JSON.stringify({ visible: true, dist: 0.7, facing: true }));
 
 // Looking at the panel from where it's readable, the face counter fades out

@@ -2,14 +2,15 @@
 // screen (every exercise, and a training set with its longest instructions),
 // and of the menu button labels. Fails if a text sticks out of its panel or
 // button, or if the instructions run into the counter.
-import { launch, textReady } from './lib.mjs';
+import { launch, frames, textReady } from './lib.mjs';
 const [url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const browser = await launch();
 const page = await browser.newPage();
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
-const measure = async () => { await textReady(page); return page.evaluate(() => [...document.querySelectorAll('#exercisePanel a-text[id]')].map(t => {
+// After a few frames: the app lays the panel out on its tick.
+const measure = async () => { await frames(page, 3); await textReady(page); return page.evaluate(() => [...document.querySelectorAll('#exercisePanel a-text[id]')].map(t => {
   const mesh = t.getObject3D('text'); mesh.geometry.computeBoundingBox();
   const b = mesh.geometry.boundingBox; const s = mesh.scale.x;
   const w = new THREE.Box3().setFromObject(mesh); const inv = new THREE.Matrix4().copy(document.querySelector('#exercisePanel').object3D.matrixWorld).invert(); w.applyMatrix4(inv);

@@ -23,7 +23,7 @@ const hand = async (sel, y) => { await page.evaluate((s, y) => { fakeXR.hands[s]
 const open = async () => {
   await page.evaluate(() => document.querySelector('#btnBack').emit('click'));
   await page.evaluate(() => document.querySelectorAll('#menuButtons > *')[1].emit('click'));
-  await sleep(150);
+  await sleep(150); await frames(page, 3);   // the detectors see the hands where they are first
 };
 // Eyes at 1.6 m: arm down = 0.8 (-0.8), curl top = 1.35 (-0.25).
 const curl = async (sel, top = 1.35, bottom = 0.8) => { await hand(sel, top); await hand(sel, bottom); };
@@ -48,8 +48,8 @@ if (shot) await page.screenshot({ path: shot + '-curls.png' });
 
 // 3. Both arms curl together: one rep each, not double counted on one side.
 await open();
-await page.evaluate(() => { fakeXR.hands.left.pos[1] = fakeXR.hands.right.pos[1] = 1.35; }); await sleep(120);
-await page.evaluate(() => { fakeXR.hands.left.pos[1] = fakeXR.hands.right.pos[1] = 0.8; }); await sleep(120);
+await page.evaluate(() => { fakeXR.hands.left.pos[1] = fakeXR.hands.right.pos[1] = 1.35; }); await sleep(120); await frames(page, 3);
+await page.evaluate(() => { fakeXR.hands.left.pos[1] = fakeXR.hands.right.pos[1] = 0.8; }); await sleep(120); await frames(page, 3);
 expect('simultaneous curl', await rep(), 'Left: 1    Right: 1');
 
 // 4. Half curl (hand only reaches -0.55, belly height) is not a rep.
@@ -162,7 +162,7 @@ await hand('#rightHand', 1.35); await track('#rightHand', false); await sleep(40
 await track('#rightHand', true); await hand('#rightHand', 0.8);
 expect('short gap keeps the rep', await rep(), 'Left: 0    Right: 1');
 await hand('#rightHand', 1.35); await track('#rightHand', false); await sleep(1500);
-await hand('#rightHand', 0.8); await track('#rightHand', true); await sleep(120);
+await hand('#rightHand', 0.8); await track('#rightHand', true); await sleep(120); await frames(page, 3);
 expect('long gap forgets it', await rep(), 'Left: 0    Right: 1');
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : `  got=${JSON.stringify(r.got)} want=${JSON.stringify(r.want)}`));

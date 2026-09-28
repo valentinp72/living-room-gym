@@ -1,6 +1,6 @@
 // Regression: one trigger pull / pinch must click exactly the button the
 // hand points at, whatever the head looks at, inside an XR session.
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 import { installFakeXR } from './fakexr.mjs';
 const [url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -16,7 +16,7 @@ await page.evaluate(() => {
   document.querySelector('#camera').setAttribute('look-controls', 'enabled: false');
   const s = document.querySelector('a-scene'); s.addState('ar-mode'); s.emit('enter-vr', { target: s });
 });
-await sleep(800);   // past the auto-recenter
+await sleep(800); await frames(page, 3);   // past the auto-recenter
 // Record every exercise start.
 await page.evaluate(() => {
   const app = document.querySelector('#stage').components['gym-app'];
@@ -47,11 +47,11 @@ for (const kind of ['hand', 'controller']) {
   await lookAt(['#menuButtons > *', 0]);
   await point('right', kind, ['#menuButtons > *', 7]);
   await point('left', kind, ['#menuButtons > *', 1]);
-  await sleep(200);
+  await sleep(200); await frames(page, 3);   // the pointers aim
   await page.evaluate(() => { starts.length = 0; fakeSelect('right'); });
-  await sleep(200);
+  await sleep(200); await frames(page, 2);
   expect(`${kind}: right select opens only Lunges`, await page.evaluate(() => starts), ['Lunges']);
-  await back(); await sleep(200);
+  await back(); await sleep(200); await frames(page, 2);
 }
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : `  got=${JSON.stringify(r.got)} want=${JSON.stringify(r.want)}`));

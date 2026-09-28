@@ -1,5 +1,5 @@
 // XR pointing (bare hands and controllers): ray visibility and select-to-click, on a fake XR session.
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 import { installFakeXR } from './fakexr.mjs';
 const [url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -20,17 +20,18 @@ const point = (side, kind, target) => page.evaluate((side, kind, target) => {
   Object.assign(fakeXR.hands[side], { kind, lost: false, ray: { from, to: [p.x, p.y, p.z] } });
 }, side, kind, target);
 const lose = side => page.evaluate(s => { fakeXR.hands[s].lost = true; }, side);
-const pinch = async side => { await sleep(150); await page.evaluate(s => fakeSelect(s), side); await sleep(100); };
+// Frames around it: the pointer aims on scene ticks, and a click changes the screen.
+const pinch = async side => { await sleep(150); await frames(page, 3); await page.evaluate(s => fakeSelect(s), side); await sleep(100); await frames(page, 2); };
 const screen = () => page.evaluate(() => document.querySelector('#exercisePanel').getAttribute('visible') ? document.querySelector('#exerciseTitle').getAttribute('value') : 'menu');
 const pointers = () => page.evaluate(() => ['#leftPointer', '#rightPointer'].map(s => document.querySelector(s).object3D.visible));
 
 const results = [];
 const expect = (name, got, want) => results.push({ name, ok: JSON.stringify(got) === JSON.stringify(want), got, want });
 
-await sleep(150);
+await sleep(150); await frames(page, 3);
 expect('no hands: no pointer rays', await pointers(), [false, false]);
 await point('right', 'hand', '#tabSingle');
-await sleep(150);
+await sleep(150); await frames(page, 3);
 expect('tracked right hand: right ray shown', await pointers(), [false, true]);
 await pinch('right');
 expect('pinch switches the menu tab', await page.evaluate(() => document.querySelector('#menuButtons').getAttribute('visible')), true);
@@ -44,7 +45,7 @@ await pinch('right');
 expect('pinch Back returns to menu', await screen(), 'menu');
 // Controllers use the same pointer: ray shown, trigger clicks once.
 await point('right', 'controller', ['#menuButtons > *', 1]);
-await sleep(150);
+await sleep(150); await frames(page, 3);
 expect('controller: ray shown', await pointers(), [false, true]);
 await pinch('right');
 expect('controller trigger opens Bicep Curls', await screen(), 'BICEP CURLS - Arms');
@@ -57,7 +58,7 @@ await page.evaluate(() => { const o = document.querySelector('#camera').object3D
 await pinch('left');
 const st = await page.evaluate(() => { const o = document.querySelector('#stage').object3D; return [o.position.x, o.position.z].map(n => Math.round(n * 100) / 100); });
 expect('left pinch on Recenter', st, [1, 1]);
-await lose('left'); await sleep(150);
+await lose('left'); await sleep(150); await frames(page, 3);
 expect('lost hand hides its ray', await pointers(), [false, false]);
 
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : `  got=${JSON.stringify(r.got)} want=${JSON.stringify(r.want)}`));

@@ -1,5 +1,5 @@
 // Geometric checks of the demo mannequin: floor contact, planted feet, no leaking poses.
-import { launch } from './lib.mjs';
+import { launch, frames } from './lib.mjs';
 
 const [url, shot] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -14,7 +14,7 @@ await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, {
 const open = async i => {
   await page.evaluate(() => document.querySelector('#btnBack').emit('click'));
   await page.evaluate(i => document.querySelectorAll('#menuButtons > *')[i].emit('click'), i);
-  await sleep(200);
+  await sleep(200); await frames(page, 3);   // the app centers the demo on its tick
 };
 
 // Pose the mannequin at time t (synchronously, so no tick interferes) and
@@ -352,10 +352,10 @@ const floorAvatar = () => page.evaluate(() => {
 await page.evaluate(() => document.querySelector('#camera').setAttribute('look-controls', 'enabled: false'));
 await open(2);
 await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.position.set(0, 1.6, 0); o.rotation.set(0, 0, 0); });
-await sleep(150);
+await sleep(150); await frames(page, 3);
 check('floor avatar: hidden while standing', !(await floorAvatar()).shown);
 await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.position.set(0, 0.45, 0); o.rotation.set(-1.4, 0, 0, 'YXZ'); });
-await sleep(150);
+await sleep(150); await frames(page, 3);
 const fa = await floorAvatar();
 check('floor avatar: shown in a plank, same pose', fa.shown && fa.same, JSON.stringify(fa));
 await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.position.set(0, 1.6, 0); o.rotation.set(0, 0, 0); });
