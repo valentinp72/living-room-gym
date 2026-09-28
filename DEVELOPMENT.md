@@ -51,7 +51,8 @@ screenshots: `node tests/workout.mjs http://127.0.0.1:8000/ /tmp/shot` (several 
 a screenshot prefix as second argument). `screenshots.mjs` regenerates the README's pictures in `docs/screenshots/` (serve `www/`, then
 `node tests/screenshots.mjs <url> docs/screenshots www/img/screenshots`; it needs ImageMagick; the
 third argument also copies the web app manifest's screenshots into the app). `icons.mjs` makes the app icons
-(`node tests/icons.mjs <url> www/img`), `thumbnails.mjs` the menu pictures of each exercise. `views.mjs` isn't a test either: it screenshots every demo
+(`node tests/icons.mjs <url> www/img`), `thumbnails.mjs` the menu pictures of each exercise, `equipment-icons.mjs` the equipment icons
+(`node tests/equipment-icons.mjs www/img/equipment`, drawn as SVG in the script). `views.mjs` isn't a test either: it screenshots every demo
 pose from several sides.
 
 `LOW_FPS=8 npm test` renders pages at about 8 frames per second, like a slow CI runner:

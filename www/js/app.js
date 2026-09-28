@@ -57,12 +57,24 @@ const MENU_CENTER_Y = 1.45;
 const TAB = { on: '#0277bd', off: '#37474f' };
 const CHIP = { on: '#00897b', off: '#263238' };
 // Menu buttons: all one calm color. Training sets have a stripe on the left
-// in their level's color; single exercises show a picture of the coach
-// (img/exercises/<id>.png, made by tests/thumbnails.mjs) and the muscle.
+// in their level's color and an icon per piece of equipment on the right
+// (img/equipment/<kind>.png, made by tests/equipment-icons.mjs); single
+// exercises show a picture of the coach (img/exercises/<id>.png, made by
+// tests/thumbnails.mjs) and the muscle.
 const BUTTON = '#2e3c45';
 const LEVEL_COLORS = { Easy: '#43a047', Medium: '#fb8c00', Hard: '#e53935' };
 const STRIPE = 0.035;       // m, training set stripe width
 const PICTURE = 0.25;       // m, exercise picture size
+const ICON = 0.14;          // m, equipment icon size
+
+// White icon (a transparent PNG) of a piece of equipment.
+function makeIcon(kind, size) {
+  const icon = document.createElement('a-plane');
+  icon.setAttribute('width', size);
+  icon.setAttribute('height', size);
+  icon.setAttribute('material', { src: `img/equipment/${kind}.png`, transparent: true, alphaTest: 0.1, shader: 'flat' });
+  return icon;
+}
 
 // Seconds to wait after entering AR before recentering, so the headset
 // pose has settled.
@@ -126,7 +138,6 @@ function loadKit() {
 function saveKit(kit) {
   try { localStorage.setItem(KIT_KEY, JSON.stringify(kit)); } catch (e) { /* storage blocked */ }
 }
-const KIT_LABELS = { chair: 'Chair', band: 'Band', weights: 'Dumbbells' };
 const PANEL_HEAD = new THREE.Vector3();
 const GAZE = new THREE.Vector3(), GAZE_QUAT = new THREE.Quaternion(), PANEL_QUAT = new THREE.Quaternion();
 
@@ -239,14 +250,16 @@ export const gymApp = {
     const PAGE_Y = 0.03;   // top of the pages
     const ROW = 0.27;      // training sets row height
     const WIDTH = 2.4;     // usable width
-    const equipment = w => equipmentOf(w).map(e => EQUIPMENT_NAMES[e]).join(', ');
     this.pages = {
       sets: {
         tab: makeButton('Training sets', TAB.off, 0.95, 0.24, 2.2),
         container: document.querySelector('#workoutButtons'),
         items: WORKOUTS, cols: 2, width: 1.17, height: 0.24, row: ROW, textWidth: 2.0,
         groups: LEVELS.map(l => ({ id: l.toLowerCase(), name: l })), groupOf: w => w.level.toLowerCase(),
-        label: w => equipment(w) ? `${w.name}\nwith ${equipment(w)}` : w.name,
+        // The equipment shows as icons, not words: a "with dumbbells" line
+        // repeated names like "Dumbbell full body". The equipment setting
+        // under the sets (icon and name) says what each icon means.
+        label: w => w.name,
         decorate: (btn, w, page) => {
           const stripe = document.createElement('a-plane');
           stripe.setAttribute('width', STRIPE);
@@ -254,6 +267,14 @@ export const gymApp = {
           stripe.setAttribute('color', LEVEL_COLORS[w.level]);
           stripe.setAttribute('position', `${-page.width / 2 + STRIPE / 2} 0 0.002`);
           btn.appendChild(stripe);
+          // Equipment icons in a row on the right; the name moves over.
+          const kinds = equipmentOf(w);
+          kinds.forEach((kind, j) => {
+            const icon = makeIcon(kind, ICON);
+            icon.setAttribute('position', `${page.width / 2 - 0.03 - ICON / 2 - (kinds.length - 1 - j) * (ICON + 0.02)} 0 0.002`);
+            btn.appendChild(icon);
+          });
+          btn.querySelector('a-text').setAttribute('position', `${-kinds.length * (ICON + 0.02) / 2} 0 0.01`);
         },
         start: w => this.startWorkout(w),
         usable: w => equipmentOf(w).every(e => this.kit[e]),
@@ -329,13 +350,23 @@ export const gymApp = {
     this.menuPanel.appendChild(sets.kit);
     const kitY = PAGE_Y - ROW / 2 - sets.rows * ROW;
     const have = makeText('I have:', '#ccc', 1.6);
-    have.setAttribute('position', `${-WIDTH / 2 + 0.2} ${kitY} 0.01`);
+    have.setAttribute('align', 'left');
+    have.setAttribute('anchor', 'left');
+    have.setAttribute('position', `${-WIDTH / 2 + 0.02} ${kitY} 0.01`);
     sets.kit.appendChild(have);
-    const kitW = 0.6;   // three buttons after the label, ending with the chips row
-    sets.kitButtons = Object.keys(KIT_LABELS).map((k, j) => {
-      const btn = makeButton('', CHIP.off, kitW, 0.2, 1.5);
+    const kitW = 0.64;   // three buttons after the label, ending with the chips row
+    sets.kitButtons = Object.keys(EQUIPMENT_NAMES).map((k, j) => {
+      // Icon on the left, then "Chair: yes".
+      const btn = makeButton('', CHIP.off, kitW, 0.2, 1.4);
+      const icon = makeIcon(k, 0.12);
+      icon.setAttribute('position', `${-kitW / 2 + 0.03 + 0.06} 0 0.002`);
+      btn.appendChild(icon);
+      const text = btn.querySelector('a-text');
+      text.setAttribute('align', 'left');
+      text.setAttribute('anchor', 'left');
+      text.setAttribute('position', `${-kitW / 2 + 0.18} 0 0.01`);
       btn.id = 'kit-' + k;
-      btn.setAttribute('position', `${WIDTH / 2 - kitW / 2 - (2 - j) * (kitW + 0.06)} ${kitY} 0.01`);
+      btn.setAttribute('position', `${WIDTH / 2 - kitW / 2 - (2 - j) * (kitW + 0.05)} ${kitY} 0.01`);
       onClick(btn, () => { this.kit[k] = !this.kit[k]; saveKit(this.kit); this.showGroup('sets', sets.group); });
       sets.kit.appendChild(btn);
       return { btn, k };
@@ -380,7 +411,7 @@ export const gymApp = {
     for (const { chip, id } of page.chipButtons) chip.setAttribute('material', 'color', id === groupId ? CHIP.on : CHIP.off);
     for (const { btn, k } of page.kitButtons || []) {
       btn.setAttribute('material', 'color', this.kit[k] ? CHIP.on : CHIP.off);
-      btn.querySelector('a-text').setAttribute('value', `${KIT_LABELS[k]}: ${this.kit[k] ? 'yes' : 'no'}`);
+      btn.querySelector('a-text').setAttribute('value', `${EQUIPMENT_NAMES[k]}: ${this.kit[k] ? 'yes' : 'no'}`);
     }
   },
   // Head-top direction on the floor (unit x/z), for someone facing down;

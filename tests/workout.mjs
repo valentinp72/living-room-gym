@@ -64,8 +64,14 @@ const eq = (name, got, want) => check(name, JSON.stringify(got) === JSON.stringi
 // get the same module instances as the app: see .github/scripts/cache-bust.mjs.)
 const menu = await page.evaluate(() => [...document.querySelectorAll('#workoutButtons > *')].map(b => b.querySelector('a-text').getAttribute('value')));
 eq('menu: training sets start with the easy ones', menu.slice(0, 5), ['Full body starter', 'Legs and glutes', 'Abs',
-  'Chest and arms', 'Chair basics\nwith chair']);
-check('menu: equipment on the label', menu.includes('Leg day\nwith dumbbells, chair'), JSON.stringify(menu));
+  'Chest and arms', 'Chair basics']);
+// Equipment shows as icons, not words (no "Dumbbell full body\nwith dumbbells").
+check('menu: no equipment words on the labels', menu.includes('Dumbbell full body') && !menu.some(l => l.includes('with')), JSON.stringify(menu));
+const icons = sel => page.evaluate(sel => [...document.querySelector(sel).querySelectorAll('a-plane')]
+  .map(p => p.getAttribute('material').src).filter(Boolean).map(s => s.src || s), sel);
+const legDay = await page.evaluate(() => [...document.querySelectorAll('#workoutButtons > *')].findIndex(b => b.querySelector('a-text').getAttribute('value').startsWith('Leg day')) + 1);
+eq('menu: equipment icons', await icons(`#workoutButtons > :nth-child(${legDay})`), ['img/equipment/weights.png', 'img/equipment/chair.png']);
+eq('menu: icon on the equipment setting', await icons('#kit-band'), ['img/equipment/band.png']);
 // Only the chosen level's sets are shown (and clickable).
 const shownSets = () => page.evaluate(() => [...document.querySelectorAll('#workoutButtons > *')]
   .filter(b => b.getAttribute('visible') && b.classList.contains('clickable')).map(b => b.querySelector('a-text').getAttribute('value').split('\n')[0]));

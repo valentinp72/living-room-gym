@@ -87,7 +87,7 @@ export const GROUPS = [
   { id: 'weights', name: 'Weights' },
 ];
 export const groupOf = ex => ex.equipment || (ex.floor ? 'floor' : 'standing');
-export const EQUIPMENT_NAMES = { chair: 'chair', band: 'band', weights: 'dumbbells' };
+export const EQUIPMENT_NAMES = { chair: 'Chair', band: 'Band', weights: 'Dumbbells' };
 
 // Moves done so far, for the per-move ding (see tickMoves() in app.js).
 export const HOLD_DING_SECONDS = 10;
