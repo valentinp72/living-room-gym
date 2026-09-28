@@ -49,12 +49,27 @@ for (const [i, want] of [[2, 'PLANK HOLD - Abs'], [1, 'BICEP CURLS - Arms'], [0,
   await click('#btnBack');
   const m = await title(); results.push({ ok: m === 'menu', name: 'mouse Back', got: m });
 }
-// Every exercise button opens its own exercise.
+// Every exercise button opens its own exercise: the first of each group
+// with the mouse (a real click is slow on a runner drawing a few frames per
+// second), all of them with a click event.
 const names = await page.evaluate(() => [...document.querySelectorAll('#menuButtons > *')].map(b => b.querySelector('a-text').getAttribute('value')));
-for (const [i, name] of names.entries()) {
+const firsts = await page.evaluate(() => {
+  const buttons = document.querySelector('#stage').components['gym-app'].pages.single.buttons;
+  return buttons.map((b, i) => i).filter(i => buttons.findIndex(b => b.group === buttons[i].group) === i);
+});
+for (const i of firsts) {
   await clickItem(i);
-  const got = await title(); results.push({ ok: got.startsWith(name.toUpperCase() + ' - '), name: 'mouse opens ' + name, got });
+  const got = await title(); results.push({ ok: got.startsWith(names[i].toUpperCase() + ' - '), name: 'mouse opens ' + names[i], got });
   await click('#btnBack');
+}
+for (const [i, name] of names.entries()) {
+  const got = await page.evaluate(i => {
+    document.querySelectorAll('#menuButtons > *')[i].emit('click');
+    const t = document.querySelector('#exerciseTitle').getAttribute('value');
+    document.querySelector('#btnBack').emit('click');
+    return t;
+  }, i);
+  results.push({ ok: got.startsWith(name.toUpperCase() + ' - '), name: 'button opens ' + name, got });
 }
 results.push({ ok: await visible('#menuButtons'), name: 'Back keeps the tab' });
 await click('#tabSets');

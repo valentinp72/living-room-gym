@@ -2,20 +2,20 @@
 // screen (every exercise, and a training set with its longest instructions),
 // and of the menu button labels. Fails if a text sticks out of its panel or
 // button, or if the instructions run into the counter.
-import { launch } from './lib.mjs';
+import { launch, textReady } from './lib.mjs';
 const [url] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const browser = await launch();
 const page = await browser.newPage();
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
-const measure = () => page.evaluate(() => [...document.querySelectorAll('#exercisePanel a-text[id]')].map(t => {
+const measure = async () => { await textReady(page); return page.evaluate(() => [...document.querySelectorAll('#exercisePanel a-text[id]')].map(t => {
   const mesh = t.getObject3D('text'); mesh.geometry.computeBoundingBox();
   const b = mesh.geometry.boundingBox; const s = mesh.scale.x;
   const w = new THREE.Box3().setFromObject(mesh); const inv = new THREE.Matrix4().copy(document.querySelector('#exercisePanel').object3D.matrixWorld).invert(); w.applyMatrix4(inv);
   return { id: t.id, width: +((b.max.x - b.min.x) * s).toFixed(2), left: +w.min.x.toFixed(2), right: +w.max.x.toFixed(2),
     bottom: +w.min.y.toFixed(2), top: +w.max.y.toFixed(2), text: t.getAttribute('value').slice(0, 40) };
-}));
+})); };
 const out = [];
 const n = await page.evaluate(() => document.querySelectorAll('#menuButtons > *').length);
 for (let i = 0; i < n; i++) {
@@ -73,6 +73,7 @@ for (let i = 0; i < out.length; i++) {
 }
 // Floor counter: every exercise's counter text (as in a training set, with
 // the progress line) fits left of the small avatar and inside the plate.
+await textReady(page);
 const floorTexts = await page.evaluate(async () => {
   const app = document.querySelector('#stage').components['gym-app'];
   const t = document.querySelector('#floorLabelText'), label = document.querySelector('#floorLabel');
@@ -100,6 +101,7 @@ await page.evaluate(() => document.querySelector('#btnBack').emit('click')); awa
 // Every text on a button (name, muscle), clear of its edges and of its
 // images (a-planes with a src: the exercise's picture on the left,
 // equipment icons on the left or right).
+await textReady(page);
 const labels = await page.evaluate(() => [...document.querySelectorAll('#menuPanel .button')].flatMap(btn => {
   const half = btn.getAttribute('geometry').width / 2, halfH = btn.getAttribute('geometry').height / 2;
   let minX = -half + 0.02, maxX = half - 0.02;
@@ -132,6 +134,7 @@ const menuSpan = await page.evaluate(() => {
 });
 const menuOk = menuSpan.bottom > 0.2 && menuSpan.top < 2.7;
 // The safety notice's text stays inside its panel, above its button.
+await textReady(page);
 const safety = await page.evaluate(() => {
   const panel = document.querySelector('#safetyPanel').object3D;
   panel.updateMatrixWorld(true);

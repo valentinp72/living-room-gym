@@ -29,6 +29,12 @@ export const frames = (page, n = 3) => page.evaluate(n => new Promise(resolve =>
   requestAnimationFrame(step);
 }), n);
 
+// Wait until every a-text has its mesh. A-Frame builds it only once the
+// font has downloaded (from the CDN), which the scene's load doesn't wait
+// for: on a slow runner, texts measured right away had no mesh yet.
+export const textReady = page => page.waitForFunction(
+  () => [...document.querySelectorAll('a-text')].every(t => t.getObject3D('text')), { timeout: 30000 });
+
 // Pages open with the safety notice already accepted, so suites start on
 // the menu; launch({ safetyAccepted: false }) to test the notice itself.
 // gpu: render with the machine's graphics card instead of SwiftShader (the

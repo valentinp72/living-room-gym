@@ -182,8 +182,10 @@ await sleep(150);
 eq('curls done: dings, the last one chimes', await sounds(), [...Array(9).fill('ding'), 'done']);
 eq('rest again', (await ui()).title, 'REST');
 
-// Full 20 s rest: 3-2-1 countdown then go; "GET READY" for the last 3 s.
-await sleep(15500);
+// End of the 20 s rest: 3-2-1 countdown then go; "GET READY" for the
+// last 3 s. Jump to 4.5 s left rather than wait 15 s.
+await page.evaluate(() => { document.querySelector('#stage').components['gym-app'].run.restLeft = 4.5; });
+await frames(page, 2);
 eq('still resting at 4-5 s left', (await ui()).title, 'REST');
 await sleep(2500);
 eq('get ready for the last 3 s', (await ui()).title, 'GET READY');

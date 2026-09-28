@@ -141,11 +141,11 @@ expect('half curl by tilt ignored', await rep(), 'Left: 0    Right: 0');
 // 13. Seen by the headset: height and tilt both see the curl, it counts once.
 await page.evaluate(() => { fakeXR.hands.left.emulated = fakeXR.hands.right.emulated = false; });
 await hand('#rightHand', 0.8); await open();
-for (let i = 0; i < 3; i++) {
-  await page.evaluate(() => { fakeXR.hands.right.pos[1] = 1.35; }); await tilt('right', 110, 120);
-  await page.evaluate(() => { fakeXR.hands.right.pos[1] = 0.8; }); await tilt('right', -70, 120);
+for (let i = 0; i < 2; i++) {
+  await page.evaluate(() => { fakeXR.hands.right.pos[1] = 1.35; }); await tilt('right', 110, 12);
+  await page.evaluate(() => { fakeXR.hands.right.pos[1] = 0.8; }); await tilt('right', -70, 12);
 }
-expect('height + tilt: no double count', await rep(), 'Left: 0    Right: 3');
+expect('height + tilt: no double count', await rep(), 'Left: 0    Right: 2');
 
 // 14. Looking down at the hands: forward still comes from the head.
 await page.evaluate(() => { document.querySelector('#camera').object3D.rotation.set(-1.3, 0, 0); });

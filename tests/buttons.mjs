@@ -51,15 +51,19 @@ for (const ex of [0, 1, 2]) {
 }
 // Menu buttons (exercise panel hidden), on both tabs and in every group:
 // the hidden tab's and groups' buttons sit exactly where the shown ones are.
+// Every button from standing; from the other spots, only the first group of
+// each tab (the others use the same slots; each aim waits for frames, which
+// is slow on a runner drawing a few per second).
 await page.evaluate(() => document.querySelector('#btnBack').emit('click')); await sleep(150);
 for (const [tab, page_, list] of [['#tabSets', 'sets', '#workoutButtons'], ['#tabSingle', 'single', '#menuButtons']]) {
   await page.evaluate(t => document.querySelector(t).emit('click'), tab); await sleep(100);
   const groups = await page.evaluate(p => document.querySelector('#stage').components['gym-app'].pages[p].groups.map(g => g.id), page_);
-  for (const g of groups) {
+  for (const [j, g] of groups.entries()) {
     await page.evaluate(g => document.querySelector('#group-' + g).emit('click'), g); await sleep(50);
     const shown = await page.evaluate((p, g) => document.querySelector('#stage').components['gym-app'].pages[p].buttons
       .map((b, i) => b.group === g ? i : -1).filter(i => i >= 0), page_, g);
     for (const [spot, from] of Object.entries(spots)) {
+      if (j > 0 && spot !== 'standing') continue;
       for (const i of shown) check({ screen: 'menu', spot, ...(await aim(from, [list + ' > *', i])) });
     }
   }

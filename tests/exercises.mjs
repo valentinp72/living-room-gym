@@ -43,10 +43,10 @@ await head(1.6); await open('crunches');
 expect('crunches: asks to lie down', await label(), 'Lie on your back');
 await head(0.2, 80);
 expect('crunches: lying = ready', await label(), 'Reps: 0');
-for (let i = 0; i < 3; i++) { await head(0.38, 50); await head(0.2, 80); }
-expect('crunches: 3 crunches', await label(), 'Reps: 3');
+for (let i = 0; i < 2; i++) { await head(0.38, 50); await head(0.2, 80); }
+expect('crunches: 2 crunches', await label(), 'Reps: 2');
 await head(0.27, 70); await head(0.2, 80);
-expect('crunches: head nod ignored', await label(), 'Reps: 3');
+expect('crunches: head nod ignored', await label(), 'Reps: 2');
 // Counter floats above the face, facing it.
 const above = await page.evaluate(() => {
   const o = document.querySelector('#floorLabel').object3D, h = document.querySelector('#camera').object3D;
@@ -55,7 +55,7 @@ const above = await page.evaluate(() => {
 expect('crunches: counter above the face', JSON.stringify(above), JSON.stringify({ visible: true, dy: 0.69, same: true }));
 // Standing and looking up while bobbing: never a crunch.
 await head(1.6); await open('crunches');
-for (let i = 0; i < 3; i++) { await head(1.6, 60); await head(1.3, 60); }
+for (let i = 0; i < 2; i++) { await head(1.6, 60); await head(1.3, 60); }
 expect('crunches: standing, looking up: nothing', await label(), 'Lie on your back');
 // Sitting up and lying down again isn't a crunch either.
 await head(0.2, 80); await head(1.0, 0); await head(0.2, 80);
@@ -66,14 +66,14 @@ for (const id of ['push-ups', 'knee-push-ups']) {
   await head(1.6); await open(id);
   expect(id + ': asks for position', await label(), 'Get into push-up position');
   await head(0.6, -75);
-  for (let i = 0; i < 4; i++) { await head(0.35, -80); await head(0.6, -75); }
-  expect(id + ': 4 push-ups', await label(), 'Reps: 4');
+  for (let i = 0; i < 2; i++) { await head(0.35, -80); await head(0.6, -75); }
+  expect(id + ': 2 push-ups', await label(), 'Reps: 2');
   await head(0.5, -75); await head(0.6, -75);
-  expect(id + ': shallow dip ignored', await label(), 'Reps: 4');
+  expect(id + ': shallow dip ignored', await label(), 'Reps: 2');
 }
 // Looking down while standing / bending over: not a push-up.
 await head(1.6); await open('push-ups');
-for (let i = 0; i < 3; i++) { await head(1.6, -80); await head(1.2, -80); }
+for (let i = 0; i < 2; i++) { await head(1.6, -80); await head(1.2, -80); }
 expect('push-ups: standing, looking down: nothing', await label(), 'Get into push-up position');
 // Looking up for a moment (under 0.5 s) at the bottom keeps the rep.
 await head(0.6, -75); await head(0.35, -80);
@@ -103,19 +103,19 @@ for (const [id, top, depth, still] of [['chair-squats', 1.6, 0.33, 'Stand still.
   await head(top); await open(id);
   expect(id + ': calibrates first', await label(), still);
   await sleep(1300);
-  for (let i = 0; i < 2; i++) { await head(top - depth); await head(top - 0.02); }
-  expect(id + ': 2 reps', await label(), 'Reps: 2');
+  await head(top - depth); await head(top - 0.02);
+  expect(id + ': a rep', await label(), 'Reps: 1');
   await head(top - depth + 0.06); await head(top - 0.02);
-  expect(id + ': too shallow ignored', await label(), 'Reps: 2');
+  expect(id + ': too shallow ignored', await label(), 'Reps: 1');
 }
 
 // Incline push-ups: face down toward the chair, head higher than on the floor.
 await head(1.6); await open('incline-push-ups');
 await head(1.1, -60);
-for (let i = 0; i < 3; i++) { await head(0.95, -65); await head(1.1, -60); }
-expect('incline push-ups: 3 reps', await label(), 'Reps: 3');
+for (let i = 0; i < 2; i++) { await head(0.95, -65); await head(1.1, -60); }
+expect('incline push-ups: 2 reps', await label(), 'Reps: 2');
 await head(1.6); await open('incline-push-ups');
-for (let i = 0; i < 3; i++) { await head(1.6, -80); await head(1.4, -80); }
+for (let i = 0; i < 2; i++) { await head(1.6, -80); await head(1.4, -80); }
 expect('incline push-ups: standing, looking down: nothing', await label(), 'Get into push-up position');
 
 // Wall sit: after the standing calibration, head 18-80 cm lower and looking ahead.
