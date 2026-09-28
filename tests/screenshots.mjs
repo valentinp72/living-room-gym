@@ -1,8 +1,9 @@
 // Screenshots for the README, from the desktop preview (a dark virtual room:
 // passthrough can't be captured here). Not a test.
-// Usage: node screenshots.mjs <url> <outDir>, with www/ served, e.g.
+// Usage: node screenshots.mjs <url> <outDir> [appDir], with www/ served, e.g.
 //   python3 -m http.server --directory www 8000
-//   node tests/screenshots.mjs http://127.0.0.1:8000/ docs/screenshots
+//   node tests/screenshots.mjs http://127.0.0.1:8000/ docs/screenshots www/img/screenshots
+// appDir: where to copy the web app manifest's screenshots (APP_SHOTS).
 // Needs ImageMagick (montage, convert) for the contact sheet and the GIF, and
 // a graphics card: the software renderer garbles the text (see launch()).
 // NO_GPU=1 forces the software renderer anyway.
@@ -11,7 +12,8 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { launch, frames } from './lib.mjs';
 
-const [url, outDir] = process.argv.slice(2);
+const [url, outDir, appDir] = process.argv.slice(2);
+const APP_SHOTS = ['menu-sets', 'exercise', 'rest'];   // see www/manifest.webmanifest
 if (!url || !outDir) { console.error('Usage: node screenshots.mjs <url> <outDir>'); process.exit(2); }
 fs.mkdirSync(outDir, { recursive: true });
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -149,3 +151,8 @@ gifFrames.forEach(f => fs.unlinkSync(f));
 console.log('wrote squats.gif');
 
 await browser.close();
+if (appDir) {
+  fs.mkdirSync(appDir, { recursive: true });
+  for (const name of APP_SHOTS) fs.copyFileSync(path.join(outDir, name + '.jpg'), path.join(appDir, name + '.jpg'));
+  console.log('copied', APP_SHOTS.join(', '), 'to', appDir);
+}

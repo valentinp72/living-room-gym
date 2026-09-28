@@ -12,7 +12,8 @@ const WWW = path.resolve(process.env.WWW || path.join(HERE, '..', 'www'));
 const SUITES = ['workout', 'desktop', 'clickbug', 'pointer', 'buttons', 'ar',
   'recenter', 'plank', 'curls', 'squats', 'exercises', 'avatar', 'textfit'];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
-  '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+  '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg',
+  '.webmanifest': 'application/manifest+json' };
 
 // Minimal static server (module scripts need HTTP, not file://).
 const server = http.createServer((req, res) => {

@@ -95,6 +95,9 @@ band or dumbbells in your hands, hand tracking is the easy way.
 4. Pick a training set (start with **Easy**), or a single exercise.
 5. Follow the coach. Your reps are counted on the panel.
 
+**Install it as an app** (optional): the Quest Browser offers to install the page as an app.
+Living Room Gym then gets its own icon in your app library and opens full screen.
+
 **Tips**
 
 - **Panels in the wrong place?** Press **Recenter**, **B** or **Y**, or use the Quest's own

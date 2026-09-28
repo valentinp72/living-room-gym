@@ -1,0 +1,24 @@
+{
+  "id": "./",
+  "name": "Living Room Gym",
+  "short_name": "Living Room Gym",
+  "description": "A mixed reality home workout for Meta Quest: a coach shows each move in your living room, and the headset counts your reps and times your holds. Training sets from easy to hard, with nothing or a chair, a band or dumbbells.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0d1117",
+  "theme_color": "#10202b",
+  "categories": ["health", "fitness", "sports"],
+  "lang": "en",
+  "icons": [
+    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "img/screenshots/menu-sets.jpg", "sizes": "1280x720", "type": "image/jpeg", "form_factor": "wide", "label": "Training sets for every level, and the equipment you have" },
+    { "src": "img/screenshots/exercise.jpg", "sizes": "1280x720", "type": "image/jpeg", "form_factor": "wide", "label": "A coach shows each move, and your reps are counted" },
+    { "src": "img/screenshots/rest.jpg", "sizes": "1280x720", "type": "image/jpeg", "form_factor": "wide", "label": "Rest between steps, with a preview of what's up next" }
+  ]
+}

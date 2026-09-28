@@ -59,6 +59,30 @@ for (const [i, name] of names.entries()) {
 results.push({ ok: await visible('#menuButtons'), name: 'Back keeps the tab' });
 await click('#tabSets');
 results.push({ ok: await visible('#workoutButtons') && !(await visible('#menuButtons')), name: 'mouse switches back' });
+// Installable web app: the manifest is linked and valid, and every icon and
+// screenshot it lists exists, at the size it says.
+const manifest = await page.evaluate(async () => {
+  const link = document.querySelector('link[rel=manifest]');
+  if (!link) return { error: 'no <link rel=manifest>' };
+  const res = await fetch(link.href);
+  if (!res.ok) return { error: 'manifest ' + res.status };
+  const m = await res.json();
+  const size = src => new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img.naturalWidth + 'x' + img.naturalHeight);
+    img.onerror = () => resolve('missing');
+    img.src = new URL(src, link.href);
+  });
+  const bad = [];
+  for (const f of [...m.icons, ...m.screenshots]) {
+    const got = await size(f.src);
+    if (got !== f.sizes) bad.push(`${f.src}: ${got}, says ${f.sizes}`);
+  }
+  return { name: m.name, start: m.start_url, display: m.display, maskable: m.icons.some(i => i.purpose === 'maskable'),
+    big: m.icons.some(i => i.sizes === '512x512'), bad };
+});
+results.push({ ok: manifest.name === 'Living Room Gym' && manifest.start === './' && manifest.display === 'standalone' &&
+  manifest.maskable && manifest.big && !manifest.bad?.length, name: 'web app manifest, icons and screenshots', got: JSON.stringify(manifest) });
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : ' got=' + r.got));
 console.log('page errors:', errors.length ? errors : 'none');
 await browser.close();
