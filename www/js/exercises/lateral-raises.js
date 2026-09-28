@@ -6,7 +6,7 @@ const SECONDS_PER_REP = 3;
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'lateral-raises', name: 'Lateral Raises', muscle: 'Shoulders', color: '#ad1457', equipment: 'weights',
+  id: 'lateral-raises', name: 'Lateral Raises', muscle: 'Shoulders', equipment: 'weights',
   instructions: 'A light dumbbell in each hand, arms at your sides, elbows slightly bent. On each beat, raise your arms out to shoulder height, then lower them slowly.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2 * Math.PI / SECONDS_PER_REP)) / 2;   // 0 = down, 1 = level

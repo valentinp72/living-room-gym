@@ -5,7 +5,7 @@ import { newCalibration, calibrate } from './calibration.js';
 // head height once the head stays still (see calibration.js). A rep = head
 // `down` meters below the top, then back within `up` of it.
 //   still -> counter text while calibrating
-//   export default { ...headDip({ down: 0.25 }), id, name, muscle, color,
+//   export default { ...headDip({ down: 0.25 }), id, name, muscle,
 //     instructions, demo }
 export function headDip({ down, up = 0.08, still = 'Stand still...' }) {
   return {

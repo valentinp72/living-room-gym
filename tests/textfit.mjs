@@ -97,12 +97,25 @@ const floorTexts = await page.evaluate(async () => {
 for (const f of floorTexts) console.log(`${f.ok ? 'inside  ' : 'OUTSIDE '} floor counter ${JSON.stringify(f.box)} ${f.name}`);
 // Menu labels inside their buttons.
 await page.evaluate(() => document.querySelector('#btnBack').emit('click')); await sleep(200);
-const labels = await page.evaluate(() => [...document.querySelectorAll('#menuPanel .button')].map(btn => {
-  const t = btn.querySelector('a-text'), mesh = t.getObject3D('text');
-  const w = new THREE.Box3().setFromObject(mesh).applyMatrix4(new THREE.Matrix4().copy(btn.object3D.matrixWorld).invert());
-  const half = btn.getAttribute('geometry').width / 2;
-  return { text: t.getAttribute('value'), ok: w.min.x > -half + 0.02 && w.max.x < half - 0.02, left: +w.min.x.toFixed(2), right: +w.max.x.toFixed(2), half };
+// Every text on a button (name, muscle), clear of its edges and of the
+// exercise's picture (an a-plane with a src).
+const labels = await page.evaluate(() => [...document.querySelectorAll('#menuPanel .button')].flatMap(btn => {
+  const half = btn.getAttribute('geometry').width / 2, halfH = btn.getAttribute('geometry').height / 2;
+  const pic = [...btn.querySelectorAll('a-plane')].find(p => p.getAttribute('material').src);
+  const minX = pic ? pic.object3D.position.x + pic.getAttribute('width') / 2 : -half + 0.02;
+  return [...btn.querySelectorAll('a-text')].map(t => {
+    const w = new THREE.Box3().setFromObject(t.getObject3D('text')).applyMatrix4(new THREE.Matrix4().copy(btn.object3D.matrixWorld).invert());
+    return { text: t.getAttribute('value'), ok: w.min.x > minX && w.max.x < half - 0.02 && w.min.y > -halfH + 0.01 && w.max.y < halfH - 0.01,
+      left: +w.min.x.toFixed(2), right: +w.max.x.toFixed(2), half };
+  });
 }));
+// Every exercise has its picture (tests/thumbnails.mjs makes them).
+const missingPictures = await page.evaluate(async () => {
+  const app = document.querySelector('#stage').components['gym-app'];
+  const missing = [];
+  for (const ex of app.pages.single.items) if (!(await fetch(`img/exercises/${ex.id}.png`)).ok) missing.push(ex.id);
+  return missing;
+});
 // The menu panel stays clear of the floor and within reach of the eyes.
 const menuSpan = await page.evaluate(() => {
   const b = new THREE.Box3().setFromObject(document.querySelector('#menuBg').object3D);
@@ -124,8 +137,9 @@ const safety = await page.evaluate(() => {
 console.log(`${safety.ok ? 'inside  ' : 'OUTSIDE '} safety notice text ${JSON.stringify(safety.box)}`);
 console.log(`${menuOk ? 'inside  ' : 'OUTSIDE '} menu panel from ${menuSpan.bottom} to ${menuSpan.top} m above the floor`);
 for (const l of labels) console.log(`${l.ok ? 'inside  ' : 'OUTSIDE '} [${l.left}, ${l.right}] in ±${l.half} button: ${l.text}`);
+for (const m of missingPictures) console.log(`MISSING picture img/exercises/${m}.png (run tests/thumbnails.mjs)`);
 for (const c of restClashes) console.log(`OVERLAP rest countdown runs into the "up next" card: ${c}`);
 for (const o of overlaps) console.log(`OVERLAP instructions (bottom ${o.bottom}) run into the counter: ${o.text}`);
 for (const o of out) console.log(`${outside(o) ? "OUTSIDE " : "inside  "} [${o.left}, ${o.right}] ${String(o.width).padEnd(5)} ${o.id.padEnd(14)} ${o.text}`);
 await browser.close();
-process.exit(out.some(outside) || overlaps.length || restClashes.length || labels.some(l => !l.ok) || !menuOk || !safety.ok || floorTexts.some(f => !f.ok) ? 1 : 0);
+process.exit(out.some(outside) || overlaps.length || restClashes.length || missingPictures.length || labels.some(l => !l.ok) || !menuOk || !safety.ok || floorTexts.some(f => !f.ok) ? 1 : 0);

@@ -12,8 +12,7 @@ const TOP = 0.86, BOTTOM = 0.56;                     // pelvis heights
 const other = side => side === 'left' ? 'right' : 'left';
 const splitSquats = side => ({
   ...headDip({ down: 0.2 }),
-  id: 'split-squats-' + side, name: `Split Squats (${side === 'left' ? 'Left' : 'Right'})`, muscle: 'Legs',
-  color: '#2e7d32', equipment: 'chair',
+  id: 'split-squats-' + side, name: `Split Squats (${side === 'left' ? 'Left' : 'Right'})`, muscle: 'Legs', equipment: 'chair',
   instructions: `${side === 'left' ? 'Left' : 'Right'} leg in front. Back to a sturdy chair, ${other(side)} foot resting on the seat behind you. Stand still to calibrate, then bend your front knee to lower yourself, and push back up.`,
   demo(parts, t) {
     demoRight(parts, t);

@@ -8,7 +8,7 @@ const LIFT = 60;                       // leg lifted out to the side, degrees
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'fire-hydrants', name: 'Fire Hydrants', muscle: 'Glutes', color: '#6a1b9a', floor: true,
+  id: 'fire-hydrants', name: 'Fire Hydrants', muscle: 'Glutes', floor: true,
   instructions: 'On all fours. On each beat, lift one bent knee out to the side, then lower it. Alternate legs.',
   demo(parts, t) {
     const rep = Math.floor(t / SECONDS_PER_REP);

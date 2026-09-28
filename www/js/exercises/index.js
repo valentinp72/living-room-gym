@@ -2,7 +2,7 @@
  * EXERCISE REGISTRY
  * To add a new exercise, create a file in this folder that default-exports
  * an object with:
- *   id, name, muscle, color, instructions
+ *   id, name, muscle, instructions
  *   unit                -> 'reps' or 'seconds': what count() returns and
  *                          what training sets give as the target
  *   state()             -> fresh per-session state object

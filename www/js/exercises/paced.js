@@ -3,7 +3,7 @@
 // one rep every `secondsPerRep`, each marked by a tick sound (the app plays
 // it for any exercise with `paced: true`), and the user follows along.
 //   export default { ...paced({ secondsPerRep: 2.5 }), id, name, muscle,
-//     color, instructions, demo }
+//     instructions, demo }
 export function paced({ secondsPerRep }) {
   return {
     paced: true,

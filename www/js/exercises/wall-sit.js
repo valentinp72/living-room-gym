@@ -20,7 +20,7 @@ export default {
     keep: (head, st) => keptHeight(head, st, HOLD_DRIFT, HOLD_DRIFT) || lookAhead(head),
     prompt: 'Slide down the wall',
   }),
-  id: 'wall-sit', name: 'Wall Sit', muscle: 'Legs', color: '#2e7d32',
+  id: 'wall-sit', name: 'Wall Sit', muscle: 'Legs',
   instructions: 'Stand still to calibrate, back to a wall. Slide down until your thighs are level, and hold. The timer starts and stops by itself.',
   demo(parts, t) {
     const breath = Math.sin(t * 1.6) * 0.005;

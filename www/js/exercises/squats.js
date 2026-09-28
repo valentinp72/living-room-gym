@@ -27,7 +27,7 @@ export function squatPose(parts, thigh, shin, lean) {
 
 export default {
   ...headDip({ down: 0.25 }),
-  id: 'squats', name: 'Squats', muscle: 'Legs', color: '#2e7d32',
+  id: 'squats', name: 'Squats', muscle: 'Legs',
   instructions: 'Stand still to calibrate, then squat down and stand back up for each rep.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 1.6)) / 2;   // 0 = standing, 1 = bottom of the squat

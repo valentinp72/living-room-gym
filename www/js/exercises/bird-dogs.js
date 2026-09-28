@@ -8,7 +8,7 @@ const DEG = Math.PI / 180;
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'bird-dogs', name: 'Bird Dogs', muscle: 'Back', color: '#00695c', floor: true,
+  id: 'bird-dogs', name: 'Bird Dogs', muscle: 'Back', floor: true,
   instructions: 'On all fours. On each beat, reach one arm forward and the opposite leg back, hold, then return. Alternate sides.',
   demo(parts, t) {
     const { tilt, shoulder } = allFours(parts);

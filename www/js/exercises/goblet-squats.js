@@ -4,7 +4,7 @@ import { squatPose } from './squats.js';
 
 export default {
   ...headDip({ down: 0.25 }),
-  id: 'goblet-squats', name: 'Goblet Squats', muscle: 'Legs', color: '#2e7d32', equipment: 'weights',
+  id: 'goblet-squats', name: 'Goblet Squats', muscle: 'Legs', equipment: 'weights',
   instructions: 'Hold one dumbbell against your chest with both hands. Stand still to calibrate, then squat down and stand back up.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 1.6)) / 2;   // 0 = standing, 1 = bottom of the squat

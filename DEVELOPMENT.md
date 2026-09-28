@@ -118,7 +118,7 @@ Add an entry to `WORKOUTS` in `www/js/workouts.js`:
 
 ```js
 {
-  id: 'full-body-plus', name: 'Full body plus', level: 'Medium', color: '#00695c',
+  id: 'full-body-plus', name: 'Full body plus', level: 'Medium',
   rest: 15,
   steps: [
     { exercise: 'squats', reps: 15 },
@@ -141,7 +141,7 @@ Create `www/js/exercises/<name>.js`:
 import { rot, place, turn } from '../avatar.js';
 
 export default {
-  id: 'lunges', name: 'Lunges', muscle: 'Legs', color: '#6a1b9a',
+  id: 'lunges', name: 'Lunges', muscle: 'Legs',
   instructions: 'Step forward and lower your back knee…',
   unit: 'reps',                          // or 'seconds' for timed exercises
   state: () => ({ reps: 0 }),            // fresh state per session
@@ -152,7 +152,10 @@ export default {
 };
 ```
 
-Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` array.
+Then import it in `www/js/exercises/index.js` and add it to the `EXERCISES` array, and make
+its menu picture (the coach at the demo's most telling moment, `www/img/exercises/<id>.png`):
+serve `www/` and run `node tests/thumbnails.mjs <url> www/img/exercises`. Run it again when a
+demo changes; `textfit` fails if an exercise has no picture.
 
 For an exercise that can't be tracked, spread `paced({ secondsPerRep })` from
 `exercises/paced.js` into it instead of writing `unit` / `state` / `update` / `count` /

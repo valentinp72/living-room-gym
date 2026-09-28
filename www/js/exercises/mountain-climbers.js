@@ -7,7 +7,7 @@ const SECONDS_PER_REP = 1;
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'mountain-climbers', name: 'Mountain Climbers', muscle: 'Abs', color: '#ef6c00', floor: true,
+  id: 'mountain-climbers', name: 'Mountain Climbers', muscle: 'Abs', floor: true,
   instructions: 'In a high plank, arms straight. On each beat, drive one knee toward your chest, then put it back. Alternate legs.',
   demo(parts, t) {
     const { pelvis, tilt } = pushUpDemo(parts, 0, false);   // top of a push-up

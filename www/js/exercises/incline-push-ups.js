@@ -12,7 +12,7 @@ const HANDS_Z = along({ y: onToesY(TOP_TILT), z: 0 }, TOP_TILT, BODY.shoulderY).
 
 export default {
   ...pushUpReps({ maxY: 1.3, faceDown: -0.4, down: 0.12, up: 0.09 }),
-  id: 'incline-push-ups', name: 'Incline Push-ups', muscle: 'Chest', color: '#c62828', equipment: 'chair',
+  id: 'incline-push-ups', name: 'Incline Push-ups', muscle: 'Chest', equipment: 'chair',
   instructions: 'Put a sturdy chair against a wall. Hands on the front of the seat, body straight. Lower your chest to the seat, then push back up.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2)) / 2;   // 0 = arms straight, 1 = chest low

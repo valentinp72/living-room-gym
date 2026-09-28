@@ -56,6 +56,13 @@ const MENU_CENTER_Y = 1.45;
 // tabs) have their own, so the two rows don't look alike.
 const TAB = { on: '#0277bd', off: '#37474f' };
 const CHIP = { on: '#00897b', off: '#263238' };
+// Menu buttons: all one calm color. Training sets have a stripe on the left
+// in their level's color; single exercises show a picture of the coach
+// (img/exercises/<id>.png, made by tests/thumbnails.mjs) and the muscle.
+const BUTTON = '#2e3c45';
+const LEVEL_COLORS = { Easy: '#43a047', Medium: '#fb8c00', Hard: '#e53935' };
+const STRIPE = 0.035;       // m, training set stripe width
+const PICTURE = 0.25;       // m, exercise picture size
 
 // Seconds to wait after entering AR before recentering, so the headset
 // pose has settled.
@@ -230,31 +237,61 @@ export const gymApp = {
     const ROW_Y = 0.45;    // tabs + recenter row
     const CHIP_Y = 0.17;   // group chips row
     const PAGE_Y = 0.03;   // top of the pages
-    const ROW = 0.27;      // page row height
+    const ROW = 0.27;      // training sets row height
     const WIDTH = 2.4;     // usable width
     const equipment = w => equipmentOf(w).map(e => EQUIPMENT_NAMES[e]).join(', ');
     this.pages = {
       sets: {
         tab: makeButton('Training sets', TAB.off, 0.95, 0.24, 2.2),
         container: document.querySelector('#workoutButtons'),
-        items: WORKOUTS, cols: 2, width: 1.17, height: 0.24, textWidth: 2.0,
+        items: WORKOUTS, cols: 2, width: 1.17, height: 0.24, row: ROW, textWidth: 2.0,
         groups: LEVELS.map(l => ({ id: l.toLowerCase(), name: l })), groupOf: w => w.level.toLowerCase(),
         label: w => equipment(w) ? `${w.name}\nwith ${equipment(w)}` : w.name,
+        decorate: (btn, w, page) => {
+          const stripe = document.createElement('a-plane');
+          stripe.setAttribute('width', STRIPE);
+          stripe.setAttribute('height', page.height);
+          stripe.setAttribute('color', LEVEL_COLORS[w.level]);
+          stripe.setAttribute('position', `${-page.width / 2 + STRIPE / 2} 0 0.002`);
+          btn.appendChild(stripe);
+        },
         start: w => this.startWorkout(w),
         usable: w => equipmentOf(w).every(e => this.kit[e]),
       },
       single: {
         tab: makeButton('Single exercises', TAB.off, 0.95, 0.24, 2.2),
         container: document.querySelector('#menuButtons'),
-        items: EXERCISES, cols: 3, width: 0.8, height: 0.22, textWidth: 0.74, wrapCount: 16,
+        items: EXERCISES, cols: 3, width: 0.8, height: 0.27, row: 0.31, textWidth: 0.47, wrapCount: 12,
         groups: GROUPS, groupOf,
         label: ex => ex.name, start: ex => this.startExercise(ex),
+        // Picture on the left; name (up to two lines) and muscle on its right.
+        decorate: (btn, ex, page) => {
+          const left = -page.width / 2;
+          const pic = document.createElement('a-plane');
+          pic.setAttribute('width', PICTURE);
+          pic.setAttribute('height', PICTURE);
+          pic.setAttribute('material', { src: `img/exercises/${ex.id}.png`, transparent: true, alphaTest: 0.1, shader: 'flat' });
+          pic.setAttribute('position', `${left + 0.015 + PICTURE / 2} 0 0.002`);
+          btn.appendChild(pic);
+          const x = left + PICTURE + 0.04;
+          const name = btn.querySelector('a-text');
+          name.setAttribute('align', 'left');
+          name.setAttribute('anchor', 'left');
+          name.setAttribute('baseline', 'bottom');
+          name.setAttribute('position', `${x} -0.015 0.01`);
+          const muscle = makeText(ex.muscle, '#b8cad2', 0.47);
+          muscle.setAttribute('wrap-count', 16);
+          muscle.setAttribute('align', 'left');
+          muscle.setAttribute('anchor', 'left');
+          muscle.setAttribute('baseline', 'top');
+          muscle.setAttribute('position', `${x} -0.04 0.01`);
+          btn.appendChild(muscle);
+        },
         usable: () => true,
       },
     };
     this.kit = loadKit();
-    this.layout = { PAGE_Y, ROW };
-    let rows = 0;
+    this.layout = { PAGE_Y };
     Object.entries(this.pages).forEach(([name, page], i) => {
       page.tab.id = name === 'sets' ? 'tabSets' : 'tabSingle';
       page.tab.setAttribute('position', `${-0.775 + i * 1.0} ${ROW_Y} 0.01`);
@@ -277,7 +314,8 @@ export const gymApp = {
       page.buttons = page.items.map(item => {
         const group = page.groupOf(item);
         counts[group] = (counts[group] || 0) + 1;
-        const btn = makeButton(page.label(item), item.color, page.width, page.height, page.textWidth, page.wrapCount);
+        const btn = makeButton(page.label(item), BUTTON, page.width, page.height, page.textWidth, page.wrapCount);
+        page.decorate(btn, item, page);
         onClick(btn, () => page.start(item));
         page.container.appendChild(btn);
         return { btn, group, item };
@@ -302,9 +340,9 @@ export const gymApp = {
       sets.kit.appendChild(btn);
       return { btn, k };
     });
-    rows = Math.max(this.pages.single.rows, sets.rows + 1);
+    const single = this.pages.single;
     document.querySelector('#btnRecenterMenu').setAttribute('position', `1.0 ${ROW_Y} 0.01`);
-    const bottom = PAGE_Y - rows * ROW - 0.08;
+    const bottom = PAGE_Y - Math.max(single.rows * single.row, (sets.rows + 1) * sets.row) - 0.08;
     const bg = document.querySelector('#menuBg');
     bg.setAttribute('height', TOP - bottom);
     bg.setAttribute('position', `0 ${(TOP + bottom) / 2} 0`);
@@ -326,7 +364,8 @@ export const gymApp = {
   // usable buttons, in order, row by row.
   showGroup: function (pageName, groupId) {
     const page = this.pages[pageName];
-    const { PAGE_Y, ROW } = this.layout;
+    const { PAGE_Y } = this.layout;
+    const ROW = page.row;
     page.group = groupId;
     page.container.setAttribute('visible', true);
     let j = 0;

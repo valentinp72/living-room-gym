@@ -8,7 +8,7 @@ const DEG = Math.PI / 180;
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'calf-raises', name: 'Calf Raises', muscle: 'Legs', color: '#2e7d32',
+  id: 'calf-raises', name: 'Calf Raises', muscle: 'Legs',
   instructions: 'Stand straight. On each beat, rise up on your toes, then lower your heels back down.',
   demo(parts, t) {
     const a = 35 * (1 - Math.cos(t * 2 * Math.PI / SECONDS_PER_REP)) / 2 * DEG;   // foot angle

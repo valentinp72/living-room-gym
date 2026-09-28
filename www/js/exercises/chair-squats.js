@@ -9,7 +9,7 @@ const SEAT_Z = squatPelvis(THIGH, SHIN).z - CHAIR_SIZE / 2 + 0.1;   // middle of
 
 export default {
   ...headDip({ down: 0.3 }),
-  id: 'chair-squats', name: 'Chair Squats', muscle: 'Legs', color: '#2e7d32', equipment: 'chair',
+  id: 'chair-squats', name: 'Chair Squats', muscle: 'Legs', equipment: 'chair',
   instructions: 'Stand in front of a sturdy chair. Stand still to calibrate, then sit down lightly on the edge of the seat and stand back up, without using your hands.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 1.6)) / 2;   // 0 = standing, 1 = sitting

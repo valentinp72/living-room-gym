@@ -10,7 +10,7 @@ const FEET = { y: BODY.ankle, z: 0.62 };
 
 export default {
   ...headDip({ down: 0.15, up: 0.06, still: 'Hold still at the top...' }),
-  id: 'chair-dips', name: 'Chair Dips', muscle: 'Arms', color: '#1565c0', equipment: 'chair',
+  id: 'chair-dips', name: 'Chair Dips', muscle: 'Arms', equipment: 'chair',
   instructions: 'Sturdy chair that cannot slide. Hands on the seat edge behind you, feet forward. Hold still at the top, then bend your elbows to go down and push back up.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2)) / 2;   // 0 = arms straight, 1 = low

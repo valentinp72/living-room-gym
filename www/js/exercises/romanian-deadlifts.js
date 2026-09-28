@@ -8,7 +8,7 @@ const BEND = 0.05;        // ...and knees soften
 
 export default {
   ...headDip({ down: 0.3 }),
-  id: 'romanian-deadlifts', name: 'Romanian Deadlifts', muscle: 'Glutes', color: '#6a1b9a', equipment: 'weights',
+  id: 'romanian-deadlifts', name: 'Romanian Deadlifts', muscle: 'Glutes', equipment: 'weights',
   instructions: 'A dumbbell in each hand, knees soft. Stand still to calibrate, then push your hips back and lower the weights along your legs with a flat back, and stand back up.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 1.6)) / 2;   // 0 = standing, 1 = bottom

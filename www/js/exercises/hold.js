@@ -12,7 +12,7 @@
 //                      (st.standY, see calibration.js), e.g. for a wall sit
 //   prompt          -> counter text before the first hold
 //   export default { ...hold({ start, keep, prompt }), id, name, muscle,
-//     color, instructions, demo }
+//     instructions, demo }
 import { newCalibration, calibrate } from './calibration.js';
 import { gazeY } from '../tracking.js';
 

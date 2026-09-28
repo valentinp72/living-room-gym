@@ -6,7 +6,6 @@
  *   id, name         -> shown in the menu, with the equipment its steps need
  *   level            -> 'Easy', 'Medium' or 'Hard' (LEVELS): the menu tab
  *                       it's listed under
- *   color            -> menu button color
  *   rest             -> seconds of rest between steps (0 = none)
  *   steps            -> [{ exercise: <exercise id>, reps: n }
  *                        | { exercise: <exercise id>, seconds: n }]
@@ -18,7 +17,7 @@ export const LEVELS = ['Easy', 'Medium', 'Hard'];
 export const WORKOUTS = [
   // ----- Easy: short sets, long rests -----
   {
-    id: 'full-body-starter', name: 'Full body starter', level: 'Easy', color: '#00838f',
+    id: 'full-body-starter', name: 'Full body starter', level: 'Easy',
     rest: 20,
     steps: [
       { exercise: 'squats', reps: 10 },
@@ -27,7 +26,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'lower-body-easy', name: 'Legs and glutes', level: 'Easy', color: '#2e7d32',
+    id: 'lower-body-easy', name: 'Legs and glutes', level: 'Easy',
     rest: 20,
     steps: [
       { exercise: 'squats', reps: 10 },
@@ -38,7 +37,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'core-easy', name: 'Abs', level: 'Easy', color: '#ef6c00',
+    id: 'core-easy', name: 'Abs', level: 'Easy',
     rest: 20,
     steps: [
       { exercise: 'crunches', reps: 10 },
@@ -48,7 +47,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'upper-body-easy', name: 'Chest and arms', level: 'Easy', color: '#c62828',
+    id: 'upper-body-easy', name: 'Chest and arms', level: 'Easy',
     rest: 25,
     steps: [
       { exercise: 'knee-push-ups', reps: 8 },
@@ -58,7 +57,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'chair-easy', name: 'Chair basics', level: 'Easy', color: '#5d4037',
+    id: 'chair-easy', name: 'Chair basics', level: 'Easy',
     rest: 25,
     steps: [
       { exercise: 'chair-squats', reps: 10 },
@@ -70,7 +69,7 @@ export const WORKOUTS = [
   },
   // ----- Medium: more reps, shorter rests -----
   {
-    id: 'full-body-medium', name: 'Full body', level: 'Medium', color: '#4527a0',
+    id: 'full-body-medium', name: 'Full body', level: 'Medium',
     rest: 15,
     steps: [
       { exercise: 'squats', reps: 15 },
@@ -82,7 +81,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'core-medium', name: 'Core', level: 'Medium', color: '#ef6c00',
+    id: 'core-medium', name: 'Core', level: 'Medium',
     rest: 15,
     steps: [
       { exercise: 'crunches', reps: 15 },
@@ -95,7 +94,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'lower-body-medium', name: 'Legs and glutes', level: 'Medium', color: '#2e7d32',
+    id: 'lower-body-medium', name: 'Legs and glutes', level: 'Medium',
     rest: 15,
     steps: [
       { exercise: 'squats', reps: 15 },
@@ -107,7 +106,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'band-medium', name: 'Band workout', level: 'Medium', color: '#e64a19',
+    id: 'band-medium', name: 'Band workout', level: 'Medium',
     rest: 20,
     steps: [
       { exercise: 'band-pull-aparts', reps: 15 },
@@ -119,7 +118,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'dumbbells-medium', name: 'Dumbbell full body', level: 'Medium', color: '#455a64',
+    id: 'dumbbells-medium', name: 'Dumbbell full body', level: 'Medium',
     rest: 20,
     steps: [
       { exercise: 'goblet-squats', reps: 12 },
@@ -132,7 +131,7 @@ export const WORKOUTS = [
   },
   // ----- Hard: long sets, short rests -----
   {
-    id: 'full-body-hard', name: 'Full body challenge', level: 'Hard', color: '#4527a0',
+    id: 'full-body-hard', name: 'Full body challenge', level: 'Hard',
     rest: 12,
     steps: [
       { exercise: 'jumping-jacks', reps: 30 },
@@ -145,7 +144,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'core-hard', name: 'Core crusher', level: 'Hard', color: '#ef6c00',
+    id: 'core-hard', name: 'Core crusher', level: 'Hard',
     rest: 10,
     steps: [
       { exercise: 'crunches', reps: 25 },
@@ -158,7 +157,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'legs-hard', name: 'Leg day', level: 'Hard', color: '#2e7d32',
+    id: 'legs-hard', name: 'Leg day', level: 'Hard',
     rest: 12,
     steps: [
       { exercise: 'goblet-squats', reps: 20 },
@@ -171,7 +170,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'upper-body-hard', name: 'Upper body', level: 'Hard', color: '#c62828',
+    id: 'upper-body-hard', name: 'Upper body', level: 'Hard',
     rest: 12,
     steps: [
       { exercise: 'push-ups', reps: 20 },
@@ -183,7 +182,7 @@ export const WORKOUTS = [
     ],
   },
   {
-    id: 'cardio-hard', name: 'Cardio blast', level: 'Hard', color: '#00838f',
+    id: 'cardio-hard', name: 'Cardio blast', level: 'Hard',
     rest: 10,
     steps: [
       { exercise: 'jumping-jacks', reps: 40 },

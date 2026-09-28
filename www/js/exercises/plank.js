@@ -21,7 +21,7 @@ export default {
     keep: (head, st) => keptHeight(head, st, HOLD_DROP, HOLD_RISE) || faceDownOff(head, HOLD_DOWN),
     prompt: 'Get into plank position',
   }),
-  id: 'plank', name: 'Plank Hold', muscle: 'Abs', color: '#ef6c00', floor: true,
+  id: 'plank', name: 'Plank Hold', muscle: 'Abs', floor: true,
   instructions: 'Get into a forearm plank, facing the floor. The timer starts and stops by itself.',
   demo(parts) {
     // Forearm plank, face down: the straight body tilts TILT degrees from

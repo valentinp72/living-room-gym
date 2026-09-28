@@ -250,7 +250,7 @@ await page.evaluate(async () => {
   const { EXERCISES } = await import('/js/exercises/index.js' + new URL(document.querySelector('script[type=module]').src).search);
   const { paced } = await import('/js/exercises/paced.js' + new URL(document.querySelector('script[type=module]').src).search);
   EXERCISES.push({ ...paced({ secondsPerRep: 0.4 }), id: 'paced-test', name: 'Paced test', muscle: 'Test',
-    color: '#888', instructions: 'Follow the beat.', demo() {} });
+    instructions: 'Follow the beat.', demo() {} });
 });
 await sounds();
 const app = fn => page.evaluate(fn);
@@ -271,7 +271,7 @@ check('paced single exercise: a tick per rep', pacedReps >= 3 && ticks.length ==
   `reps=${pacedReps} sounds=${JSON.stringify(ticks)}`);
 await click('#btnBack');
 await app(() => document.querySelector('#stage').components['gym-app'].startWorkout(
-  { id: 't', name: 'T', level: 'Test', color: '#888', rest: 0,
+  { id: 't', name: 'T', level: 'Test', rest: 0,
     steps: [{ exercise: 'paced-test', reps: 2 }, { exercise: 'paced-test', reps: 2 }] }));
 await sleep(2200);
 eq('paced training set (no rest)', await sounds(), ['rep', 'rep', 'done', 'go', 'rep', 'rep', 'finish']);

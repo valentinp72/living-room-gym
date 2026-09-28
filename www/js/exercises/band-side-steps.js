@@ -9,7 +9,7 @@ const WIDE = 8;                // legs apart, degrees
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'band-side-steps', name: 'Band Side Steps', muscle: 'Glutes', color: '#6a1b9a', equipment: 'band',
+  id: 'band-side-steps', name: 'Band Side Steps', muscle: 'Glutes', equipment: 'band',
   instructions: 'Band around your legs just above the knees, in a half squat. On each beat, take a small step to the side, then bring the other foot in. Go a few steps each way.',
   demo(parts, t) {
     const beat = t / SECONDS_PER_REP;

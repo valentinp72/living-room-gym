@@ -10,7 +10,7 @@ const TOP = PELVIS_Y - 0.08, BOTTOM = 0.5;   // pelvis heights
 
 export default {
   ...headDip({ down: 0.25 }),
-  id: 'lunges', name: 'Lunges', muscle: 'Legs', color: '#2e7d32',
+  id: 'lunges', name: 'Lunges', muscle: 'Legs',
   instructions: 'Stand still to calibrate. Step back and lower your back knee toward the floor, then stand up. Alternate legs.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 1.6)) / 2;   // 0 = up, 1 = back knee near the floor

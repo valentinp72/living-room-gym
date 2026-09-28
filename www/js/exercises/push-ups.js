@@ -86,7 +86,7 @@ export function pushUpDemo(parts, t, knees) {
 
 export default {
   ...pushUpReps(),
-  id: 'push-ups', name: 'Push-ups', muscle: 'Chest', color: '#c62828', floor: true,
+  id: 'push-ups', name: 'Push-ups', muscle: 'Chest', floor: true,
   instructions: 'Hands under your shoulders, body straight. Lower your chest to the floor, then push back up.',
   demo: (parts, t) => pushUpDemo(parts, t, false),
 };

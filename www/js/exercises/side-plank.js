@@ -45,8 +45,7 @@ const sidePlank = side => ({
     keep: (head, st) => keptHeight(head, st, HOLD_DROP, HOLD_RISE) || sidewaysOff(head, side, 0.9, 0.75),
     prompt: 'Get into a side plank',
   }),
-  id: 'side-plank-' + side, name: `Side Plank (${side === 'left' ? 'Left' : 'Right'})`, muscle: 'Abs',
-  color: '#ef6c00', floor: true,
+  id: 'side-plank-' + side, name: `Side Plank (${side === 'left' ? 'Left' : 'Right'})`, muscle: 'Abs', floor: true,
   instructions: `Lie on your ${side} side, on your ${side} forearm, feet stacked. Lift your hips so your body is straight, and hold.`,
   demo(parts, t) {
     demoLeft(parts, t);

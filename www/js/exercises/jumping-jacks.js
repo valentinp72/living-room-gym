@@ -7,7 +7,7 @@ const DEG = Math.PI / 180;
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'jumping-jacks', name: 'Jumping Jacks', muscle: 'Cardio', color: '#00838f',
+  id: 'jumping-jacks', name: 'Jumping Jacks', muscle: 'Cardio',
   instructions: 'On each beat, jump your feet apart while raising your arms overhead, then jump back. Make sure you have room around you.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2 * Math.PI / SECONDS_PER_REP)) / 2;   // 0 = together, 1 = apart

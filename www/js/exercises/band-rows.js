@@ -8,7 +8,7 @@ const LEAN = -5;                    // torso upright, slightly back
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'band-rows', name: 'Band Rows', muscle: 'Back', color: '#00695c', equipment: 'band', floor: true,
+  id: 'band-rows', name: 'Band Rows', muscle: 'Back', equipment: 'band', floor: true,
   instructions: 'Sit with your legs straight, the band around your feet, one end in each hand. On each beat, pull your elbows back and squeeze your shoulder blades, then extend your arms.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2 * Math.PI / SECONDS_PER_REP)) / 2;   // 0 = arms extended, 1 = pulled

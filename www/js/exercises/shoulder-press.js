@@ -6,7 +6,7 @@ const SECONDS_PER_REP = 2.5;
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'shoulder-press', name: 'Shoulder Press', muscle: 'Shoulders', color: '#ad1457', equipment: 'weights',
+  id: 'shoulder-press', name: 'Shoulder Press', muscle: 'Shoulders', equipment: 'weights',
   instructions: 'Stand with a dumbbell in each hand at shoulder height, palms forward. On each beat, press them overhead, then lower them back to your shoulders.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2 * Math.PI / SECONDS_PER_REP)) / 2;   // 0 = at the shoulders, 1 = overhead

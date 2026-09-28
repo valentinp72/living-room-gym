@@ -8,7 +8,7 @@ const HIP = { y: PELVIS_Y - 0.07, z: -0.14 };      // hips back, knees bent
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'bent-over-rows', name: 'Bent-over Rows', muscle: 'Back', color: '#00695c', equipment: 'weights',
+  id: 'bent-over-rows', name: 'Bent-over Rows', muscle: 'Back', equipment: 'weights',
   instructions: 'A dumbbell in each hand. Bend forward from the hips, back flat, knees soft. On each beat, pull the weights up to your ribs, then lower them.',
   demo(parts, t) {
     const c = (1 - Math.cos(t * 2 * Math.PI / SECONDS_PER_REP)) / 2;   // 0 = arms hanging, 1 = pulled up

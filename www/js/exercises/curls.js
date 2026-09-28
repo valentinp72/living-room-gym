@@ -68,7 +68,7 @@ function stepArm(arm, hand, headY, forward, dtMs) {
 }
 
 export default {
-  id: 'curls', name: 'Bicep Curls', muscle: 'Arms', color: '#1565c0',
+  id: 'curls', name: 'Bicep Curls', muscle: 'Arms',
   instructions: 'Hold a controller in each hand, or use bare hands in view of the headset. Curl your hand up to your shoulder, then lower it.',
   unit: 'reps',
   state: () => ({ left: newArm(), right: newArm() }),

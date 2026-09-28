@@ -7,7 +7,7 @@ const SECONDS_PER_REP = 2;
 
 export default {
   ...paced({ secondsPerRep: SECONDS_PER_REP }),
-  id: 'donkey-kicks', name: 'Donkey Kicks', muscle: 'Glutes', color: '#6a1b9a', floor: true,
+  id: 'donkey-kicks', name: 'Donkey Kicks', muscle: 'Glutes', floor: true,
   instructions: 'On all fours. On each beat, keep the knee bent and push one foot up toward the ceiling, then lower it. Alternate legs.',
   demo(parts, t) {
     const { tilt } = allFours(parts);
