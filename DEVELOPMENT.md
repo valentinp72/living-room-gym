@@ -55,8 +55,10 @@ third argument also copies the web app manifest's screenshots into the app). `ic
 (`node tests/equipment-icons.mjs www/img/equipment`, drawn as SVG in the script). `views.mjs` isn't a test either: it screenshots every demo
 pose from several sides.
 
-`LOW_FPS=8 npm test` renders pages at about 8 frames per second, like a slow CI runner:
-suites must pass that way too (GitHub's runners are much slower than a desktop).
+The suites run the page's frames themselves on a test clock (`frames()` / `wait()` in
+`tests/lib.mjs`), so their results don't depend on how fast the machine is. `LOW_FPS=8 npm test`
+steps the clock at 8 frames per second instead of 60, to check nothing depends on the frame
+rate; `CPU_THROTTLE=6 JOBS=13 npm test` (a slow CPU, every suite at once) should pass too.
 
 `WWW=/path/to/copy npm test` runs the suites against another copy of the app (the deploy
 workflow uses it to test exactly what it publishes).

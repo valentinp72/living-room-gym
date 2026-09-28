@@ -1,15 +1,16 @@
 // Geometric checks of the demo mannequin: floor contact, planted feet, no leaking poses.
-import { launch, frames } from './lib.mjs';
+import { launch, frames, wait } from './lib.mjs';
 
 const [url, shot] = process.argv.slice(2);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+// The page's time, not real time (see the test clock in lib.mjs).
+const sleep = ms => wait(page, ms);
 const browser = await launch();
 const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 800 });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 await page.goto(url, { waitUntil: 'load' });
-await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
 
 const open = async i => {
   await page.evaluate(() => document.querySelector('#btnBack').emit('click'));

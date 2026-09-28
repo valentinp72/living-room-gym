@@ -2,9 +2,10 @@
 // screen (every exercise, and a training set with its longest instructions),
 // and of the menu button labels. Fails if a text sticks out of its panel or
 // button, or if the instructions run into the counter.
-import { launch, frames, textReady } from './lib.mjs';
+import { launch, frames, textReady, wait } from './lib.mjs';
 const [url] = process.argv.slice(2);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+// The page's time, not real time (see the test clock in lib.mjs).
+const sleep = ms => wait(page, ms);
 const browser = await launch();
 const page = await browser.newPage();
 await page.goto(url, { waitUntil: 'load' });

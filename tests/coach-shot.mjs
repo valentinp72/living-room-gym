@@ -9,7 +9,7 @@ export async function openCoach(url, size) {
   const page = await browser.newPage();
   await page.setViewport({ width: size, height: size });
   await page.goto(url, { waitUntil: 'load' });
-  await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+  await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
   const ids = await page.evaluate(() => {
     document.querySelector('#hint').style.display = 'none';
     document.documentElement.style.background = document.body.style.background = 'transparent';

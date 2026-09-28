@@ -1,15 +1,16 @@
 // Casts the right controller's ray at each visible button from several body
 // positions (standing, kneeling, lying in plank) and checks what it hits first.
-import { launch } from './lib.mjs';
+import { launch, frames, wait } from './lib.mjs';
 import { installFakeXR } from './fakexr.mjs';
 const [url] = process.argv.slice(2);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+// The page's time, not real time (see the test clock in lib.mjs).
+const sleep = ms => wait(page, ms);
 const browser = await launch();
 const page = await browser.newPage();
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 await page.goto(url, { waitUntil: 'load' });
-await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
 await installFakeXR(page);
 
 // Name a clickable entity by its label text (or id).
@@ -24,10 +25,7 @@ const aim = async (from, targetSel) => {
     Object.assign(fakeXR.hands.right, { kind: 'controller', lost: false, ray: { from, to: [tp.x, tp.y, tp.z] } });
     return name(target);
   }, from, targetSel, nameFn);
-  // Two animation frames: at least one full scene tick has moved the
-  // pointer (a fixed sleep could miss one on a busy machine and read the
-  // previous aim).
-  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await frames(page, 2);   // the pointer aims on the scene's tick
   const hit = await page.evaluate(nameFn => {
     const name = eval(nameFn);
     const el = document.querySelector('#rightPointer');

@@ -1,9 +1,10 @@
 // Scene appearance per display mode, and VR being refused (AR / VR sessions
 // are simulated with the
 // same state + event sequence A-Frame uses).
-import { launch } from './lib.mjs';
+import { launch, frames, wait } from './lib.mjs';
 const [url, shot] = process.argv.slice(2);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+// The page's time, not real time (see the test clock in lib.mjs).
+const sleep = ms => wait(page, ms);
 const browser = await launch();
 const page = await browser.newPage();
 await page.setViewport({ width: 1100, height: 800 });
@@ -11,7 +12,7 @@ const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 await page.goto(url, { waitUntil: 'load' });
-await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
 await sleep(300);
 
 const look = () => page.evaluate(() => {

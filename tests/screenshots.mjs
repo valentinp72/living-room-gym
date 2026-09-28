@@ -22,7 +22,7 @@ const browser = await launch({ safetyAccepted: false, gpu: !process.env.NO_GPU }
 const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 720 });
 await page.goto(url, { waitUntil: 'load' });
-await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
 const renderer = await page.evaluate(() => {
   const gl = document.querySelector('a-scene').renderer.getContext(), d = gl.getExtension('WEBGL_debug_renderer_info');
   return d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : 'unknown';

@@ -8,7 +8,7 @@ const browser = await launch();
 const page = await browser.newPage();
 await page.setViewport({ width: 900, height: 700 });
 await page.goto(url, { waitUntil: 'load' });
-await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
 await page.evaluate(() => document.querySelector('#camera').setAttribute('look-controls', 'enabled: false'));
 
 // [exercise index, demo time, label]

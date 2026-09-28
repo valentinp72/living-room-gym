@@ -1,14 +1,15 @@
 // Desktop: real mouse clicks on the panels (cursor rayOrigin: mouse).
-import { launch, frames } from './lib.mjs';
+import { launch, frames, wait } from './lib.mjs';
 const [url] = process.argv.slice(2);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+// The page's time, not real time (see the test clock in lib.mjs).
+const sleep = ms => wait(page, ms);
 const browser = await launch({ safetyAccepted: false });
 const page = await browser.newPage();
 await page.setViewport({ width: 1200, height: 800 });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 await page.goto(url, { waitUntil: 'load' });
-await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
 await sleep(300);
 // Screen position of an element's center.
 const screenOf = sel => page.evaluate(sel => {
@@ -35,7 +36,7 @@ results.push({ ok: !(await page.evaluate(() => [...document.querySelectorAll('#m
 await click('#btnSafetyOk');
 results.push({ ok: !(await visibleNow('#safetyPanel')) && await visibleNow('#menuPanel'), name: 'I understand opens the menu' });
 await page.reload({ waitUntil: 'load' });
-await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, { timeout: 20000 });
+await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded);
 await sleep(300);
 results.push({ ok: !(await visibleNow('#safetyPanel')) && await visibleNow('#menuPanel'), name: 'notice remembered after a reload' });
 // The menu opens on the training sets; exercises are on the other tab.
