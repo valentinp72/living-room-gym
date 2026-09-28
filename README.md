@@ -71,7 +71,7 @@ confetti; finish the whole set and you get a lot more.
 |---|---|
 | ![The rest screen: countdown, the resting coach, and the next exercise](docs/screenshots/rest.jpg) | ![Confetti after a step](docs/screenshots/confetti.jpg) |
 
-### 29 exercises, at home
+### 31 exercises, at home
 
 Everything can be done at home. Many exercises need nothing; others use a sturdy **chair**, an
 elastic **band** or **dumbbells**. Tell the app what you have and it only shows the training
@@ -115,18 +115,19 @@ band or dumbbells in your hands, hand tracking is the easy way.
 | Chest and arms      | Easy   | 25 s |                  | 8 knee push-ups, 10 curls, 8 knee push-ups, 10 curls |
 | Chair basics        | Easy   | 25 s | chair            | 10 chair squats, 8 incline push-ups, 10 glute bridges, 6 chair dips, 8 bird dogs |
 | Full body           | Medium | 15 s |                  | 15 squats, 10 push-ups, 16 lunges, 15 crunches, 15 glute bridges, 40 s plank |
-| Core                | Medium | 15 s |                  | 15 crunches, 20 mountain climbers, 20 s side plank, 10 leg raises, 10 bird dogs, 40 s plank |
+| Core                | Medium | 15 s |                  | 15 crunches, 20 mountain climbers, 20 s side plank each side, 10 leg raises, 10 bird dogs, 40 s plank |
 | Legs and glutes     | Medium | 15 s | a wall           | 15 squats, 16 lunges, 40 s wall sit, 16 donkey kicks, 15 glute bridges, 20 calf raises |
 | Band workout        | Medium | 20 s | band             | 15 band pull-aparts, 16 band side steps, 15 band rows, 15 squats, 15 band pull-aparts, 15 glute bridges |
 | Dumbbell full body  | Medium | 20 s | dumbbells        | 12 goblet squats, 10 shoulder presses, 12 bent-over rows, 12 Romanian deadlifts, 12 curls, 10 lateral raises |
-| Full body challenge | Hard   | 12 s | chair            | 30 jumping jacks, 15 push-ups, 20 split squats, 30 mountain climbers, 15 chair dips, 60 s plank |
-| Core crusher        | Hard   | 10 s |                  | 25 crunches, 15 leg raises, 40 s side plank, 40 mountain climbers, 16 bird dogs, 75 s plank |
-| Leg day             | Hard   | 12 s | dumbbells, chair | 20 goblet squats, 15 Romanian deadlifts, 20 split squats, 60 s wall sit, 30 calf raises, 20 lunges |
+| Full body challenge | Hard   | 12 s | chair            | 30 jumping jacks, 15 push-ups, 10 split squats each leg, 30 mountain climbers, 15 chair dips, 60 s plank |
+| Core crusher        | Hard   | 10 s |                  | 25 crunches, 15 leg raises, 30 s side plank each side, 40 mountain climbers, 16 bird dogs, 75 s plank |
+| Leg day             | Hard   | 12 s | dumbbells, chair | 20 goblet squats, 15 Romanian deadlifts, 10 split squats each leg, 60 s wall sit, 30 calf raises, 20 lunges |
 | Upper body          | Hard   | 12 s | dumbbells, chair | 20 push-ups, 15 bent-over rows, 15 shoulder presses, 15 chair dips, 12 lateral raises, 15 curls |
 | Cardio blast        | Hard   | 10 s |                  | 40 jumping jacks, 30 mountain climbers, 20 squats, 12 push-ups, 40 jumping jacks, 30 mountain climbers |
 
 For exercises that alternate sides (mountain climbers, bird dogs, donkey kicks, fire
-hydrants), each side counts as one rep.
+hydrants), each side counts as one rep. One-sided exercises (side plank, split squats) have a
+step for each side; the side plank checks you're on the right one.
 
 ## Exercises
 
@@ -142,7 +143,7 @@ sets the pace with a tick and counts along; follow the coach.
 | Jumping Jacks      | Cardio     |           | Beat, every 1.5 s |
 | Bicep Curls        | Arms       | dumbbells optional | Counted, each arm |
 | Plank Hold         | Abs        |           | Timed |
-| Side Plank         | Abs        |           | Timed |
+| Side Plank         | Abs        |           | Timed, one exercise per side |
 | Crunches           | Abs        |           | Counted |
 | Leg Raises         | Abs        |           | Beat, every 3 s |
 | Mountain Climbers  | Abs        |           | Beat, a knee every second |
@@ -155,7 +156,7 @@ sets the pace with a tick and counts along; follow the coach.
 | Chair Dips         | Arms       | chair     | Counted |
 | Incline Push-ups   | Chest      | chair     | Counted |
 | Chair Squats       | Legs       | chair     | Counted |
-| Split Squats       | Legs       | chair     | Counted |
+| Split Squats       | Legs       | chair     | Counted, one exercise per leg |
 | Band Pull-Aparts   | Back       | band      | Beat, every 2.5 s |
 | Band Rows          | Back       | band      | Beat, every 2.5 s |
 | Band Side Steps    | Glutes     | band      | Beat, every 1.5 s |

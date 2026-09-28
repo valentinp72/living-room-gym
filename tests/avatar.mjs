@@ -202,10 +202,17 @@ check('band side steps: nothing below floor', above(bs), bs.map(p => p.minY).joi
 check('band side steps: a foot always on the floor', someOnFloor(bs, ['ankleL', 'ankleR']), lows(bs, 'ankleL') + ' | ' + lows(bs, 'ankleR'));
 
 // Floor exercises: what touches the floor.
-const sp = await cycleOf('side-plank', 4);
+const sp = await cycleOf('side-plank-right', 4);
 check('side plank: nothing below floor', above(sp), sp.map(p => p.minY).join(' '));
 check('side plank: on the forearm and foot', flat(sp, ['elbowR', 'ankleR']), lows(sp, 'elbowR') + ' | ' + lows(sp, 'ankleR'));
 check('side plank: hips off the floor', sp.every(p => p.parts.pelvis.minY > 0.12), range(sp, p => p.parts.pelvis.minY));
+// The left one is the mirror image (see mirror() in avatar.js): the same
+// contacts, with the head on the other side.
+const spl = await cycleOf('side-plank-left', 4);
+check('side plank (left): nothing below floor', above(spl), spl.map(p => p.minY).join(' '));
+check('side plank (left): on the forearm and foot', flat(spl, ['elbowR', 'ankleR']), lows(spl, 'elbowR') + ' | ' + lows(spl, 'ankleR'));
+check('side plank (left): head on the other side', spl.every((p, k) => near(p.parts.head.cx, -sp[k].parts.head.cx, 0.01) && Math.abs(p.parts.head.cx) > 0.3),
+  range(sp, p => p.parts.head.cx) + ' vs ' + range(spl, p => p.parts.head.cx));
 const mc = await cycleOf('mountain-climbers', 2, 16);
 check('mountain climbers: nothing below floor', above(mc), mc.map(p => p.minY).join(' '));
 check('mountain climbers: hands on floor', flat(mc, ['elbowL', 'elbowR']), lows(mc, 'elbowL'));
@@ -239,12 +246,48 @@ const cs = await cycleOf('chair-squats', 2 * Math.PI / 1.6);
 check('chair squats: feet flat on floor', flat(cs, ['ankleL', 'ankleR']), lows(cs, 'ankleL'));
 check('chair squats: sits on the seat at the bottom', near(cs[6].parts.pelvis.minY, SEAT, 0.02), cs[6].parts.pelvis.minY);
 check('chair squats: never through the seat', cs.every(p => p.parts.pelvis.minY > SEAT - 0.02), lows(cs, 'pelvis'));
-const ss = await cycleOf('split-squats', 2 * Math.PI / 1.6);
+const ss = await cycleOf('split-squats-left', 2 * Math.PI / 1.6);
 check('split squats: nothing below floor', above(ss), ss.map(p => p.minY).join(' '));
 check('split squats: front foot flat on floor', flat(ss, ['ankleL']), lows(ss, 'ankleL'));
 check('split squats: back foot on the seat', ss.every(p => near(p.parts.ankleR.minY, SEAT, 0.02)), lows(ss, 'ankleR'));
 check('split squats: back knee stays up', ss.every(p => p.parts.kneeR.minY > 0.08), lows(ss, 'kneeR'));
 check('split squats: goes down > 25 cm', ss[0].parts.head.maxY - ss[6].parts.head.maxY > 0.25);
+const ssr = await cycleOf('split-squats-right', 2 * Math.PI / 1.6);
+check('split squats (right): nothing below floor', above(ssr), ssr.map(p => p.minY).join(' '));
+check('split squats (right): back foot on the seat', ssr.every(p => near(p.parts.ankleR.minY, SEAT, 0.02)), lows(ssr, 'ankleR'));
+// The front foot (+z in the mannequin's frame, turn undone but mirror kept)
+// is on the body's left (+x) for the left one, on its right for the right one.
+const frontFootX = id => page.evaluate(async id => {
+  const app = document.querySelector('#stage').components['gym-app'];
+  const { resetPose } = await import('/js/avatar.js' + new URL(document.querySelector('script[type=module]').src).search);
+  const p = app.mannequin, ex = app.pages.single.items.find(e => e.id === id);
+  resetPose(p); ex.demo(p, 0);
+  p.root.object3D.updateMatrixWorld(true);
+  const root = p.root.object3D, toHolder = new THREE.Matrix4().copy(root.parent.matrixWorld).invert();
+  const unturn = root.quaternion.clone().invert();
+  const feet = ['ankleL', 'ankleR'].map(k => p[k].object3D.getWorldPosition(new THREE.Vector3())
+    .applyMatrix4(toHolder).sub(root.position).applyQuaternion(unturn));
+  return +(feet[0].z > feet[1].z ? feet[0].x : feet[1].x).toFixed(3);
+}, id);
+// The mannequin faces +z, so its own left is +x (its L joints, named from
+// the viewer, are on its right).
+const [ssx, ssrx] = [await frontFootX('split-squats-left'), await frontFootX('split-squats-right')];
+check('split squats: left foot in front on the left one, right foot on the right one', ssx > 0.05 && ssrx < -0.05, [ssx, ssrx]);
+// Side plank: the forearm on the floor is the left one on the left side.
+const lowElbowX = id => page.evaluate(async id => {
+  const app = document.querySelector('#stage').components['gym-app'];
+  const { resetPose } = await import('/js/avatar.js' + new URL(document.querySelector('script[type=module]').src).search);
+  const p = app.mannequin, ex = app.pages.single.items.find(e => e.id === id);
+  resetPose(p); ex.demo(p, 0);
+  p.root.object3D.updateMatrixWorld(true);
+  const root = p.root.object3D, toHolder = new THREE.Matrix4().copy(root.parent.matrixWorld).invert();
+  const elbows = ['elbowL', 'elbowR'].map(k => p[k].object3D.getWorldPosition(new THREE.Vector3()).applyMatrix4(toHolder));
+  // The lower one's side of the body: elbowL is on -x, elbowR on +x (its
+  // own left), swapped by mirror(). > 0 = the left forearm.
+  return (elbows[0].y < elbows[1].y ? -1 : 1) * root.scale.x;
+}, id);
+const [spx, sprx] = [await lowElbowX('side-plank-left'), await lowElbowX('side-plank-right')];
+check('side plank: on the left forearm on the left one, the right forearm on the right one', spx > 0 && sprx < 0, [spx, sprx]);
 
 // On the panel: every demo (and the resting idle pose) stays inside the
 // avatar's frame as the user sees it (projected onto the panel from eye

@@ -97,7 +97,7 @@ expect('calf raises: paced', await label(), 'Follow the beat: 1');
 
 // Head-dip exercises added with equipment: calibrate at the top, then the
 // head goes down by their depth and back.
-for (const [id, top, depth, still] of [['chair-squats', 1.6, 0.33, 'Stand still...'], ['split-squats', 1.6, 0.23, 'Stand still...'],
+for (const [id, top, depth, still] of [['chair-squats', 1.6, 0.33, 'Stand still...'], ['split-squats-left', 1.6, 0.23, 'Stand still...'],
   ['goblet-squats', 1.6, 0.28, 'Stand still...'], ['romanian-deadlifts', 1.6, 0.33, 'Stand still...'],
   ['chair-dips', 1.0, 0.17, 'Hold still at the top...']]) {
   await head(top); await open(id);
@@ -134,8 +134,9 @@ await head(1.6, 0, 300);
 await head(1.15, -80, 1600);
 check('wall sit: bent over is not a wall sit', /^Look ahead/.test(await label()), await label());
 
-// Side plank: head low, tilted to the side, looking ahead.
-await head(1.6); await open('side-plank');
+// Side plank: head low, tilted to the side, looking ahead. A positive roll
+// puts the head's right up: lying on the left side.
+await head(1.6); await open('side-plank-left');
 expect('side plank: prompt', await label(), 'Get into a side plank');
 await head(0.5, 0, 1600, 70);
 check('side plank: holding', secs(await label(), 'Hold') >= 0.5, await label());
@@ -146,10 +147,20 @@ await head(0.4, -80, 1600);
 check('side plank: a regular plank is not one', /^Face forward/.test(await label()), await label());
 await head(0.2, 80, 1600, 0);
 check('side plank: lying on the back is not one', !/^Hold/.test(await label()), await label());
+// One exercise per side: the other side doesn't count, and says so.
+await head(1.6, 0, 300);
+await head(0.5, 0, 1600, -70);
+check('side plank (left): on the right side, a hint', (await label()).startsWith('Lie on your left side'), await label());
+await head(1.6, 0, 300); await open('side-plank-right');
+await head(0.5, 0, 1600, -70);
+check('side plank (right): holding', secs(await label(), 'Hold') >= 0.5, await label());
+await head(1.6, 0, 300);
+await head(0.5, 0, 1600, 70);
+check('side plank (right): on the left side, a hint', (await label()).startsWith('Lie on your right side'), await label());
 // Regression (Quest): a head held more upright than the body, looking a bit
 // down, still counts, and the counter floats in front of the face instead of
 // lying on the floor (looking down at it made the side plank fail).
-await head(1.6, 0, 300); await open('side-plank');
+await head(1.6, 0, 300); await open('side-plank-left');
 await head(0.45, -25, 1600, 45);
 check('side plank: head tilted only 45 deg, looking a bit down', secs(await label(), 'Hold') >= 0.5, await label());
 const faceLabel = () => page.evaluate(() => {

@@ -106,7 +106,7 @@ To set it up on a fork: repository **Settings > Pages > Source: GitHub Actions**
             ├── hold.js        # Helper for timed holds (plank, side plank, wall sit)
             ├── calibration.js # Standing head height, measured once still
             ├── all-fours.js   # Demo pose on all fours (fire hydrants, bird dogs...)
-            └── <exercise>.js  # One file per exercise (29)
+            └── <exercise>.js  # One file per exercise (29; one-sided ones export a left and a right)
 ```
 
 The JavaScript uses native ES modules, so the page has to be served over HTTP(S).

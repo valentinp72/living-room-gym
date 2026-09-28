@@ -87,7 +87,8 @@ export const WORKOUTS = [
     steps: [
       { exercise: 'crunches', reps: 15 },
       { exercise: 'mountain-climbers', reps: 20 },
-      { exercise: 'side-plank', seconds: 20 },
+      { exercise: 'side-plank-left', seconds: 20 },
+      { exercise: 'side-plank-right', seconds: 20 },
       { exercise: 'leg-raises', reps: 10 },
       { exercise: 'bird-dogs', reps: 10 },
       { exercise: 'plank', seconds: 40 },
@@ -136,7 +137,8 @@ export const WORKOUTS = [
     steps: [
       { exercise: 'jumping-jacks', reps: 30 },
       { exercise: 'push-ups', reps: 15 },
-      { exercise: 'split-squats', reps: 20 },
+      { exercise: 'split-squats-left', reps: 10 },
+      { exercise: 'split-squats-right', reps: 10 },
       { exercise: 'mountain-climbers', reps: 30 },
       { exercise: 'chair-dips', reps: 15 },
       { exercise: 'plank', seconds: 60 },
@@ -148,7 +150,8 @@ export const WORKOUTS = [
     steps: [
       { exercise: 'crunches', reps: 25 },
       { exercise: 'leg-raises', reps: 15 },
-      { exercise: 'side-plank', seconds: 40 },
+      { exercise: 'side-plank-left', seconds: 30 },
+      { exercise: 'side-plank-right', seconds: 30 },
       { exercise: 'mountain-climbers', reps: 40 },
       { exercise: 'bird-dogs', reps: 16 },
       { exercise: 'plank', seconds: 75 },
@@ -160,7 +163,8 @@ export const WORKOUTS = [
     steps: [
       { exercise: 'goblet-squats', reps: 20 },
       { exercise: 'romanian-deadlifts', reps: 15 },
-      { exercise: 'split-squats', reps: 20 },
+      { exercise: 'split-squats-left', reps: 10 },
+      { exercise: 'split-squats-right', reps: 10 },
       { exercise: 'wall-sit', seconds: 60 },
       { exercise: 'calf-raises', reps: 30 },
       { exercise: 'lunges', reps: 20 },

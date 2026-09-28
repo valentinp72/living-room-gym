@@ -27,6 +27,9 @@
  *                          for the joint names, rot/place/turn helpers and
  *                          rotation directions)
  * then import it below and add it to EXERCISES (menu order: a grid, row by row).
+ * One-sided exercises come as a left and a right one: the file exports both
+ * as an array ([left, right], ids ending in -left / -right), spread into
+ * EXERCISES, and the demo shows the other side with mirror() (avatar.js).
  * Building blocks: paced() (untracked, app-paced reps), headDip() (head goes
  * down and up from a still top position: squats, lunges, dips), pushUpReps()
  * (face down), hold() (timed holds: plank, side plank, wall sit). Demo
@@ -67,8 +70,8 @@ import lateralRaises from './lateral-raises.js';
 
 export const EXERCISES = [squats, curls, plank, crunches, legRaises, pushUps, kneePushUps,
   lunges, calfRaises, gluteBridges, fireHydrants,
-  jumpingJacks, wallSit, sidePlank, mountainClimbers, birdDogs, donkeyKicks,
-  chairDips, inclinePushUps, chairSquats, splitSquats,
+  jumpingJacks, wallSit, ...sidePlank, mountainClimbers, birdDogs, donkeyKicks,
+  chairDips, inclinePushUps, chairSquats, ...splitSquats,
   bandPullAparts, bandRows, bandSideSteps,
   gobletSquats, romanianDeadlifts, shoulderPress, bentOverRows, lateralRaises];
 

@@ -8,6 +8,10 @@
 // A limb hangs along -Y from its pivot, so a NEGATIVE x rotation swings it
 // forward (+Z) and a positive one swings it backward.
 //
+// L / R joints are named as seen from the viewer: facing them (turn 0), the
+// L side is on their left, so it is the mannequin's own right side. It only
+// matters for one-sided exercises (see mirror()).
+//
 // Joint tree, with the standing pose (pivot positions relative to their parent):
 //   root                 on the floor, between the feet; turns the whole body
 //   └ pelvis             hip height (PELVIS_Y); move/rotate it to squat or lie down
@@ -54,6 +58,13 @@ export function place(el, x = 0, y = 0, z = 0) {
 // at the holder from its +Z side). 0 = facing the viewer, 90 = side view.
 export function turn(parts, deg) {
   rot(parts.root, 0, deg, 0);
+}
+
+// Swap the body's left and right (after posing), so one demo shows both
+// sides of a one-sided exercise (side plank, split squats). It flips the
+// root's own x axis; resetPose() undoes it.
+export function mirror(parts) {
+  parts.root.object3D.scale.x = -1;
 }
 
 // Side-view posing (inverse kinematics) in the mannequin's own y/z plane:
@@ -128,6 +139,7 @@ export const onToesY = deg =>
 export function resetPose(parts) {
   place(parts.root, parts.shiftX || 0);
   turn(parts, DEFAULT_TURN);
+  parts.root.object3D.scale.x = 1;   // see mirror()
   place(parts.pelvis, 0, PELVIS_Y, 0);
   for (const name of JOINTS) {
     rot(parts[name]);

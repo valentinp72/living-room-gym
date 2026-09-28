@@ -93,8 +93,8 @@ await camera([0.1, 0.55, 0.05], [-68, -6, 0]);
 await shot('plank-floor');
 
 // 7. The coach: close-ups of demos, in one contact sheet.
-const demos = [['squats', 2], ['push-ups', 1.5], ['side-plank', 0], ['bird-dogs', 1.5],
-  ['split-squats', 2], ['incline-push-ups', 1.5], ['band-rows', 1.25], ['shoulder-press', 1.25]];
+const demos = [['squats', 2], ['push-ups', 1.5], ['side-plank-right', 0], ['bird-dogs', 1.5],
+  ['split-squats-left', 2], ['incline-push-ups', 1.5], ['band-rows', 1.25], ['shoulder-press', 1.25]];
 const tiles = [];
 await page.setViewport({ width: 480, height: 480 });
 // Only the avatar and its frame: hide the panel's texts and buttons.
