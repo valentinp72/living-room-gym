@@ -65,6 +65,8 @@ export function hold({ start, keep, prompt, calibrate: needsStand = false, tryin
     },
     // Seconds held, over all holds.
     count: st => st.total + (st.holding ? st.time : 0),
+    // Is the timer running? (the app plays a sound when it starts or stops)
+    holding: st => st.holding,
     label(st) {
       if (needsStand && st.standY === null) return 'Stand still...';
       if (st.holding) return 'Hold: ' + fmt(st.time) + (st.best ? '\nBest: ' + fmt(st.best) : '');

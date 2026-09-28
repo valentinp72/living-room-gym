@@ -28,7 +28,7 @@ await page.waitForFunction(() => document.querySelector('a-scene')?.hasLoaded, {
 await installFakeXR(page);
 await page.evaluate(() => document.querySelector('#camera').setAttribute('look-controls', 'enabled: false'));
 
-const NAMES = { 880: 'rep', 1320: 'ding', 3300: null, 660: 'done', 520: 'count', 1040: 'go', 523: 'finish' };
+const NAMES = { 880: 'rep', 1320: 'ding', 3300: null, 660: 'done', 520: 'count', 1040: 'go', 523: 'finish', 587: 'holdOn', 415: 'holdOff' };
 // Sounds played since the last call, by name.
 const sounds = () => page.evaluate(NAMES => {
   const out = [];
@@ -194,7 +194,7 @@ check('plank progress on the floor counter', /\n(9|10|11) \/ 20 s$/.test(await p
 if (shot) await page.screenshot({ path: shot + '-plank.png' });
 await sleep(10600);
 u = await ui();
-eq('plank: a ding at 10 s, fanfare at the end', await sounds(), ['ding', 'finish']);
+eq('plank: in position, a ding at 10 s, fanfare at the end', await sounds(), ['holdOn', 'ding', 'finish']);
 c = await confetti();
 check('finish: big confetti burst, above the floor', c.live === 260 && c.minY >= 0.003, JSON.stringify(c));
 eq('complete screen', [u.title, u.rep, u.skip, u.mannequin, u.next], ['TRAINING COMPLETE', 'Well done!', false, false, false]);
@@ -228,6 +228,16 @@ eq('skip exercise: no sound', await sounds(), []);
 elbows = [];
 for (let i = 0; i < 6; i++) { elbows.push((await ui()).elbow); await sleep(150); }
 check('skip exercise: mannequin idles', elbows.every(e => e >= 10 && e <= 14), JSON.stringify(elbows));
+
+// Holds sound when their timer starts and stops (out of position: not
+// counted any more), so the user knows without seeing the counter.
+await page.evaluate(() => { document.querySelector('#btnBack').emit('click'); document.querySelectorAll('#menuButtons > *')[2].emit('click'); });
+await head(1.6); await sounds();
+await head(0.45, -80, 1500);
+eq('hold: a sound when the timer starts', await sounds(), ['holdOn']);
+await head(1.6, 0, 1500);
+eq('hold: a sound when it stops', await sounds(), ['holdOff']);
+await click('#btnBack');
 
 // Single exercise: no Skip, no target.
 await page.evaluate(() => document.querySelectorAll('#menuButtons > *')[0].emit('click')); await sleep(150);

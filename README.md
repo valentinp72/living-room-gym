@@ -50,7 +50,8 @@ their own: get in position and the timer starts; stop and it stops. No buttons t
 mid-exercise. For moves the headset can't follow, the app sets the pace with a beat and counts
 along with you.
 
-Every counted rep gets a little ding. When you're on the floor, the counter comes to you: on
+Every counted rep gets a little ding. Holds tell you by sound too: a rising tone when the
+timer starts, a falling one when you've left the position and it stopped counting. When you're on the floor, the counter comes to you: on
 the floor under your face in a plank, or above you when you lie on your back.
 
 ![Holding a plank: the timer and the coach on the floor, under your face](docs/screenshots/plank-floor.jpg)

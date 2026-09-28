@@ -11,6 +11,9 @@
  *                          mutate st (reps, time, etc.)
  *   count(st)           -> progress toward a training-set target, in `unit`
  *   label(st)           -> string shown as the live counter
+ *   holding(st) (optional) -> for holds: is the timer running? The app
+ *                          plays a sound when it starts and when it stops
+ *                          (hold() provides it)
  *   moves(st) (optional) -> moves done so far; each new one gets a ding
  *                          and a counter pop. Default: whole reps, or
  *                          every 10 s for 'seconds' (see movesOf below)

@@ -188,6 +188,7 @@ export const gymApp = {
     this.run = null;
     this.clock = 0;
     this.lastMoves = 0;
+    this.lastHolding = false;
     this.pop = POP;   // seconds since the counter last popped (see popCounter)
     this.confetti = document.querySelector('#confetti').components.confetti;
     this.hands = readHands(this.el.sceneEl);
@@ -469,6 +470,7 @@ export const gymApp = {
     this.showNext(null);
     this.clock = 0;
     this.lastMoves = 0;
+    this.lastHolding = false;
     setShown(this.menuPanel, false);
     setShown(this.exercisePanel, true);
     setShown(this.skipBtn, skippable);
@@ -493,6 +495,7 @@ export const gymApp = {
     const steps = run.workout.steps;
     this.clock = 0;
     this.lastMoves = 0;
+    this.lastHolding = false;
     this.setLook(run.phase === 'rest' ? 'rest' : 'exercise');
     this.showNext(run.phase === 'rest' ? exerciseById(nextStep(run).exercise) : null);
     if (run.phase === 'exercise') {
@@ -599,6 +602,8 @@ export const gymApp = {
   // Every move done (see movesOf()): the counter pops, and a ding plays
   // (paced exercises tick instead: that sound is their beat). quiet: the
   // step's last move, which gets the step's sound instead of a ding.
+  // Holds also sound when their timer starts and stops, so the user knows
+  // without seeing the counter (not when the step ends: that has its sound).
   tickMoves: function (ex, st, quiet) {
     const n = movesOf(ex, st);
     if (n > this.lastMoves) {
@@ -607,6 +612,10 @@ export const gymApp = {
       else if (!quiet) play('ding');
     }
     this.lastMoves = n;
+    if (!ex.holding) return;
+    const holding = ex.holding(st);
+    if (holding !== this.lastHolding && !quiet) play(holding ? 'holdOn' : 'holdOff');
+    this.lastHolding = holding;
   },
   // The counter grows for a moment, then eases back (this.pop = 0 starts it).
   // The frame a move counts always shows the full pop, however long it is.
