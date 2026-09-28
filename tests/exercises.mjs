@@ -177,6 +177,18 @@ await page.evaluate(() => { const o = document.querySelector('#camera').object3D
 await sleep(150);
 expect('near panel: counter by the face', JSON.stringify(await faceLabel()), JSON.stringify({ visible: true, dist: 0.7, facing: true }));
 
+// Looking at the panel from where it's readable, the face counter fades out
+// (regression: sitting low, it covered the panel's texts), and comes back
+// when looking away.
+await head(1.6, 0, 300); await open('chair-dips');
+await head(0.85, 10, 600);
+expect('looking at the panel: face counter faded out', (await faceLabel()).visible, false);
+await page.evaluate(() => { const o = document.querySelector('#camera').object3D; o.rotation.set(0.17, Math.PI / 2, 0, 'YXZ'); });
+await sleep(600); await frames(page, 2);
+const shown = await page.evaluate(() => ({ visible: document.querySelector('#floorLabel').object3D.visible,
+  opacity: Number(document.querySelector('#floorLabelText').getAttribute('opacity')), avatar: document.querySelector('#floorAvatar').object3D.visible }));
+expect('looking away: face counter back', JSON.stringify(shown), JSON.stringify({ visible: true, opacity: 1, avatar: true }));
+
 for (const r of results) console.log((r.ok ? 'PASS ' : 'FAIL ') + r.name + (r.ok ? '' : `  got=${JSON.stringify(r.got)} want=${JSON.stringify(r.want)}`));
 console.log('page errors:', errors.length ? errors : 'none');
 await browser.close();

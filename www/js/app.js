@@ -79,6 +79,13 @@ const FACE_AHEAD = 0.7;
 // wide) it didn't fit in view.
 const FACE_LABEL_WIDTH = 0.93;
 const FACE_LABEL_FULL = 1.0;   // #floorLabel's width at scale 1
+const FACE_LABEL_OPACITY = 0.8; // its background's
+// Looking at the exercise panel from where it's readable (the gaze ray hits
+// it, PANEL_MARGIN meters around it included), the counter fades out over
+// FACE_FADE seconds, and back in when looking away: floating in front of
+// the face, it covered the panel's texts (sitting on a chair, wall sit).
+const PANEL_MARGIN = 0.15;
+const FACE_FADE = 0.25;
 
 // Menu follow (XR only): when the menu is on screen and the user has turned
 // more than FOLLOW_ANGLE degrees away from it, or walked more than
@@ -114,6 +121,7 @@ function saveKit(kit) {
 }
 const KIT_LABELS = { chair: 'Chair', band: 'Band', weights: 'Dumbbells' };
 const PANEL_HEAD = new THREE.Vector3();
+const GAZE = new THREE.Vector3(), GAZE_QUAT = new THREE.Quaternion(), PANEL_QUAT = new THREE.Quaternion();
 
 // Exercise vs rest look: rest gets a blue panel and a cyan countdown so it
 // can't be mistaken for an exercise. Panels are nearly opaque: over
@@ -165,6 +173,9 @@ export const gymApp = {
     this.exerciseBg = document.querySelector('#exerciseBg');
     this.floorLabel = document.querySelector('#floorLabel');
     this.floorLabelText = document.querySelector('#floorLabelText');
+    this.floorLabelBg = document.querySelector('#floorLabelBg');
+    this.floorAvatar = document.querySelector('#floorAvatar');
+    this.faceFade = 0;   // see updateFloorLabel()
     // Demo avatars: on the exercise panel, and a small one on the floor
     // counter (floor exercises). Both show the same pose. A third one, in
     // the "UP NEXT" card, previews the next exercise during a rest.
@@ -341,11 +352,17 @@ export const gymApp = {
     return dir.normalize();
   },
   // Keep the floor counter in sight while the user's head is low: on the
-  // floor under the face, or above it when lying on the back.
-  updateFloorLabel: function (text) {
+  // floor under the face, or above it when lying on the back. It fades out
+  // while the user looks at the (readable) exercise panel.
+  updateFloorLabel: function (text, delta) {
     const head = this.camera.object3D;
     const low = head.position.y < FLOOR_HEAD_Y;
-    const show = low || this.nearPanel(head);
+    const near = this.nearPanel(head);
+    const wanted = (low || near) && (near || !this.lookingAtPanel(head));
+    const step = delta / 1000 / FACE_FADE;
+    this.faceFade = Math.max(0, Math.min(1, this.faceFade + (wanted ? step : -step)));
+    this.setFaceFade(this.faceFade);
+    const show = this.faceFade > 0;
     if (show !== this.floorLabel.getAttribute('visible')) this.floorLabel.setAttribute('visible', show);
     if (!show) return;
     this.floorLabelText.setAttribute('value', text);
@@ -361,6 +378,32 @@ export const gymApp = {
     }
     const width = FACE_LABEL_WIDTH * o.position.distanceTo(head.position);
     o.scale.setScalar(Math.min(1, width / FACE_LABEL_FULL));
+  },
+  // Fade the face counter: 0 = gone, 1 = fully shown. Its small avatar only
+  // shows from half way (its materials don't fade).
+  setFaceFade: function (f) {
+    if (f === this.shownFade) return;
+    this.shownFade = f;
+    this.floorLabelBg.setAttribute('material', 'opacity', FACE_LABEL_OPACITY * f);
+    this.floorLabelText.setAttribute('opacity', f);
+    const avatar = f > 0.5;
+    if (avatar !== this.floorAvatar.getAttribute('visible')) this.floorAvatar.setAttribute('visible', avatar);
+  },
+  // Does the gaze ray hit the exercise panel (with PANEL_MARGIN around it)?
+  lookingAtPanel: function (head) {
+    const panel = this.exercisePanel.object3D;
+    head.getWorldPosition(PANEL_HEAD);
+    head.getWorldQuaternion(GAZE_QUAT);
+    panel.worldToLocal(PANEL_HEAD);
+    // The gaze in the panel's frame: a direction, so only rotated.
+    panel.getWorldQuaternion(PANEL_QUAT);
+    GAZE.set(0, 0, -1).applyQuaternion(GAZE_QUAT).applyQuaternion(PANEL_QUAT.invert());
+    if (GAZE.z >= 0) return false;   // looking away from its plane
+    const k = -PANEL_HEAD.z / GAZE.z;
+    const x = PANEL_HEAD.x + GAZE.x * k, y = PANEL_HEAD.y + GAZE.y * k;
+    const bg = this.exerciseBg;
+    return Math.abs(x) < bg.getAttribute('width') / 2 + PANEL_MARGIN &&
+      Math.abs(y) < bg.getAttribute('height') / 2 + PANEL_MARGIN;
   },
   // Is the head too close to the exercise panel to read it (or behind it)?
   nearPanel: function (head) {
@@ -409,6 +452,7 @@ export const gymApp = {
     setShown(this.exercisePanel, false);
     this.mannequin.root.setAttribute('visible', false);
     this.floorLabel.setAttribute('visible', false);
+    this.faceFade = 0;
     this.showNext(null);
   },
   setLook: function (name) {
@@ -473,6 +517,7 @@ export const gymApp = {
       setShown(this.skipBtn, false);
       this.mannequin.root.setAttribute('visible', false);
       this.floorLabel.setAttribute('visible', false);
+      this.faceFade = 0;
     }
   },
   // Sounds + screen changes for the runner's events.
@@ -524,7 +569,7 @@ export const gymApp = {
       text = ex.label(st);
     }
     this.repText.setAttribute('value', text);
-    this.updateFloorLabel(text);
+    this.updateFloorLabel(text, delta);
     this.popCounter(delta);
     const pose = this.current.ex ? this.current.ex.demo : idle;
     if (pose !== this.centered) this.centerAvatars(pose);
