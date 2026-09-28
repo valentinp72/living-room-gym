@@ -3,10 +3,11 @@ import { hold, heightOff, keptHeight } from './hold.js';
 import { gazeY } from '../tracking.js';
 
 // Wall sit, from the headset: it first measures the standing head height,
-// then the hold starts when the head is 30 to 80 cm below it, looking ahead
+// then the hold starts when the head is 18 to 80 cm below it, looking ahead
 // (not bent over). Once holding, the head must stay within 10 cm of where it
-// started. Sitting on a real chair would count too.
-const START_DROP = [0.3, 0.8];   // m below standing height
+// started. Sitting on a real chair would count too. A 30 cm minimum was too
+// deep: on a Quest it took an almost floor-level sit to start.
+const START_DROP = [0.18, 0.8];  // m below standing height
 const HOLD_DRIFT = 0.1;
 const LOOK_AHEAD = -0.6;         // gaze y above this = not bent over
 

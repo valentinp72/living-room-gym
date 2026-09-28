@@ -118,14 +118,17 @@ await head(1.6); await open('incline-push-ups');
 for (let i = 0; i < 3; i++) { await head(1.6, -80); await head(1.4, -80); }
 expect('incline push-ups: standing, looking down: nothing', await label(), 'Get into push-up position');
 
-// Wall sit: after the standing calibration, head 30-80 cm lower and looking ahead.
+// Wall sit: after the standing calibration, head 18-80 cm lower and looking ahead.
 await head(1.6); await open('wall-sit');
 expect('wall sit: calibrates first', await label(), 'Stand still...');
 await sleep(1300);
 expect('wall sit: prompt', await label(), 'Slide down the wall');
 await head(1.15, 0, 1600);
 check('wall sit: holding', secs(await label(), 'Hold') >= 0.5, await label());
-await head(1.4, 0, 1400);
+// A shallower sit counts too (regression: 30 cm lower was needed, too deep).
+await head(1.6, 0, 1400); await head(1.4, 0, 1600);
+check('wall sit: 20 cm lower counts', secs(await label(), 'Hold') >= 0.5, await label());
+await head(1.6, 0, 1400);
 check('wall sit: standing up ends the hold', /^Head lower/.test(await label()) || /^Last: /.test(await label()), await label());
 await head(1.6, 0, 300);
 await head(1.15, -80, 1600);
